@@ -1,0 +1,42 @@
+id: npc-behavior
+title: "NPC Behavior Template"
+description: "Each row is an NPC. Mix classical (inventory) with jazz (dialogue)."
+version: 0.1.0
+
+# Use this template for game NPCs. Each row is a character.
+# Designers edit the values, not the code.
+
+cells:
+  - id: npc.1.name
+    kind: value
+    value: "Mira the Merchant"
+  - id: npc.1.role
+    kind: value
+    value: "shopkeeper"
+  - id: npc.1.dialogue_style
+    kind: value
+    value: "friendly, formal, uses 'thee' and 'thou'"
+
+  # Jazz cells: stochastic dialogue
+  - id: npc.1.greeting
+    kind: model
+    endpoint: "model:claude-sonnet-4-5"
+    description: "LLM-generated greeting"
+
+  # Classical cells: hard rules
+  - id: npc.1.alignment
+    kind: value
+    value: "lawful_good"
+  - id: npc.1.max_sale_price
+    kind: value
+    value: 100
+  - id: npc.1.refuses_to_sell
+    kind: value
+    value: ["stolen_goods", "cursed_items"]
+
+  # Router: who to talk to
+  - id: npc.1.router
+    kind: router
+    rules:
+      - when: 'caller.identity && caller.identity.type === "agent"'
+        route: { cell: "npc.1.greeting" }

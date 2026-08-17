@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quilt — A spreadsheet where every cell is a live capability</title>
+  <meta name="description" content="Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control plane. The cell is the universal IO primitive. The grid is the runtime.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">◳</span>
+        <span class="logo-text">Quilt</span>
+      </a>
+      <nav class="nav">
+        <a href="#paradigm">Paradigm</a>
+        <a href="#features">Features</a>
+        <a href="#code">Code</a>
+        <a href="simulator.html">⚡ Simulator</a>
+        <a href="tutorial.html">Tutorial</a>
+        <a href="https://github.com/superinstance/quilt" class="nav-cta">GitHub →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-eyebrow">
+          <span class="dot"></span>
+          v0.1.0 — the substrate is live
+        </div>
+        <h1 class="hero-title">
+          A spreadsheet where every cell<br>
+          is a <span class="grad">live capability</span>.<br>
+          The grid <em>is</em> the runtime.
+        </h1>
+        <p class="hero-sub">
+          Quilt is a reactive, typed, cellular runtime.
+          Change one cell — every dependent sensor, model, agent, and actuator rewires.
+          Built for the era where humans and AI agents share the same workspace.
+        </p>
+        <div class="hero-cta">
+          <a href="#install" class="btn btn-primary">Get started</a>
+          <a href="simulator.html" class="btn btn-ghost">⚡ Try the live simulator</a>
+        </div>
+
+        <!-- Live demo: animated grid -->
+        <div class="hero-demo">
+          <div class="grid-card">
+            <div class="grid-card-header">
+              <span class="grid-card-title">boat-autopilot.cellflow.yaml</span>
+              <span class="grid-card-status">● live</span>
+            </div>
+            <div class="grid">
+              <div class="cell head"></div>
+              <div class="cell head">compass</div>
+              <div class="cell head">desired</div>
+              <div class="cell head">error</div>
+              <div class="cell head">rudder</div>
+
+              <div class="cell label">boat-1</div>
+              <div class="cell val" data-anim="compass">182°</div>
+              <div class="cell val">180°</div>
+              <div class="cell val">-2°</div>
+              <div class="cell val accent" data-anim="rudder">-1.0°</div>
+
+              <div class="cell label">boat-2</div>
+              <div class="cell val" data-anim="compass">175°</div>
+              <div class="cell val">180°</div>
+              <div class="cell val">+5°</div>
+              <div class="cell val accent" data-anim="rudder">+2.5°</div>
+
+              <div class="cell label">boat-3</div>
+              <div class="cell val" data-anim="compass">190°</div>
+              <div class="cell val">180°</div>
+              <div class="cell val">-10°</div>
+              <div class="cell val accent" data-anim="rudder">-5.0°</div>
+            </div>
+            <div class="grid-card-footer">
+              <span>3 boats · 1 model · live</span>
+              <span class="kbd">⌘ live</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARADIGM SHIFT -->
+    <section class="section paradigm" id="paradigm">
+      <div class="container">
+        <div class="section-eyebrow">The shift</div>
+        <h2 class="section-title">Six changes. One substrate.</h2>
+        <p class="section-sub">
+          Quilt isn't a better spreadsheet. It's a new computational surface — one where
+          data, logic, policy, and IO all live in the same addressable grid.
+        </p>
+
+        <div class="shift-grid">
+          <div class="shift">
+            <div class="shift-old">Cell = value</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Cell = capability</div>
+          </div>
+          <div class="shift">
+            <div class="shift-old">Formula = math</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Formula = program call</div>
+          </div>
+          <div class="shift">
+            <div class="shift-old">Sheet = document</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Sheet = runtime</div>
+          </div>
+          <div class="shift">
+            <div class="shift-old">Row/column = labels</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Row/column = policy</div>
+          </div>
+          <div class="shift">
+            <div class="shift-old">Reference = pointer</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Reference = dependency injection</div>
+          </div>
+          <div class="shift">
+            <div class="shift-old">Spreadsheet = calculator</div>
+            <div class="shift-arrow">→</div>
+            <div class="shift-new">Spreadsheet = control plane</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section features" id="features">
+      <div class="container">
+        <div class="section-eyebrow">What's in the box</div>
+        <h2 class="section-title">The primitives no one else combines.</h2>
+        <p class="section-sub">
+          Each is real. Each is in the engine today. Together they're the new shape of composable systems.
+        </p>
+
+        <div class="features-grid">
+          <div class="feature">
+            <div class="feature-icon">◇</div>
+            <h3>Cell-as-capability</h3>
+            <p>A cell can be a value, a formula, an API call, a model, a sensor, an actuator, a listener, or a router. Changing <code>A1</code> reroutes every dependent automatically.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⇄</div>
+            <h3>Caller-aware routing</h3>
+            <p>Every call carries <code>caller.row</code>, <code>caller.column</code>, <code>caller.identity</code>. A cell routes on who called it. Row 10+ uses Model A. Column J uses Prompt X.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">◉</div>
+            <h3>Reactive, by default</h3>
+            <p>Pure formulas recalculate on dep change. Sensors push. Listeners fire. The graph is alive. No polling, no manual orchestration.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⇌</div>
+            <h3>MCP-native</h3>
+            <p>Every named cell is an MCP tool. Every sheet is an MCP server. Claude Code, Cursor, and any MCP client can use your cells as tools and shared memory.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⊕</div>
+            <h3>Edge-ready</h3>
+            <p>Runs on a Raspberry Pi. Sensors in, actuators out, local model on a Pi, all in the same sheet. No cloud round-trip for control loops.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">∞</div>
+            <h3>Classical ↔ jazz</h3>
+            <p>Mix deterministic algorithms with stochastic models in the same grid. See exactly where the jazz is. Decompose over time — visible, auditable, editable.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">◳</div>
+            <h3>Human + agent shared space</h3>
+            <p>The agent writes a cell; you see it instantly. You override a cell; the agent reads it on the next cycle. Same grid, same view, same audit log.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⌘</div>
+            <h3>Git-friendly YAML</h3>
+            <p>Sheets are <code>.quilt.yaml</code> files. Diffable, mergeable, reviewable. LLMs can write them. Humans can read them. No binary blobs.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">⊟</div>
+            <h3>Terminal-native</h3>
+            <p>TUI for tmux. Watch agents work. Step in. Override. The terminal is the power tool — Quilt lives there.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CODE -->
+    <section class="section code-section" id="code">
+      <div class="container">
+        <div class="section-eyebrow">In code</div>
+        <h2 class="section-title">Look how small it is.</h2>
+        <p class="section-sub">
+          A boat autopilot with sensors, PID control, voice commands, and a model router.
+          One YAML file. About 100 lines.
+        </p>
+
+        <div class="code-tabs">
+          <div class="tab active">boat-autopilot.cellflow.yaml</div>
+          <div class="tab">CLI</div>
+          <div class="tab">MCP</div>
+        </div>
+
+        <div class="code-block">
+<pre><span class="c"># A reactive control system. The grid is the runtime.</span>
+<span class="k">id:</span> boat-autopilot
+<span class="k">title:</span> <span class="s">"Voice-Controlled Autopilot"</span>
+
+<span class="k">cells:</span>
+  <span class="c"># --- Sensors (push from hardware) ---</span>
+  - <span class="k">id:</span> compass.heading
+    <span class="k">kind:</span> sensor
+    <span class="k">source:</span> nmea:/dev/ttyUSB0
+    <span class="k">unit:</span> degrees
+
+  <span class="c"># --- Pure computations (reactive) ---</span>
+  - <span class="k">id:</span> heading.error
+    <span class="k">kind:</span> formula
+    <span class="k">expr:</span> <span class="s">"=((desired.heading - compass.heading + 540) % 360) - 180"</span>
+
+  <span class="c"># --- Program cells (stateful, async) ---</span>
+  - <span class="k">id:</span> rudder.command
+    <span class="k">kind:</span> program
+    <span class="k">code:</span> <span class="s">|
+      const e = await runtime.get('heading.error');
+      const g = await runtime.get('rudder.gain');
+      return clamp((e.data || 0) * (g.data || 0.5), -30, 30);</span>
+
+  <span class="c"># --- Router (caller-aware) ---</span>
+  - <span class="k">id:</span> model.router
+    <span class="k">kind:</span> router
+    <span class="k">rules:</span>
+      - <span class="k">when:</span> <span class="s">'caller.row === "boat-1"'</span>
+        <span class="k">route:</span> { <span class="k">model:</span> <span class="s">"gpt-4o-mini"</span> }
+      - <span class="k">when:</span> <span class="s">'caller.row === "boat-2"'</span>
+        <span class="k">route:</span> { <span class="k">model:</span> <span class="s">"gpt-4o"</span> }
+
+  <span class="c"># --- Actuators (write to hardware) ---</span>
+  - <span class="k">id:</span> rudder.position
+    <span class="k">kind:</span> io
+    <span class="k">direction:</span> out
+    <span class="k">port:</span> actuator:rudder</pre>
+        </div>
+
+        <div class="code-cta">
+          <p>And then you just <code>quilt run boat-autopilot.cellflow.yaml</code> — or <code>quilt serve --mcp</code> to expose it to Claude Code.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="section install" id="install">
+      <div class="container">
+        <div class="section-eyebrow">Get started</div>
+        <h2 class="section-title">Five minutes to your first cell.</h2>
+
+        <div class="install-steps">
+          <div class="install-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h3>Install</h3>
+              <div class="code-inline">
+                <code>npm install -g @quilt/cli</code>
+              </div>
+              <p>Requires Node.js 18+. The CLI brings the runtime, the MCP server, and the TUI.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h3>Scaffold</h3>
+              <div class="code-inline">
+                <code>quilt init my-sheet</code>
+              </div>
+              <p>Creates a starter sheet with two cells — a value and a formula.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h3>Run</h3>
+              <div class="code-inline">
+                <code>quilt run my-sheet.quilt.yaml</code>
+              </div>
+              <p>Watch the cells evaluate. Edit the YAML, re-run, watch them change.</p>
+            </div>
+          </div>
+          <div class="install-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h3>Expose to MCP</h3>
+              <div class="code-inline">
+                <code>quilt serve my-sheet.quilt.yaml --mcp</code>
+              </div>
+              <p>Now Claude Code (or any MCP client) can use your cells as tools.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="install-cta">
+          <a href="tutorial.html" class="btn btn-primary">Read the full tutorial →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- KILLER DEMOS -->
+    <section class="section demos">
+      <div class="container">
+        <div class="section-eyebrow">What people build with it</div>
+        <h2 class="section-title">The killer demos.</h2>
+
+        <div class="demos-grid">
+          <a href="https://github.com/superinstance/quilt/tree/main/examples/boat-autopilot" class="demo-card">
+            <div class="demo-icon">⛵</div>
+            <h3>Voice-controlled autopilot</h3>
+            <p>Sensors in, PID controller, voice intent, model router — all in one grid. The 30-year dream of "spreadsheet as control system" actually working.</p>
+            <span class="demo-link">View demo →</span>
+          </a>
+          <a href="https://github.com/superinstance/quilt/tree/main/examples/agent-dashboard" class="demo-card">
+            <div class="demo-icon">🤖</div>
+            <h3>Agent mission control</h3>
+            <p>Tasks, status, outputs — every cell. The agent reads/writes via MCP. You watch in tmux. Override a cell, the agent sees it on the next cycle.</p>
+            <span class="demo-link">View demo →</span>
+          </a>
+          <a href="https://github.com/superinstance/quilt/tree/main/examples/model-router" class="demo-card">
+            <div class="demo-icon">⇄</div>
+            <h3>Caller-aware model router</h3>
+            <p>Row 10+ → premium model. Column J → creative prompt. Identity tags → bypass cache. Change one cell, every caller reroutes.</p>
+            <span class="demo-link">View demo →</span>
+          </a>
+          <a href="https://github.com/superinstance/quilt/tree/main/examples/sensor-anomaly" class="demo-card">
+            <div class="demo-icon">⚡</div>
+            <h3>Self-tuning anomaly detector</h3>
+            <p>Local statistical loop catches 95% of events cheaply. Only true anomalies escalate to the model. False positives drop from 100/day to 2/day.</p>
+            <span class="demo-link">View demo →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section final-cta">
+      <div class="container">
+        <h2>Stop building pipelines. Start orchestrating cells.</h2>
+        <p>Quilt is Apache 2.0, written in TypeScript and Rust, and ready for the agent era.</p>
+        <div class="hero-cta">
+          <a href="https://github.com/superinstance/quilt" class="btn btn-primary">★ Star on GitHub</a>
+          <a href="tutorial.html" class="btn btn-ghost">Read the tutorial</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="logo">
+            <span class="logo-mark">◳</span>
+            <span class="logo-text">Quilt</span>
+          </div>
+          <p>A spreadsheet where every cell is a live, addressable capability.</p>
+          <p class="small">Apache 2.0 · Made for the agent era.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Get started</h4>
+          <a href="#install">Install</a>
+          <a href="tutorial.html">Tutorial</a>
+          <a href="manifesto.html">Manifesto</a>
+          <a href="https://github.com/superinstance/quilt/tree/main/examples">Examples</a>
+        </div>
+        <div class="footer-col">
+          <h4>Project</h4>
+          <a href="https://github.com/superinstance/quilt">GitHub</a>
+          <a href="https://github.com/superinstance/quilt/issues">Issues</a>
+          <a href="https://github.com/superinstance/quilt/discussions">Discussions</a>
+          <a href="https://github.com/superinstance/quilt/blob/main/LICENSE">License</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Quilt contributors.</span>
+        <span>The spreadsheet is the runtime.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

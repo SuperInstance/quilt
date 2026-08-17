@@ -1,0 +1,48 @@
+id: predictive-maintenance
+title: "Predictive Maintenance Template"
+description: "Per-machine row, per-capability column. Watch for anomalies, escalate to model."
+version: 0.1.0
+
+# Use this template as a starting point for industrial monitoring.
+# Each row is a machine. Each column is a capability.
+# Change one cell, and every machine updates.
+
+cells:
+  # Per-machine configuration
+  - id: machine.1.name
+    kind: value
+    value: "Press #1"
+  - id: machine.1.threshold
+    kind: value
+    value: 75  # celsius
+
+  - id: machine.2.name
+    kind: value
+    value: "Press #2"
+  - id: machine.2.threshold
+    kind: value
+    value: 80
+
+  # Shared: vibration model
+  - id: model.vibration_anomaly
+    kind: api
+    endpoint: "model:anomaly-detector"
+    description: "An ONNX model for vibration anomaly detection"
+
+  # Shared: alert system
+  - id: alert.dispatcher
+    kind: program
+    code: |
+      return {
+        channel: 'pagerduty',
+        severity: 'high',
+        message: 'Predictive maintenance alert',
+        timestamp: Date.now(),
+      };
+
+  # Router: which model to use
+  - id: router.model
+    kind: router
+    rules:
+      - when: 'caller.row === 1'
+        route: { model: "model.vibration_anomaly" }

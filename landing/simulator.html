@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quilt — Live Simulator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="simulator.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">◳</span>
+        <span class="logo-text">Quilt</span>
+      </a>
+      <nav class="nav">
+        <a href="index.html">← Back to home</a>
+        <a href="tutorial.html">Tutorial</a>
+        <a href="https://github.com/superinstance/quilt" class="nav-cta">GitHub →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="sim-main">
+    <div class="container">
+      <div class="sim-header">
+        <h1>Live Simulator</h1>
+        <p>Edit the sheet on the left. Watch the runtime update on the right. See the dependency graph below.</p>
+      </div>
+
+      <div class="sim-presets">
+        <span class="sim-presets-label">Preset:</span>
+        <button class="preset-btn active" data-preset="boat-autopilot">⛵ Boat Autopilot</button>
+        <button class="preset-btn" data-preset="model-router">⇄ Model Router</button>
+        <button class="preset-btn" data-preset="sensor-anomaly">⚡ Anomaly Detector</button>
+        <button class="preset-btn" data-preset="agent-dashboard">🤖 Agent Dashboard</button>
+      </div>
+
+      <div class="sim-grid">
+        <!-- LEFT: Source code -->
+        <div class="sim-pane sim-pane-code">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="pane-icon">▤</span>
+              <span>sheet.cellflow.yaml</span>
+            </div>
+            <button class="btn-mini" id="apply-btn">▶ Apply</button>
+          </div>
+          <div class="pane-body">
+            <textarea id="source" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <!-- RIGHT: Runtime view -->
+        <div class="sim-pane sim-pane-runtime">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="pane-icon">◉</span>
+              <span>Runtime</span>
+            </div>
+            <div class="pane-stats">
+              <span id="stat-cells">0 cells</span>
+              <span id="stat-eval">0 evals</span>
+            </div>
+          </div>
+          <div class="pane-body">
+            <div id="runtime-grid" class="runtime-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Dependency graph + actions -->
+      <div class="sim-bottom">
+        <div class="sim-pane sim-pane-graph">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="pane-icon">◇</span>
+              <span>Dependency graph</span>
+            </div>
+            <div class="pane-legend">
+              <span class="legend-item"><span class="legend-dot dot-value"></span>value</span>
+              <span class="legend-item"><span class="legend-dot dot-formula"></span>formula</span>
+              <span class="legend-item"><span class="legend-dot dot-api"></span>api</span>
+              <span class="legend-item"><span class="legend-dot dot-program"></span>program</span>
+              <span class="legend-item"><span class="legend-dot dot-sensor"></span>sensor</span>
+              <span class="legend-item"><span class="legend-dot dot-router"></span>router</span>
+            </div>
+          </div>
+          <div class="pane-body">
+            <svg id="graph-svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </div>
+
+        <div class="sim-pane sim-pane-actions">
+          <div class="pane-header">
+            <div class="pane-title">
+              <span class="pane-icon">⚡</span>
+              <span>Try it</span>
+            </div>
+          </div>
+          <div class="pane-body">
+            <div id="actions" class="actions-list">
+              <p class="empty-state">Pick a preset above to see live actions.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="simulator.js"></script>
+</body>
+</html>

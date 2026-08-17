@@ -1,0 +1,39 @@
+{
+  "name": "quilt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A spreadsheet where every cell is a live, addressable capability. The grid is the runtime.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/superinstance/quilt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/superinstance/quilt/issues"
+  },
+  "homepage": "https://github.com/superinstance/quilt#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:core": "cd packages/core && npm run test",
+    "dev": "cd packages/cli && npm run dev",
+    "lint": "echo 'lint placeholder'",
+    "format": "echo 'format placeholder'"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0",
+    "zod": "^3.22.0"
+  }
+}

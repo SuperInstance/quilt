@@ -1,0 +1,66 @@
+id: edge-anomaly-detection
+title: "Edge Anomaly Detection Template"
+description: "For Raspberry Pi / industrial gateways. Local loop, model escalation."
+version: 0.1.0
+
+# The "5-minute industrial anomaly detection" pattern, as a template.
+# Deploy on a Pi, point at MQTT, watch.
+
+cells:
+  # Per-device rows
+  - id: device.1.name
+    kind: value
+    value: "Motor-A"
+  - id: device.2.name
+    kind: value
+    value: "Motor-B"
+
+  # Sensors (push from MQTT adapter)
+  - id: device.1.vibration
+    kind: sensor
+    source: "mqtt://broker.local/motor-a/vibration"
+    rate: 100
+  - id: device.2.vibration
+    kind: sensor
+    source: "mqtt://broker.local/motor-b/vibration"
+    rate: 100
+
+  # Local statistical analysis (classical, no model needed)
+  - id: device.1.rolling_mean
+    kind: program
+    code: |
+      // Maintain a rolling mean over a window
+      const v = (await runtime.get('device.1.vibration')).data || 0;
+      const prev = (await runtime.get('device.1.rolling_mean')).data || 0;
+      return prev * 0.95 + v * 0.05;
+  - id: device.2.rolling_mean
+    kind: program
+    code: |
+      const v = (await runtime.get('device.2.vibration')).data || 0;
+      const prev = (await runtime.get('device.2.rolling_mean')).data || 0;
+      return prev * 0.95 + v * 0.05;
+
+  # Surprise detection
+  - id: device.1.surprise
+    kind: formula
+    expr: "=abs(device.1.vibration - device.1.rolling_mean)"
+  - id: device.2.surprise
+    kind: formula
+    expr: "=abs(device.2.vibration - device.2.rolling_mean)"
+
+  - id: threshold
+    kind: value
+    value: 0.5
+    description: "Above this surprise level, escalate to model"
+
+  # Model (only called on surprise)
+  - id: model.analyzer
+    kind: api
+    endpoint: "model:onnx-anomaly"
+    description: "Local ONNX anomaly classifier"
+
+  # Alert
+  - id: alert
+    kind: io
+    direction: out
+    port: "mqtt://broker.local/alerts"
