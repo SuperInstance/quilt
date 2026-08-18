@@ -349,6 +349,7 @@ export interface CellDef {
   // sensor
   source?: string;
   rate?: number;
+  default?: unknown;
 
   // listener
   watch?: CellRef[];

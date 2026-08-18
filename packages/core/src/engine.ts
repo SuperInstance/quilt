@@ -197,10 +197,19 @@ export class QuiltEngine implements ProgramRuntime {
     if (this.cells.has(def.id)) {
       throw new Error(`cell already defined: ${def.id}`);
     }
+    // Seed the cell with its initial value. Value cells use
+    // `def.value`; sensor cells use `def.default` (if any) so
+    // demo sheets work without an adapter wired up.
+    let initial: CellValue = { data: undefined, status: 'idle' };
+    if (def.value !== undefined) {
+      initial = { data: def.value, status: 'ready', computedAt: Date.now() };
+    } else if (def.kind === 'sensor' && def.default !== undefined) {
+      initial = { data: def.default, status: 'ready', computedAt: Date.now() };
+    }
     const cell: Cell = {
       id: def.id,
       def,
-      value: { data: undefined, status: 'idle' },
+      value: initial,
       dependencies: new Set(),
       dependents: new Set(),
       contextCache: new Map(),
