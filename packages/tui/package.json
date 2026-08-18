@@ -1,0 +1,34 @@
+{
+  "name": "@quilt/tui",
+  "version": "0.1.0",
+  "description": "Terminal UI for Quilt — the power-tool view of a running engine.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "quilt-tui": "bin/quilt-tui"
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "tsx bin/quilt-tui",
+    "dev": "tsx watch bin/quilt-tui",
+    "build": "tsc",
+    "test": "node --test --import tsx src/*.test.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@quilt/core": "file:../core"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+// quilt-tui — terminal UI entry point.
+//
+// Usage: quilt-tui [sheet.yaml]
+//
+// If a sheet path is given, it's loaded into a fresh engine and
+// the TUI starts on top. If not, the TUI starts with an empty
+// engine (you can register cells dynamically via the API).
+//
+// The TUI is a focused tool. It plays well with tmux, doesn't
+// take over the screen, and exits cleanly on q / Ctrl-C.
+
+import { readFileSync } from 'node:fs';
+import { parseSheet, QuiltEngine } from '@quilt/core';
+import { startTui } from '../src/index.js';
+
+async function main() {
+  const sheetPath = process.argv[2];
+
+  const engine = new QuiltEngine({ id: 'tui-session' });
+  if (sheetPath) {
+    const source = readFileSync(sheetPath, 'utf8');
+    const sheet = parseSheet(source);
+    engine.loadSheet(sheet);
+  }
+
+  await startTui(engine);
+}
+
+main().catch((e) => {
+  console.error('quilt-tui:', e instanceof Error ? e.message : String(e));
+  process.exit(1);
+});
