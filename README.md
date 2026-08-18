@@ -1,5 +1,9 @@
 # ◳ Quilt
 
+<p align="center">
+  <img src="assets/images/hero-grid.jpg" alt="The grid is the runtime — a sparse cybernetic quilt, every cell a live, addressable capability" width="720">
+</p>
+
 > **A spreadsheet where every cell is a live, addressable capability. The grid is the runtime.**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
