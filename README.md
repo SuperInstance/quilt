@@ -6,31 +6,32 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-native-purple)](https://modelcontextprotocol.io)
-[![Rust port](https://img.shields.io/badge/Rust-alpha-orange)](https://github.com/superinstance/quilt-rust)
-[![Status](https://img.shields.io/badge/status-v0.1.0-brightgreen)](https://github.com/superinstance/quilt)
+[![Rust port](https://img.shields.io/badge/Rust-1.0-blue)](https://github.com/superinstance/quilt-rust)
+[![Status](https://img.shields.io/badge/status-v0.2.0-brightgreen)](https://github.com/superinstance/quilt)
+[![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen)](https://github.com/superinstance/quilt)
 
-**[Live simulator ⚡](landing/simulator.html)** · **[Read the manifesto →](docs/manifesto.md)** · **[Tutorial →](tutorials/README.md)** · **[Examples →](examples/)** · **[Architecture →](docs/architecture.md)**
+**[Live simulator ⚡](landing/simulator.html)** · **[Read the manifesto →](docs/manifesto.md)** · **[Tutorial →](tutorials/README.md)** · **[Examples →](examples/)** · **[Architecture →](docs/architecture.md)** · **[Harness guide →](docs/harness-guide.md)** · **[Throughput notes →](docs/throughput.md)**
 
 ---
 
 ## 🤔 TypeScript or Rust?
 
-This is the **canonical, fully-working TypeScript implementation**. Use it if you want to *use* Quilt today. The Rust port is alpha — see [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust) for the same engine in a single binary.
+Both are production-grade. Same engine, same sheet format, different tradeoffs.
 
 | Need                                              | Use **TypeScript** | Use **Rust** |
 | ------------------------------------------------- | :----------------: | :----------: |
-| **Browser simulator** / web UI / TUI              | ✅                  | ❌            |
+| **Browser simulator** / web UI                    | ✅                  | ✅ (axum)     |
+| **TUI** for the terminal                          | ✅                  | ✅ (crossterm)|
 | **MCP server** for Claude Code / Cursor / agents  | ✅                  | ✅            |
-| **Production-ready** today                        | ✅                  | ⚠️ (alpha)    |
 | **Single static binary**, no Node.js              | ❌                  | ✅            |
-| **Embedded / IoT / edge** (RPi, ESP32)            | ❌                  | ✅            |
+| **Embedded / IoT / edge** (RPi, ESP32, no_std)     | ❌                  | ✅            |
 | **Strict memory guarantees** in a sandboxed cell  | ❌                  | ✅ (rhai)     |
-| **High-throughput** cell evaluation               | ⚠️ (slower)         | ✅            |
-| Embed in a **web app** or **Node service**        | ✅                  | ❌            |
+| **High-throughput** cell evaluation               | ⚠️ (~50k ops/s)     | ✅ (compiled) |
+| Embed in a **web app** or **Node service**        | ✅                  | ✅ (axum)     |
 | **Static cross-compilation** to any platform      | ❌                  | ✅            |
-| Test the **TUI** (live, in your terminal)         | ✅                  | ❌            |
+| **WASM target** for the browser                   | 🔜 (planned)        | ✅ (planned)  |
 
-> The two repos share the **same sheet format (YAML)** and the **same conceptual model**. A sheet that runs on one runs on the other.
+> The two repos share the **same sheet format (YAML)** and the **same conceptual model**. A sheet that runs on one runs on the other (with a few language-specific quirks documented in `docs/harness-guide.md`).
 
 ---
 
@@ -43,6 +44,7 @@ Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control pla
 - A cell can **route** based on who called it (`caller.row > 10` → use Model A).
 - The whole sheet is an **MCP server**. Every named cell is an MCP tool.
 - It's **reactive** by default. Change one cell, every dependent rewires.
+- **Per-context memoization**: same cell called from different callers can return different cached values.
 
 > **The paradigm shift, in one line:** A cell is not a value. A cell is a live, typed, addressable capability. The spreadsheet is not a document. The spreadsheet is the runtime.
 
@@ -243,11 +245,23 @@ The Rust port honors the same five layers. The data model is identical. Only the
 - **`@quilt/mcp`** — exposes every cell as an MCP tool, every sheet as an MCP resource.
 - **`@quilt/tui`** — terminal-native view of a running engine. Live cell grid, dependencies panel, key bindings. Plays well with tmux.
 
-### Examples (4, all working)
+### Examples (10, all working end-to-end)
+
+The original four:
+
 - **[boat-autopilot](examples/boat-autopilot/)** — sensors, PID, voice intent, model router. The killer demo.
 - **[agent-dashboard](examples/agent-dashboard/)** — tasks, status, shared human+agent workspace.
 - **[model-router](examples/model-router/)** — caller-aware model selection.
 - **[sensor-anomaly](examples/sensor-anomaly/)** — self-tuning anomaly detector.
+
+Six new production-grade examples:
+
+- **[weather-monitor](examples/weather-monitor/)** — three sensors → heat-index formula → listener alerts → caller-aware router.
+- **[chat-router](examples/chat-router/)** — LLM routing by tier (premium/standard/free) and message length.
+- **[ab-test-router](examples/ab-test-router/)** — deterministic A/B test using FNV-1a hash + bucket router.
+- **[iot-dashboard](examples/iot-dashboard/)** — three thermometers → room status → building status, with alerts.
+- **[rate-limiter](examples/rate-limiter/)** — token-bucket rate limiter with per-caller state.
+- **[task-scheduler](examples/task-scheduler/)** — reactive task scheduler with overdue listener.
 
 ### Templates (3, copy-and-customize)
 - **[predictive-maintenance](templates/predictive-maintenance.yaml)** — per-machine rows, sensor → model → alert
