@@ -130,6 +130,12 @@ import("@quilt/core").then(async ({ QuiltEngine, parseSheet }) => {
 
 ## The 8 cell kinds
 
+<p align="center">
+  <img src="assets/images/cell-types.jpg" alt="Many different kinds of cells living in one grid — values, formulas, programs, models" width="640"><br>
+  <em>A sheet can hold many different kinds of cells at once — each one a
+  different kind of capability, all addressable from the grid.</em>
+</p>
+
 | Kind        | What it is                                       | Evaluator             | Example                                |
 | ----------- | ------------------------------------------------ | --------------------- | -------------------------------------- |
 | `value`     | Static data. No dependencies.                    | direct                | `kind: value, value: 42`              |
