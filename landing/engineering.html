@@ -60,8 +60,9 @@ section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-ri
 .at td.r{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--t)}
 .at td.s7,.at td.s6,.at td.s4,.at td.s3,.at td.s2{font-weight:600;font-family:'JetBrains Mono',monospace;text-align:center}
 .at td.s7{color:var(--ok)}.at td.s6{color:#a8c87a}.at td.s4{color:var(--w)}.at td.s3{color:#e6896a}.at td.s2{color:var(--err)}
-.at td.m{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.92rem}
-.at td.m .ok{color:var(--ok)}.at td.m .no{color:var(--err)}.at td.m .pr{color:var(--w)}
+.at td.ok,.at td.no,.at td.pr{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.92rem}
+.at td.ok{color:var(--ok)}.at td.no{color:var(--err)}.at td.pr{color:var(--w)}
+p .ok,p .no,p .pr{font-family:'JetBrains Mono',monospace}
 .improve{display:grid;grid-template-columns:1fr;gap:6px;margin:16px 0}
 .improve-row{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:var(--panel);border:1px solid var(--b);border-radius:8px;transition:all .15s}
 .improve-row:hover{border-color:var(--a1)}
@@ -218,24 +219,24 @@ footer a{color:var(--td)}footer a:hover{color:var(--a1)}
   <table class="at">
     <thead><tr><th>Repo</th><th>Type</th><th>License</th><th>CHANGELOG</th><th>CI</th><th>Tests</th><th>Examples</th><th>Score</th></tr></thead>
     <tbody>
-      <tr><td class="r">quilt</td><td>TS core, monorepo</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="s6">6/10</td></tr>
-      <tr><td class="r">quilt-live</td><td>TS, demo studio</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="s7">7/10</td></tr>
-      <tr><td class="r">quilt-rust</td><td>Rust, core bindings</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s6">6/10</td></tr>
-      <tr><td class="r">quilt-time</td><td>TS, time-series</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-vault</td><td>TS, secrets</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-zk</td><td>TS, zero-knowledge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-flow</td><td>TS, dataflow</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-cloudflare</td><td>TS, workers</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-ai</td><td>TS, model bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-evolve</td><td>TS, self-improve</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-codespace</td><td>TS, IDE bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
-      <tr><td class="r">quilt-esp32</td><td>C++, embedded</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s3">3/10</td></tr>
-      <tr><td class="r">quilt-agent</td><td>TS, agent class</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s3">3/10</td></tr>
-      <tr><td class="r">quilt-mesh</td><td>TS, p2p mesh</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s2">2/10</td></tr>
-      <tr><td class="r">quilt-vision</td><td>TS, vision bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s2">2/10</td></tr>
+      <tr><td class="r">quilt</td><td>TS core, monorepo</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (82)</td><td class="ok">✓</td><td class="s9">9/10</td></tr>
+      <tr><td class="r">quilt-live</td><td>TS, single-file browser</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (146)</td><td class="ok">✓</td><td class="s9">9/10</td></tr>
+      <tr><td class="r">quilt-rust</td><td>Rust, core bindings</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (68)</td><td class="ok">✓</td><td class="s8">8/10</td></tr>
+      <tr><td class="r">quilt-cloudflare</td><td>TS, workers</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (5)</td><td class="ok">✓</td><td class="s8">8/10</td></tr>
+      <tr><td class="r">quilt-ai</td><td>TS, model bridge</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (6)</td><td class="ok">✓ (6)</td><td class="s8">8/10</td></tr>
+      <tr><td class="r">quilt-evolve</td><td>TS, self-improve</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (13)</td><td class="ok">✓ (3)</td><td class="s8">8/10</td></tr>
+      <tr><td class="r">quilt-codespace</td><td>TS, Codespaces template</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="pr">~ (smoke)</td><td class="ok">✓</td><td class="s8">8/10</td></tr>
+      <tr><td class="r">quilt-time</td><td>TS, time-series</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (17)</td><td class="no">✗</td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-vault</td><td>TS, secrets</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (10)</td><td class="no">✗</td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-zk</td><td>TS, zero-knowledge</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (7)</td><td class="no">✗</td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-flow</td><td>TS, dataflow</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓ (8)</td><td class="no">✗</td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-agent</td><td>TS, agent class</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="pr">~</td><td class="ok">✓</td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-mesh</td><td>TS, p2p mesh</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="pr">~</td><td class="no">✗</td><td class="s6">6/10</td></tr>
+      <tr><td class="r">quilt-vision</td><td>TS, vision bridge</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="pr">~</td><td class="no">✗</td><td class="s6">6/10</td></tr>
+      <tr><td class="r">quilt-esp32</td><td>Rust, embedded (no_std)</td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td><td class="pr">~ (2)</td><td class="no">✗</td><td class="s6">6/10</td></tr>
     </tbody>
   </table>
-  <p>The picture is clear: <b>two repos above the bar, twelve at or below the half-way line, one in the cellar</b>. The good news: most of the gaps are mechanical — copy a LICENSE, drop in a <code>ci.yml</code>, write a CHANGELOG. That's why the top-10 list is short, concrete, and finishable in a single quarter.</p>
+  <p>The picture has lifted significantly. After the standards pass, <b>all 15 repos now have LICENSE, CI, CODEOWNERS, SECURITY.md, Dependabot, and .editorconfig</b>. The remaining gaps are real engineering work — examples that work, examples that run, docs sites, signed releases. Those are L5-L6 and the 1-year bar.</p>
 </section>
 
 <section id="top10">
