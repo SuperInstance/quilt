@@ -64,7 +64,7 @@ test('FederatedArtifactStore — R2 get promotes to local', async () => {
   const r2Data = SAMPLE(99);
   const r2 = {
     put: async () => {},
-    get: async (key) => ({
+    get: async (_key) => ({
       body: new ReadableStream({ start(c) { c.enqueue(r2Data); c.close(); } }),
     }),
   };
@@ -155,7 +155,7 @@ test('MqttCellTransport — publish → subscribe round-trip', () => {
   const mockClient = {
     on(event, cb) { handlers[event].push(cb); },
     subscribe(topic, opts, cb) { subs.set(topic, (subs.get(topic) || []).concat({ cb, opts })); if (cb) cb(null); },
-    publish(topic, payload, opts) { /* simulate broker delivering to subs */ },
+    publish(_topic, _payload, _opts) { /* simulate broker delivering to subs */ },
     end() {},
   };
   const transport = new MqttCellTransport(mockClient, { url: 'mqtt://test' });
