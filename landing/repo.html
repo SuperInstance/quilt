@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Time — time travel for cells</title>
+<meta name="description" content="Every cell has history. Fork, rewind, replay, merge. The killer feature for the cell model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+h3 { font-size: 1.25rem; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+
+/* Nav */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1100px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple, #bb7ec6)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* Hero */
+.hero { padding: 80px 0 32px; text-align: center; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 24px; }
+.hero h1 { margin-bottom: 16px; }
+.hero p { margin: 0 auto 32px; }
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); cursor: pointer; background: transparent; }
+.btn:hover { background: var(--bg-elev-2); color: var(--text); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+
+/* Demo */
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin: 32px 0; }
+.demo-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.demo-title { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+.demo-pills { display: flex; gap: 6px; }
+.demo-pill { font-size: 0.7rem; padding: 3px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+.timeline-vis { position: relative; padding: 32px 0 60px; }
+.timeline-track { position: absolute; left: 0; right: 0; top: 80px; height: 4px; background: var(--border); border-radius: 2px; }
+.timeline-track-filled { position: absolute; left: 0; top: 0; height: 100%; background: var(--green); border-radius: 2px; transition: width 200ms var(--ease); }
+.timeline-cursor { position: absolute; top: 64px; width: 32px; height: 32px; background: var(--green); border: 3px solid var(--bg); border-radius: 50%; transform: translateX(-50%); box-shadow: 0 0 16px var(--green); transition: left 200ms var(--ease); }
+.timeline-event { position: absolute; top: 50px; width: 18px; height: 18px; background: var(--bg-elev-2); border: 2px solid var(--text-dim); border-radius: 50%; transform: translateX(-50%); }
+.timeline-event.fork { border-color: var(--blue); }
+.timeline-event.now { border-color: var(--green); background: var(--green); }
+.timeline-label { position: absolute; top: 100px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); transform: translateX(-50%); white-space: nowrap; }
+.timeline-label b { color: var(--text); }
+
+.tt-controls { display: flex; gap: 8px; margin-top: 24px; justify-content: center; flex-wrap: wrap; }
+.tt-controls input[type="range"] { width: 100%; max-width: 600px; }
+
+.tt-state { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+.tt-box { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.tt-box h4 { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); margin-bottom: 12px; }
+.tt-row { display: flex; justify-content: space-between; padding: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.tt-row .key { color: var(--text-dim); }
+.tt-row .val { color: var(--text); }
+
+.forks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.fork-btn { padding: 6px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; cursor: pointer; }
+.fork-btn:hover { background: var(--bg-elev); color: var(--text); }
+.fork-btn.active { background: var(--blue); color: var(--bg); border-color: var(--blue); }
+
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; margin: 16px 0; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row h3 { margin-bottom: 8px; }
+.feature-row p { color: var(--text-dim); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+
+@media (max-width: 768px) {
+  .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; }
+  .tt-state { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Time</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Quilt</a>
+      <a href="docs.html">Docs</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="https://github.com/SuperInstance/quilt-time" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 17 tests</div>
+  <h1>Every cell has a <span class="grad-text">past.</span></h1>
+  <p class="lead">Time travel for Quilt cells. Fork, rewind, replay, merge. The killer feature that makes Quilt a database, not just a runtime.</p>
+  <div class="hero-ctas">
+    <a href="https://github.com/SuperInstance/quilt-time" target="_blank" class="btn primary">npm install quilt-time →</a>
+    <a href="#demo" class="btn">Try the demo</a>
+  </div>
+</header>
+
+<section id="demo" style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 32px;">
+      <div class="eyebrow">Live demo</div>
+      <h2>Step through the history</h2>
+    </div>
+    <div class="demo-card">
+      <div class="demo-head">
+        <div class="demo-title">budget-timeline.yaml</div>
+        <div class="demo-pills">
+          <span class="demo-pill" id="tt-version-count">5 versions</span>
+          <span class="demo-pill" id="tt-fork-count">2 forks</span>
+        </div>
+      </div>
+
+      <div class="timeline-vis">
+        <div class="timeline-track"><div class="timeline-track-filled" id="tt-track-filled" style="width: 100%;"></div></div>
+        <!-- events will be injected -->
+        <div class="tt-cursor" id="tt-cursor" style="left: 100%;"></div>
+        <div class="timeline-label" id="tt-label" style="left: 100%;"><b>t=5</b> · spent = 2770</div>
+      </div>
+
+      <div class="tt-controls">
+        <button class="btn" id="tt-back">⏮ Back</button>
+        <button class="btn" id="tt-step-back">⏪ Step</button>
+        <input type="range" id="tt-range" min="0" max="100" value="100" />
+        <button class="btn" id="tt-step-fwd">Step ⏩</button>
+        <button class="btn" id="tt-forward">⏭ Forward</button>
+        <button class="btn primary" id="tt-fork">🌿 Fork</button>
+      </div>
+
+      <div class="tt-state">
+        <div class="tt-box">
+          <h4>Current values <span id="tt-now-tag" style="color: var(--text-faint);">(present)</span></h4>
+          <div class="tt-row"><span class="key">budget.total</span><span class="val" id="v-total">5000</span></div>
+          <div class="tt-row"><span class="key">spent</span><span class="val" id="v-spent">2770</span></div>
+          <div class="tt-row"><span class="key">remaining</span><span class="val" id="v-remaining">2230</span></div>
+          <div class="tt-row"><span class="key">status</span><span class="val" id="v-status">ok</span></div>
+        </div>
+        <div class="tt-box">
+          <h4>Forks</h4>
+          <div class="forks" id="forks">
+            <button class="fork-btn active" data-fork="main">main</button>
+          </div>
+          <h4 style="margin-top: 16px;">History</h4>
+          <div class="tt-row"><span class="key">t=0</span><span class="val">start: spent = 2770</span></div>
+          <div class="tt-row"><span class="key">t=1</span><span class="val">set rent 2200 → spent 3170</span></div>
+          <div class="tt-row"><span class="key">t=2</span><span class="val">set food 800 → spent 3370</span></div>
+          <div class="tt-row"><span class="key">t=3</span><span class="val">🌿 fork: experiment</span></div>
+          <div class="tt-row"><span class="key">t=4</span><span class="val">set rent 1500 (experiment)</span></div>
+          <div class="tt-row"><span class="key">t=5</span><span class="val">set food 600 (experiment)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 48px;">
+      <div class="eyebrow">The API</div>
+      <h2>Five operations. <span class="grad-text">One model.</span></h2>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3><code>at(t)</code> — the value at any past time</h3>
+        <p>Every cell has history. Ask for the value at any timestamp. The engine returns the latest version whose timestamp ≤ t.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> q = <span class="c-kw">new</span> QuiltTime();
+q.<span class="c-fn">set</span>(<span class="c-str">'counter'</span>, <span class="c-num">0</span>);
+q.<span class="c-fn">set</span>(<span class="c-str">'counter'</span>, <span class="c-num">1</span>);
+q.<span class="c-fn">set</span>(<span class="c-str">'counter'</span>, <span class="c-num">2</span>);
+
+q.<span class="c-fn">at</span>(<span class="c-str">'counter'</span>, <span class="c-num">1</span>);  <span class="c-com">// 0</span>
+q.<span class="c-fn">at</span>(<span class="c-str">'counter'</span>, <span class="c-num">2</span>);  <span class="c-com">// 1</span>
+q.<span class="c-fn">at</span>(<span class="c-str">'counter'</span>, <span class="c-num">3</span>);  <span class="c-com">// 2</span>
+q.<span class="c-fn">get</span>(<span class="c-str">'counter'</span>);    <span class="c-com">// 2 (current)</span>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div>
+        <h3><code>fork()</code> — like git branch</h3>
+        <p>Snapshot the engine at a point in time. Continue with new changes. Later, rewind to the fork or merge with another fork.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> v1 = q.<span class="c-fn">fork</span>(<span class="c-str">'experiment'</span>);
+q.<span class="c-fn">set</span>(<span class="c-str">'counter'</span>, <span class="c-num">999</span>);
+
+q.<span class="c-fn">rewind</span>(v1);  <span class="c-com">// back to 2</span>
+q.<span class="c-fn">get</span>(<span class="c-str">'counter'</span>); <span class="c-com">// 2</span>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3><code>diff(from, to)</code> — what changed</h3>
+        <p>Get a per-cell summary of what changed between two times. Useful for "what's different between these two reports?"</p>
+      </div>
+      <div class="code">
+q.<span class="c-fn">diff</span>(<span class="c-num">0</span>, <span class="c-num">100</span>);  <span class="c-com">// {</span>
+                                <span class="c-com">//   counter: { from: 0, to: 2 },</span>
+                                <span class="c-com">//   flag:    { from: null, to: true }</span>
+                                <span class="c-com">// }</span>
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div>
+        <h3><code>replay()</code> — walk forward</h3>
+        <p>Iterate the events that happened after a fork, in order. Useful for "replay this user's session" or "show me everything that happened".</p>
+      </div>
+      <div class="code">
+<span class="c-kw">for</span> (<span class="c-kw">const</span> e <span class="c-kw">of</span> q.<span class="c-fn">replay</span>(v1)) {
+  <span class="c-fn">console</span>.log(e.cid, e.value, e.t);
+}
+<span class="c-com">// counter 500 6</span>
+<span class="c-com">// counter 600 7</span>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3><code>merge()</code> — combine two engines</h3>
+        <p>Take two engines, merge their histories. Conflicts resolved deterministically by Lamport clock + tiebreaker. Save, share, sync.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> a = <span class="c-kw">new</span> QuiltTime();
+a.<span class="c-fn">set</span>(<span class="c-str">'x'</span>, <span class="c-num">1</span>, { t: <span class="c-num">1</span> });
+<span class="c-kw">const</span> b = <span class="c-kw">new</span> QuiltTime();
+b.<span class="c-fn">set</span>(<span class="c-str">'y'</span>, <span class="c-num">2</span>, { t: <span class="c-num">1</span> });
+
+<span class="c-kw">const</span> m = QuiltTime.<span class="c-fn">merge</span>(a, b);
+m.<span class="c-fn">get</span>(<span class="c-str">'x'</span>);  <span class="c-com">// 1</span>
+m.<span class="c-fn">get</span>(<span class="c-str">'y'</span>);  <span class="c-com">// 2</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container" style="text-align: center;">
+    <div class="eyebrow">Use cases</div>
+    <h2>What you can build</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; text-align: left;">
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--green); margin-bottom: 8px;">Undo without a stack</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Every cell has its own undo. Just rewind the affected cell to the previous version.</p>
+      </div>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--blue); margin-bottom: 8px;">"What was my balance 6 months ago?"</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Just ask. The history knows.</p>
+      </div>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--purple); margin-bottom: 8px;">Branching scenarios</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Try a different budget. If it doesn't work out, rewind.</p>
+      </div>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--tan); margin-bottom: 8px;">Real-time collaboration</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Two peers, two engines, merge. No server needed.</p>
+      </div>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--cyan); margin-bottom: 8px;">Audit log</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Every cell knows every change. Compliance is built in.</p>
+      </div>
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+        <h4 style="color: var(--red); margin-bottom: 8px;">Time-travel debugging</h4>
+        <p style="color: var(--text-dim); font-size: 0.9rem;">Replay the cell graph. See what the state was at each step.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <h2>Drop it in. <span class="grad-text">Five minutes.</span></h2>
+    <p class="lead" style="margin: 16px auto 32px;">No dependencies. No build step. Just import and go.</p>
+    <pre class="code" style="max-width: 500px; margin: 0 auto 24px; text-align: left;"><span class="c-kw">$</span> npm install quilt-time</pre>
+    <a href="https://github.com/SuperInstance/quilt-time" target="_blank" class="btn primary">View on GitHub →</a>
+    <a href="index.html" class="btn">Back to Quilt</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Time — part of the Quilt ecosystem. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Quilt</a> · <a href="showcase.html">All 11 repos</a> · <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a></div>
+</footer>
+
+<script>
+// Timeline demo
+(function() {
+  // State: 6 timestamps, two forks
+  const events = [
+    { t: 0, label: 'start', desc: 'rent=1800 food=600 transit=120 fun=200 → spent=2720' },
+    { t: 1, label: 'set rent', desc: 'rent=2200 → spent=3120' },
+    { t: 2, label: 'set food', desc: 'food=800 → spent=3320' },
+    { t: 3, label: '🌿 fork', desc: 'created fork: experiment' },
+    { t: 4, label: 'set rent', desc: 'rent=1500 (on experiment) → spent=2620' },
+    { t: 5, label: 'set food', desc: 'food=600 (on experiment) → spent=2420' },
+  ];
+  const states = [
+    { total: 5000, spent: 2720 }, // t=0
+    { total: 5000, spent: 3120 }, // t=1
+    { total: 5000, spent: 3320 }, // t=2
+    { total: 5000, spent: 3320 }, // t=3
+    { total: 5000, spent: 2620 }, // t=4
+    { total: 5000, spent: 2420 }, // t=5
+  ];
+
+  let cursor = 5;
+  const track = document.getElementById('tt-track-filled');
+  const cursorEl = document.getElementById('tt-cursor');
+  const labelEl = document.getElementById('tt-label');
+  const range = document.getElementById('tt-range');
+  const vSpent = document.getElementById('v-spent');
+  const vRemaining = document.getElementById('v-remaining');
+  const vStatus = document.getElementById('v-status');
+  const nowTag = document.getElementById('tt-now-tag');
+
+  // Render events
+  const tv = document.querySelector('.timeline-vis');
+  events.forEach((e, i) => {
+    const pct = (i / (events.length - 1)) * 100;
+    const ev = document.createElement('div');
+    ev.className = 'timeline-event' + (e.label.includes('fork') ? ' fork' : '') + (i === events.length - 1 ? ' now' : '');
+    ev.style.left = pct + '%';
+    tv.appendChild(ev);
+  });
+
+  function render() {
+    const pct = (cursor / (events.length - 1)) * 100;
+    track.style.width = pct + '%';
+    cursorEl.style.left = pct + '%';
+    labelEl.style.left = pct + '%';
+    labelEl.innerHTML = `<b>t=${cursor}</b> · ${events[cursor].desc}`;
+    range.value = pct;
+    const s = states[cursor];
+    vSpent.textContent = s.spent;
+    vRemaining.textContent = s.total - s.spent;
+    const pctUsed = s.spent / s.total;
+    const status = pctUsed > 0.9 ? 'danger' : (pctUsed > 0.7 ? 'warning' : 'ok');
+    vStatus.textContent = status;
+    vStatus.style.color = status === 'danger' ? '#c67e7e' : (status === 'warning' ? '#c6c67e' : '#7ec699');
+    nowTag.textContent = cursor === events.length - 1 ? '(present)' : `(rewound to t=${cursor})`;
+    nowTag.style.color = cursor === events.length - 1 ? 'var(--text-faint)' : '#c6c67e';
+  }
+
+  range.addEventListener('input', e => {
+    cursor = Math.round((e.target.value / 100) * (events.length - 1));
+    render();
+  });
+  document.getElementById('tt-back').onclick = () => { cursor = 0; render(); };
+  document.getElementById('tt-step-back').onclick = () => { cursor = Math.max(0, cursor - 1); render(); };
+  document.getElementById('tt-step-fwd').onclick = () => { cursor = Math.min(events.length - 1, cursor + 1); render(); };
+  document.getElementById('tt-forward').onclick = () => { cursor = events.length - 1; render(); };
+  document.getElementById('tt-fork').onclick = () => {
+    const forks = document.getElementById('forks');
+    const id = 'f' + (forks.children.length);
+    const btn = document.createElement('button');
+    btn.className = 'fork-btn active';
+    btn.dataset.fork = id;
+    btn.textContent = `experiment-${id} @ t=${cursor}`;
+    forks.querySelectorAll('.fork-btn').forEach(b => b.classList.remove('active'));
+    forks.appendChild(btn);
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

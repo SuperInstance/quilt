@@ -1,402 +1,1059 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quilt — A spreadsheet where every cell is a live capability</title>
-  <meta name="description" content="Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control plane. The cell is the universal IO primitive. The grid is the runtime.">
-  <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt — every cell is a live, addressable capability</title>
+<meta name="description" content="A reactive, typed, cellular runtime. From microcontroller to browser to mesh. The spreadsheet model, finally done right.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Quilt design system
+   ============================================================ */
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --green-glow: rgba(126,198,153,0.3);
+  --blue: #5fa8d3;
+  --blue-glow: rgba(95,168,211,0.3);
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --cyan: #7ec6c6;
+  --grad: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --grad-text: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6);
+  --radius: 8px;
+  --radius-lg: 16px;
+  --t-fast: 150ms;
+  --t-med: 300ms;
+  --t-slow: 600ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; transition: color var(--t-fast) var(--ease); }
+a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 0.875em; }
+img, svg { display: block; max-width: 100%; }
+
+/* Layout */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+section.tight { padding: 64px 0; }
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -0.04em; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -0.03em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 16px; }
+.lead { font-size: clamp(1.125rem, 1.5vw, 1.375rem); color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Navigation */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; max-width: 1280px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.125rem; }
+.brand-mark { width: 28px; height: 28px; background: var(--grad); border-radius: 6px; position: relative; }
+.brand-mark::before, .brand-mark::after { content: ''; position: absolute; border: 1.5px solid #0a0a0a; border-radius: 2px; }
+.brand-mark::before { top: 4px; left: 4px; right: 12px; bottom: 12px; }
+.brand-mark::after { top: 12px; left: 12px; right: 4px; bottom: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; }
+.nav-links a { padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; color: var(--text-dim); }
+.nav-links a:hover { color: var(--text); background: var(--bg-card-hover); }
+.nav-links a.cta { color: var(--bg); background: var(--text); padding: 8px 16px; margin-left: 8px; font-weight: 500; }
+.nav-links a.cta:hover { background: var(--green); color: var(--bg); }
+
+/* Hero */
+.hero { padding: 80px 0 0; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%); width: 1200px; height: 1200px; background: radial-gradient(circle, var(--green-glow) 0%, transparent 50%); opacity: 0.3; pointer-events: none; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 32px; }
+.hero-tag .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.hero h1 { margin-bottom: 24px; }
+.hero h1 .quiet { color: var(--text-dim); font-weight: 400; }
+.hero p.lead { margin: 0 auto 40px; }
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 80px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 500; transition: all var(--t-fast) var(--ease); border: 1px solid var(--border-strong); cursor: pointer; background: transparent; color: var(--text); }
+.btn:hover { background: var(--bg-card-hover); border-color: var(--text-dim); color: var(--text); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-ghost { border-color: var(--border); }
+.btn .arrow { transition: transform var(--t-fast) var(--ease); }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* Hero canvas (the live cell graph) */
+.hero-canvas { position: relative; max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+.hero-canvas-wrap { position: relative; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-lg); overflow: hidden; }
+.hero-canvas-wrap::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 20% 0%, var(--green-glow) 0%, transparent 40%), radial-gradient(circle at 80% 100%, var(--blue-glow) 0%, transparent 40%); opacity: 0.4; pointer-events: none; }
+#hero-graph { position: relative; z-index: 1; height: 480px; }
+
+/* Cell visual */
+.cell { position: absolute; background: var(--bg-elev-2); border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: default; user-select: none; transition: all var(--t-med) var(--ease); min-width: 100px; }
+.cell .cell-id { color: var(--text-dim); font-size: 0.7rem; margin-bottom: 4px; }
+.cell .cell-value { color: var(--text); font-weight: 500; font-size: 0.85rem; }
+.cell[data-kind="value"] { border-color: rgba(126,198,153,0.3); }
+.cell[data-kind="formula"] { border-color: rgba(95,168,211,0.3); }
+.cell[data-kind="formula"]::before { content: 'ƒ'; position: absolute; top: 4px; right: 6px; color: var(--blue); font-size: 0.7rem; opacity: 0.6; }
+.cell.pulsing { animation: cell-pulse 800ms var(--ease); }
+@keyframes cell-pulse { 0% { box-shadow: 0 0 0 0 var(--green-glow); } 100% { box-shadow: 0 0 0 12px transparent; } }
+.cell[data-kind="formula"].pulsing { animation-name: cell-pulse-blue; }
+@keyframes cell-pulse-blue { 0% { box-shadow: 0 0 0 0 var(--blue-glow); } 100% { box-shadow: 0 0 0 12px transparent; } }
+
+/* SVG wires layer */
+.wires { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.wires path { fill: none; stroke: var(--text-faint); stroke-width: 1.5; opacity: 0.4; transition: all var(--t-med) var(--ease); }
+.wires path.active { stroke: var(--green); opacity: 0.9; stroke-width: 2; }
+
+/* Hero controls */
+.hero-controls { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.hero-controls .btn { font-size: 0.85rem; padding: 8px 14px; }
+
+/* Sections common */
+section h2 { margin-bottom: 16px; }
+section .lead { margin-bottom: 48px; }
+.section-head { text-align: center; margin-bottom: 64px; }
+.section-head .lead { margin: 0 auto; }
+
+/* Pillars / what is Quilt */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.pillar { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: all var(--t-med) var(--ease); }
+.pillar:hover { border-color: var(--border-strong); background: var(--bg-elev-2); transform: translateY(-2px); }
+.pillar-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; background: var(--bg-card); border: 1px solid var(--border); }
+.pillar h3 { font-size: 1.125rem; margin-bottom: 8px; }
+.pillar p { color: var(--text-dim); font-size: 0.95rem; line-height: 1.55; }
+
+/* Code block */
+.code-block { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; overflow-x: auto; }
+.code-block .c-kw { color: var(--purple); }
+.code-block .c-str { color: var(--green); }
+.code-block .c-num { color: var(--tan); }
+.code-block .c-com { color: var(--text-faint); font-style: italic; }
+.code-block .c-fn { color: var(--blue); }
+
+/* Interactive demo card */
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.demo-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.demo-title { font-weight: 600; font-size: 0.95rem; }
+.demo-pills { display: flex; gap: 6px; }
+.demo-pill { font-size: 0.7rem; padding: 3px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.demo-body { padding: 32px; }
+
+/* Live budget demo */
+.budget-demo { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; align-items: center; }
+.budget-inputs { display: flex; flex-direction: column; gap: 12px; }
+.budget-input { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; transition: border-color var(--t-fast) var(--ease); }
+.budget-input:focus-within { border-color: var(--green); }
+.budget-input label { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); flex: 1; }
+.budget-input input { background: transparent; border: none; outline: none; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 600; width: 100px; text-align: right; }
+.budget-outputs { display: flex; flex-direction: column; gap: 12px; }
+.budget-output { padding: 16px 20px; background: var(--bg-elev-2); border-radius: 8px; border-left: 3px solid var(--border-strong); }
+.budget-output.highlight { border-left-color: var(--green); background: linear-gradient(90deg, rgba(126,198,153,0.06) 0%, transparent 100%); }
+.budget-output.warn { border-left-color: var(--yellow); }
+.budget-output.danger { border-left-color: var(--red); }
+.budget-output .out-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.budget-output .out-value { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.budget-output .out-sub { font-size: 0.75rem; color: var(--text-faint); margin-top: 4px; }
+
+/* Repo grid */
+.repos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.repo { position: relative; display: block; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: all var(--t-med) var(--ease); }
+.repo:hover { border-color: var(--border-strong); background: var(--bg-elev-2); transform: translateY(-2px); }
+.repo::after { content: '→'; position: absolute; top: 24px; right: 24px; color: var(--text-faint); transition: all var(--t-fast) var(--ease); }
+.repo:hover::after { color: var(--green); transform: translateX(3px); }
+.repo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+.repo-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; }
+.repo-desc { color: var(--text-dim); font-size: 0.875rem; line-height: 1.5; margin-bottom: 12px; }
+.repo-meta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.repo-tag { padding: 2px 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; }
+.repo-tag.green { color: var(--green); border-color: rgba(126,198,153,0.3); }
+.repo-tag.blue { color: var(--blue); border-color: rgba(95,168,211,0.3); }
+.repo-tag.purple { color: var(--purple); border-color: rgba(187,126,198,0.3); }
+
+/* Stats strip */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.stat { background: var(--bg-elev); padding: 24px 16px; text-align: center; }
+.stat-num { font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; margin-bottom: 4px; }
+.stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* Two-column features */
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; margin-bottom: 96px; }
+.feature-row:last-child { margin-bottom: 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row h3 { font-size: 1.5rem; margin-bottom: 12px; }
+.feature-row p { color: var(--text-dim); margin-bottom: 16px; }
+.feature-row ul { list-style: none; padding: 0; }
+.feature-row li { padding: 6px 0 6px 24px; position: relative; color: var(--text-dim); font-size: 0.95rem; }
+.feature-row li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 600; }
+.feature-visual { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; min-height: 280px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+/* Timeline / roadmap */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before { content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(to bottom, var(--green) 0%, var(--blue) 50%, var(--purple) 100%); opacity: 0.4; }
+.tl-item { position: relative; padding-bottom: 32px; }
+.tl-item::before { content: ''; position: absolute; left: -27px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--text-faint); }
+.tl-item.done::before { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+.tl-item.active::before { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 8px var(--blue-glow); animation: pulse 2s ease-in-out infinite; }
+.tl-q { font-size: 0.75rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+.tl-h { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+.tl-d { color: var(--text-dim); font-size: 0.9rem; }
+.tl-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.tl-tag { font-size: 0.7rem; padding: 2px 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.tl-tag.green { color: var(--green); border-color: rgba(126,198,153,0.3); }
+.tl-tag.blue { color: var(--blue); border-color: rgba(95,168,211,0.3); }
+
+/* CTA */
+.cta { text-align: center; background: linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.cta h2 { margin-bottom: 16px; }
+.cta p { color: var(--text-dim); margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+/* Footer */
+footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+.footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.footer-col a { display: block; padding: 4px 0; color: var(--text-dim); font-size: 0.9rem; }
+.footer-col a:hover { color: var(--green); }
+.footer-bottom { padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); }
+
+/* Loading state */
+#hero-graph.loading::after { content: 'Loading engine...'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  section { padding: 64px 0; }
+  .nav-links a:not(.cta) { display: none; }
+  .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 32px; direction: ltr; }
+  .budget-demo { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-bottom { flex-direction: column; gap: 12px; }
+  .hero-canvas-wrap { padding: 16px; }
+  #hero-graph { height: 360px; }
+}
+</style>
 </head>
 <body>
-  <div class="grid-bg"></div>
 
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="/" class="logo">
-        <span class="logo-mark">◳</span>
-        <span class="logo-text">Quilt</span>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="#what">What</a>
+      <a href="#repos">Repos</a>
+      <a href="#play">Play</a>
+      <a href="docs.html">Docs</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="studio.html">Studio</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub ↗</a>
+      <a href="quilt-live.html" class="cta">Open Live</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag"><span class="dot"></span> v0.2.0 — production grade, 11 repos, 145+ tests</div>
+    <h1>Every cell is a live,<br><span class="grad-text">addressable capability.</span></h1>
+    <p class="lead">A reactive, typed, cellular runtime. From microcontroller to browser to mesh. The spreadsheet model, finally done right. The cell model, finally made real.</p>
+    <div class="hero-ctas">
+      <a href="quilt-live.html" class="btn btn-primary">Open Quilt Live <span class="arrow">→</span></a>
+      <a href="studio.html" class="btn">Try the Studio</a>
+      <a href="tutorial.html" class="btn">5-min Tutorial</a>
+      <a href="showcase.html" class="btn btn-ghost">All 11 repos</a>
+    </div>
+  </div>
+
+  <div class="hero-canvas">
+    <div class="hero-canvas-wrap">
+      <div id="hero-graph" class="loading"></div>
+      <div class="hero-controls">
+        <button class="btn btn-ghost" id="btn-rand">Randomize ↻</button>
+        <button class="btn btn-ghost" id="btn-reset">Reset</button>
+        <button class="btn btn-ghost" id="btn-spike">Spike temperature 🔥</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="what">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The cell model</span>
+      <h2>What if every value were <span class="grad-text">alive</span>?</h2>
+      <p class="lead">A cell isn't a variable. It's a value with a type, a history, an access policy, dependencies, and formulas. Cells compose. Cells sync. Cells outlive devices.</p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--green);">ƒ</div>
+        <h3>Reactive</h3>
+        <p>Change a value cell, watch every dependent recompute. The engine handles propagation. You write formulas; the graph does the rest.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--blue);">⏱</div>
+        <h3>Time-traveling</h3>
+        <p>Every cell has a history. Fork the engine like git. Rewind, replay, branch, merge. Undo without a stack.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--purple);">🔒</div>
+        <h3>Encrypted</h3>
+        <p>Per-cell end-to-end encryption. The server never sees your plaintext. You choose who can read each cell.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--tan);">📡</div>
+        <h3>Synced</h3>
+        <p>Peer-to-peer mesh. Cells sync across devices with no central server. Offline-then-sync. Conflict-free merge.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--red);">📐</div>
+        <h3>Typed</h3>
+        <p>Values have types: int, float, bool, string, list, object, blob. Formulas are checked. Bad input is rejected.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon" style="color: var(--cyan);">🌐</div>
+        <h3>Universal</h3>
+        <p>Same model in TypeScript, Rust, a 70KB browser file, a microcontroller, a visual editor, an LLM agent.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="play" style="background: var(--bg-elev); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Try it</span>
+      <h2>Edit a value. <span class="grad-text">Watch everything respond.</span></h2>
+      <p class="lead">A real Quilt engine is running in this page. The cells below are live. Change a number, see formulas recompute instantly.</p>
+    </div>
+
+    <div class="demo-card">
+      <div class="demo-head">
+        <div class="demo-title">budget-tracker.yaml</div>
+        <div class="demo-pills">
+          <span class="demo-pill">8 cells</span>
+          <span class="demo-pill">3 formulas</span>
+          <span class="demo-pill">1 listener</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="budget-demo">
+          <div class="budget-inputs" id="budget-inputs">
+            <!-- Filled by JS -->
+          </div>
+          <div class="budget-outputs" id="budget-outputs">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="repos">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">11 repositories</span>
+      <h2>One model. <span class="grad-text">Many runtimes.</span></h2>
+      <p class="lead">The cell model is the API surface. Each repo is a different runtime for the same model. Pick the one that fits your context — or compose them.</p>
+    </div>
+
+    <div class="repos">
+      <a href="https://github.com/SuperInstance/quilt" target="_blank" class="repo">
+        <div class="repo-name">quilt</div>
+        <div class="repo-title">The canonical TypeScript runtime</div>
+        <div class="repo-desc">8 cell kinds, reactive DAG, MCP server, CLI. The reference implementation, fully tested.</div>
+        <div class="repo-meta">
+          <span class="repo-tag green">v0.2.0</span>
+          <span class="repo-tag">30 tests</span>
+          <span class="repo-tag">core</span>
+        </div>
       </a>
-      <nav class="nav">
-        <a href="#paradigm">Paradigm</a>
-        <a href="#features">Features</a>
-        <a href="#code">Code</a>
-        <a href="simulator.html">⚡ Simulator</a>
-        <a href="tutorial.html">Tutorial</a>
-        <a href="https://github.com/superinstance/quilt" class="nav-cta">GitHub →</a>
-      </nav>
+      <a href="https://github.com/SuperInstance/quilt-rust" target="_blank" class="repo">
+        <div class="repo-name">quilt-rust</div>
+        <div class="repo-title">The desktop Rust runtime</div>
+        <div class="repo-desc">Same model in Rust. Sync engine, Rhai formulas, Tokio async, TUI + Web front-ends, 68 tests.</div>
+        <div class="repo-meta">
+          <span class="repo-tag green">v0.2.0</span>
+          <span class="repo-tag">68 tests</span>
+          <span class="repo-tag">desktop</span>
+        </div>
+      </a>
+      <a href="quilt-live.html" class="repo">
+        <div class="repo-name">quilt-live</div>
+        <div class="repo-title">Single-file browser runtime</div>
+        <div class="repo-desc">Full Quilt in one HTML file. 54 examples. No build. No network. Save state as a cookie or download.</div>
+        <div class="repo-meta">
+          <span class="repo-tag green">v0.2.0</span>
+          <span class="repo-tag">146 tests</span>
+          <span class="repo-tag">browser</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-time" target="_blank" class="repo">
+        <div class="repo-name">quilt-time</div>
+        <div class="repo-title">Time travel for cells</div>
+        <div class="repo-desc">Every cell has history. Fork, rewind, replay, merge. Like git for your data, but it's a runtime.</div>
+        <div class="repo-meta">
+          <span class="repo-tag blue">v0.1.0</span>
+          <span class="repo-tag">17 tests</span>
+          <span class="repo-tag">history</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-vault" target="_blank" class="repo">
+        <div class="repo-name">quilt-vault</div>
+        <div class="repo-title">Encrypted cells</div>
+        <div class="repo-desc">Real ECDH P-256 + AES-GCM. Per-cell access control. Server never sees plaintext. Grant, revoke.</div>
+        <div class="repo-meta">
+          <span class="repo-tag blue">v0.1.0</span>
+          <span class="repo-tag">10 tests</span>
+          <span class="repo-tag">privacy</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-mesh" target="_blank" class="repo">
+        <div class="repo-name">quilt-mesh</div>
+        <div class="repo-title">Peer-to-peer cell sync</div>
+        <div class="repo-desc">CRDT-based, broker-less. Two peers, no server, sync cells. Lamport clocks + version vectors.</div>
+        <div class="repo-meta">
+          <span class="repo-tag blue">v0.1.0</span>
+          <span class="repo-tag">3 tests</span>
+          <span class="repo-tag">p2p</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-esp32" target="_blank" class="repo">
+        <div class="repo-name">quilt-esp32</div>
+        <div class="repo-title">Microcontroller runtime</div>
+        <div class="repo-desc">no_std Rust for ESP32. Sensors and actuators as cells. 3KB flash. WiFi + BLE mesh.</div>
+        <div class="repo-meta">
+          <span class="repo-tag purple">v0.1.0</span>
+          <span class="repo-tag">2 tests</span>
+          <span class="repo-tag">embedded</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-agent" target="_blank" class="repo">
+        <div class="repo-name">quilt-agent</div>
+        <div class="repo-title">LLM agents as sheets</div>
+        <div class="repo-desc">Memory, tools, reasoning, goals — all cells. The agent is a sheet. Multiple agents share cells.</div>
+        <div class="repo-meta">
+          <span class="repo-tag purple">v0.1.0</span>
+          <span class="repo-tag">agent</span>
+          <span class="repo-tag">llm</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-vision" target="_blank" class="repo">
+        <div class="repo-name">quilt-vision</div>
+        <div class="repo-title">Images as cells</div>
+        <div class="repo-desc">Computer vision as formulas. 8 kinds: caption, OCR, faces, objects, tags, embed, segment, depth.</div>
+        <div class="repo-meta">
+          <span class="repo-tag purple">v0.1.0</span>
+          <span class="repo-tag">vision</span>
+          <span class="repo-tag">multimodal</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-zk" target="_blank" class="repo">
+        <div class="repo-name">quilt-zk</div>
+        <div class="repo-title">Zero-knowledge over cells</div>
+        <div class="repo-desc">Prove statements about cells without revealing the cells. 6 pre-built circuits.</div>
+        <div class="repo-meta">
+          <span class="repo-tag purple">v0.1.0</span>
+          <span class="repo-tag">7 tests</span>
+          <span class="repo-tag">zk</span>
+        </div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt-flow" target="_blank" class="repo">
+        <div class="repo-name">quilt-flow</div>
+        <div class="repo-title">Visual editor</div>
+        <div class="repo-desc">Drag-and-drop cell wiring. Like Scratch but for cells. ASCII renderer, force-directed layout, sheet export.</div>
+        <div class="repo-meta">
+          <span class="repo-tag purple">v0.1.0</span>
+          <span class="repo-tag">8 tests</span>
+          <span class="repo-tag">visual</span>
+        </div>
+      </a>
     </div>
-  </header>
+  </div>
+</section>
 
-  <main>
-    <!-- HERO -->
-    <section class="hero">
-      <div class="container">
-        <div class="hero-eyebrow">
-          <span class="dot"></span>
-          v0.1.0 — the substrate is live
-        </div>
-        <h1 class="hero-title">
-          A spreadsheet where every cell<br>
-          is a <span class="grad">live capability</span>.<br>
-          The grid <em>is</em> the runtime.
-        </h1>
-        <p class="hero-sub">
-          Quilt is a reactive, typed, cellular runtime.
-          Change one cell — every dependent sensor, model, agent, and actuator rewires.
-          Built for the era where humans and AI agents share the same workspace.
-        </p>
-        <div class="hero-cta">
-          <a href="#install" class="btn btn-primary">Get started</a>
-          <a href="simulator.html" class="btn btn-ghost">⚡ Try the live simulator</a>
-        </div>
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><div class="stat-num">11</div><div class="stat-label">repos</div></div>
+      <div class="stat"><div class="stat-num">145+</div><div class="stat-label">tests passing</div></div>
+      <div class="stat"><div class="stat-num">54</div><div class="stat-label">examples</div></div>
+      <div class="stat"><div class="stat-num">8</div><div class="stat-label">cell kinds</div></div>
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">runtimes</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">cloud servers</div></div>
+    </div>
+  </div>
+</section>
 
-        <!-- Live demo: animated grid -->
-        <div class="hero-demo">
-          <div class="grid-card">
-            <div class="grid-card-header">
-              <span class="grid-card-title">boat-autopilot.cellflow.yaml</span>
-              <span class="grid-card-status">● live</span>
-            </div>
-            <div class="grid">
-              <div class="cell head"></div>
-              <div class="cell head">compass</div>
-              <div class="cell head">desired</div>
-              <div class="cell head">error</div>
-              <div class="cell head">rudder</div>
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Why cells</span>
+      <h2>Three shifts that <span class="grad-text">change the model.</span></h2>
+      <p class="lead">Files, programs, services. We know these. But the next era is built on cells.</p>
+    </div>
 
-              <div class="cell label">boat-1</div>
-              <div class="cell val" data-anim="compass">182°</div>
-              <div class="cell val">180°</div>
-              <div class="cell val">-2°</div>
-              <div class="cell val accent" data-anim="rudder">-1.0°</div>
-
-              <div class="cell label">boat-2</div>
-              <div class="cell val" data-anim="compass">175°</div>
-              <div class="cell val">180°</div>
-              <div class="cell val">+5°</div>
-              <div class="cell val accent" data-anim="rudder">+2.5°</div>
-
-              <div class="cell label">boat-3</div>
-              <div class="cell val" data-anim="compass">190°</div>
-              <div class="cell val">180°</div>
-              <div class="cell val">-10°</div>
-              <div class="cell val accent" data-anim="rudder">-5.0°</div>
-            </div>
-            <div class="grid-card-footer">
-              <span>3 boats · 1 model · live</span>
-              <span class="kbd">⌘ live</span>
-            </div>
-          </div>
-        </div>
+    <div class="feature-row">
+      <div>
+        <h3>Files → Cells</h3>
+        <p>A file is a static blob on a disk. A cell is a live, addressable, reactive value with a type, a history, and an access policy.</p>
+        <ul>
+          <li>Cells compose into graphs</li>
+          <li>Cells sync across devices</li>
+          <li>Cells outlive their creators</li>
+          <li>Cells belong to people, not platforms</li>
+        </ul>
       </div>
-    </section>
-
-    <!-- PARADIGM SHIFT -->
-    <section class="section paradigm" id="paradigm">
-      <div class="container">
-        <div class="section-eyebrow">The shift</div>
-        <h2 class="section-title">Six changes. One substrate.</h2>
-        <p class="section-sub">
-          Quilt isn't a better spreadsheet. It's a new computational surface — one where
-          data, logic, policy, and IO all live in the same addressable grid.
-        </p>
-
-        <div class="shift-grid">
-          <div class="shift">
-            <div class="shift-old">Cell = value</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Cell = capability</div>
-          </div>
-          <div class="shift">
-            <div class="shift-old">Formula = math</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Formula = program call</div>
-          </div>
-          <div class="shift">
-            <div class="shift-old">Sheet = document</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Sheet = runtime</div>
-          </div>
-          <div class="shift">
-            <div class="shift-old">Row/column = labels</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Row/column = policy</div>
-          </div>
-          <div class="shift">
-            <div class="shift-old">Reference = pointer</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Reference = dependency injection</div>
-          </div>
-          <div class="shift">
-            <div class="shift-old">Spreadsheet = calculator</div>
-            <div class="shift-arrow">→</div>
-            <div class="shift-new">Spreadsheet = control plane</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FEATURES -->
-    <section class="section features" id="features">
-      <div class="container">
-        <div class="section-eyebrow">What's in the box</div>
-        <h2 class="section-title">The primitives no one else combines.</h2>
-        <p class="section-sub">
-          Each is real. Each is in the engine today. Together they're the new shape of composable systems.
-        </p>
-
-        <div class="features-grid">
-          <div class="feature">
-            <div class="feature-icon">◇</div>
-            <h3>Cell-as-capability</h3>
-            <p>A cell can be a value, a formula, an API call, a model, a sensor, an actuator, a listener, or a router. Changing <code>A1</code> reroutes every dependent automatically.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⇄</div>
-            <h3>Caller-aware routing</h3>
-            <p>Every call carries <code>caller.row</code>, <code>caller.column</code>, <code>caller.identity</code>. A cell routes on who called it. Row 10+ uses Model A. Column J uses Prompt X.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">◉</div>
-            <h3>Reactive, by default</h3>
-            <p>Pure formulas recalculate on dep change. Sensors push. Listeners fire. The graph is alive. No polling, no manual orchestration.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⇌</div>
-            <h3>MCP-native</h3>
-            <p>Every named cell is an MCP tool. Every sheet is an MCP server. Claude Code, Cursor, and any MCP client can use your cells as tools and shared memory.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⊕</div>
-            <h3>Edge-ready</h3>
-            <p>Runs on a Raspberry Pi. Sensors in, actuators out, local model on a Pi, all in the same sheet. No cloud round-trip for control loops.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">∞</div>
-            <h3>Classical ↔ jazz</h3>
-            <p>Mix deterministic algorithms with stochastic models in the same grid. See exactly where the jazz is. Decompose over time — visible, auditable, editable.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">◳</div>
-            <h3>Human + agent shared space</h3>
-            <p>The agent writes a cell; you see it instantly. You override a cell; the agent reads it on the next cycle. Same grid, same view, same audit log.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⌘</div>
-            <h3>Git-friendly YAML</h3>
-            <p>Sheets are <code>.quilt.yaml</code> files. Diffable, mergeable, reviewable. LLMs can write them. Humans can read them. No binary blobs.</p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon">⊟</div>
-            <h3>Terminal-native</h3>
-            <p>TUI for tmux. Watch agents work. Step in. Override. The terminal is the power tool — Quilt lives there.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CODE -->
-    <section class="section code-section" id="code">
-      <div class="container">
-        <div class="section-eyebrow">In code</div>
-        <h2 class="section-title">Look how small it is.</h2>
-        <p class="section-sub">
-          A boat autopilot with sensors, PID control, voice commands, and a model router.
-          One YAML file. About 100 lines.
-        </p>
-
-        <div class="code-tabs">
-          <div class="tab active">boat-autopilot.cellflow.yaml</div>
-          <div class="tab">CLI</div>
-          <div class="tab">MCP</div>
-        </div>
-
-        <div class="code-block">
-<pre><span class="c"># A reactive control system. The grid is the runtime.</span>
-<span class="k">id:</span> boat-autopilot
-<span class="k">title:</span> <span class="s">"Voice-Controlled Autopilot"</span>
-
-<span class="k">cells:</span>
-  <span class="c"># --- Sensors (push from hardware) ---</span>
-  - <span class="k">id:</span> compass.heading
-    <span class="k">kind:</span> sensor
-    <span class="k">source:</span> nmea:/dev/ttyUSB0
-    <span class="k">unit:</span> degrees
-
-  <span class="c"># --- Pure computations (reactive) ---</span>
-  - <span class="k">id:</span> heading.error
-    <span class="k">kind:</span> formula
-    <span class="k">expr:</span> <span class="s">"=((desired.heading - compass.heading + 540) % 360) - 180"</span>
-
-  <span class="c"># --- Program cells (stateful, async) ---</span>
-  - <span class="k">id:</span> rudder.command
-    <span class="k">kind:</span> program
-    <span class="k">code:</span> <span class="s">|
-      const e = await runtime.get('heading.error');
-      const g = await runtime.get('rudder.gain');
-      return clamp((e.data || 0) * (g.data || 0.5), -30, 30);</span>
-
-  <span class="c"># --- Router (caller-aware) ---</span>
-  - <span class="k">id:</span> model.router
-    <span class="k">kind:</span> router
-    <span class="k">rules:</span>
-      - <span class="k">when:</span> <span class="s">'caller.row === "boat-1"'</span>
-        <span class="k">route:</span> { <span class="k">model:</span> <span class="s">"gpt-4o-mini"</span> }
-      - <span class="k">when:</span> <span class="s">'caller.row === "boat-2"'</span>
-        <span class="k">route:</span> { <span class="k">model:</span> <span class="s">"gpt-4o"</span> }
-
-  <span class="c"># --- Actuators (write to hardware) ---</span>
-  - <span class="k">id:</span> rudder.position
-    <span class="k">kind:</span> io
-    <span class="k">direction:</span> out
-    <span class="k">port:</span> actuator:rudder</pre>
-        </div>
-
-        <div class="code-cta">
-          <p>And then you just <code>quilt run boat-autopilot.cellflow.yaml</code> — or <code>quilt serve --mcp</code> to expose it to Claude Code.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- INSTALL -->
-    <section class="section install" id="install">
-      <div class="container">
-        <div class="section-eyebrow">Get started</div>
-        <h2 class="section-title">Five minutes to your first cell.</h2>
-
-        <div class="install-steps">
-          <div class="install-step">
-            <div class="step-num">1</div>
-            <div class="step-content">
-              <h3>Install</h3>
-              <div class="code-inline">
-                <code>npm install -g @quilt/cli</code>
-              </div>
-              <p>Requires Node.js 18+. The CLI brings the runtime, the MCP server, and the TUI.</p>
-            </div>
-          </div>
-          <div class="install-step">
-            <div class="step-num">2</div>
-            <div class="step-content">
-              <h3>Scaffold</h3>
-              <div class="code-inline">
-                <code>quilt init my-sheet</code>
-              </div>
-              <p>Creates a starter sheet with two cells — a value and a formula.</p>
-            </div>
-          </div>
-          <div class="install-step">
-            <div class="step-num">3</div>
-            <div class="step-content">
-              <h3>Run</h3>
-              <div class="code-inline">
-                <code>quilt run my-sheet.quilt.yaml</code>
-              </div>
-              <p>Watch the cells evaluate. Edit the YAML, re-run, watch them change.</p>
-            </div>
-          </div>
-          <div class="install-step">
-            <div class="step-num">4</div>
-            <div class="step-content">
-              <h3>Expose to MCP</h3>
-              <div class="code-inline">
-                <code>quilt serve my-sheet.quilt.yaml --mcp</code>
-              </div>
-              <p>Now Claude Code (or any MCP client) can use your cells as tools.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="install-cta">
-          <a href="tutorial.html" class="btn btn-primary">Read the full tutorial →</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- KILLER DEMOS -->
-    <section class="section demos">
-      <div class="container">
-        <div class="section-eyebrow">What people build with it</div>
-        <h2 class="section-title">The killer demos.</h2>
-
-        <div class="demos-grid">
-          <a href="https://github.com/superinstance/quilt/tree/main/examples/boat-autopilot" class="demo-card">
-            <div class="demo-icon">⛵</div>
-            <h3>Voice-controlled autopilot</h3>
-            <p>Sensors in, PID controller, voice intent, model router — all in one grid. The 30-year dream of "spreadsheet as control system" actually working.</p>
-            <span class="demo-link">View demo →</span>
-          </a>
-          <a href="https://github.com/superinstance/quilt/tree/main/examples/agent-dashboard" class="demo-card">
-            <div class="demo-icon">🤖</div>
-            <h3>Agent mission control</h3>
-            <p>Tasks, status, outputs — every cell. The agent reads/writes via MCP. You watch in tmux. Override a cell, the agent sees it on the next cycle.</p>
-            <span class="demo-link">View demo →</span>
-          </a>
-          <a href="https://github.com/superinstance/quilt/tree/main/examples/model-router" class="demo-card">
-            <div class="demo-icon">⇄</div>
-            <h3>Caller-aware model router</h3>
-            <p>Row 10+ → premium model. Column J → creative prompt. Identity tags → bypass cache. Change one cell, every caller reroutes.</p>
-            <span class="demo-link">View demo →</span>
-          </a>
-          <a href="https://github.com/superinstance/quilt/tree/main/examples/sensor-anomaly" class="demo-card">
-            <div class="demo-icon">⚡</div>
-            <h3>Self-tuning anomaly detector</h3>
-            <p>Local statistical loop catches 95% of events cheaply. Only true anomalies escalate to the model. False positives drop from 100/day to 2/day.</p>
-            <span class="demo-link">View demo →</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="section final-cta">
-      <div class="container">
-        <h2>Stop building pipelines. Start orchestrating cells.</h2>
-        <p>Quilt is Apache 2.0, written in TypeScript and Rust, and ready for the agent era.</p>
-        <div class="hero-cta">
-          <a href="https://github.com/superinstance/quilt" class="btn btn-primary">★ Star on GitHub</a>
-          <a href="tutorial.html" class="btn btn-ghost">Read the tutorial</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col">
-          <div class="logo">
-            <span class="logo-mark">◳</span>
-            <span class="logo-text">Quilt</span>
-          </div>
-          <p>A spreadsheet where every cell is a live, addressable capability.</p>
-          <p class="small">Apache 2.0 · Made for the agent era.</p>
-        </div>
-        <div class="footer-col">
-          <h4>Get started</h4>
-          <a href="#install">Install</a>
-          <a href="tutorial.html">Tutorial</a>
-          <a href="manifesto.html">Manifesto</a>
-          <a href="https://github.com/superinstance/quilt/tree/main/examples">Examples</a>
-        </div>
-        <div class="footer-col">
-          <h4>Project</h4>
-          <a href="https://github.com/superinstance/quilt">GitHub</a>
-          <a href="https://github.com/superinstance/quilt/issues">Issues</a>
-          <a href="https://github.com/superinstance/quilt/discussions">Discussions</a>
-          <a href="https://github.com/superinstance/quilt/blob/main/LICENSE">License</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© 2026 Quilt contributors.</span>
-        <span>The spreadsheet is the runtime.</span>
+      <div class="feature-visual">
+<div style="color: var(--text-faint);">// A file is a blob.</div>
+<div style="color: var(--text-faint);">// A cell is alive.</div>
+<br>
+<span class="c-kw">cell</span> <span style="color: var(--blue);">budget.total</span> {
+  <span class="c-kw">value</span>: <span class="c-num">5000</span>;
+  <span class="c-kw">history</span>: [...]; <span style="color: var(--text-faint);">// every change</span>
+  <span class="c-kw">acl</span>: [alice, bob];
+  <span class="c-kw">deps</span>: [...];
+}
       </div>
     </div>
-  </footer>
 
-  <script src="script.js"></script>
+    <div class="feature-row reverse">
+      <div>
+        <h3>Programs → Graphs</h3>
+        <p>A program runs once. A graph is always running. Formulas recompute when their dependencies change. The graph is the application.</p>
+        <ul>
+          <li>Drop a 10-cell "mortgage" subgraph into a 100-cell "finance" graph</li>
+          <li>Dependencies are explicit, in the sheet</li>
+          <li>The reactive engine handles the propagation</li>
+          <li>No event handlers, no state synchronization code</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+<div style="color: var(--text-faint);">// Compose like Lego.</div>
+<br>
+<span class="c-kw">import</span> <span style="color: var(--blue);">'mortgage-cell'</span>;
+<br><br>
+mySheet.<span class="c-fn">add</span>(<span style="color: var(--blue);">mortgage</span>);
+mySheet.<span class="c-fn">add</span>(<span style="color: var(--blue);">budget</span>);
+mySheet.<span class="c-fn">wire</span>(mortgage.pmt, budget.payment);
+<br><br>
+<div style="color: var(--text-faint);">// Everything recomputes automatically.</div>
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3>Services → Rooms</h3>
+        <p>A service is a public API on a server. A room is a private shared space on a mesh. A service is one-to-many. A room is many-to-many, with an access policy.</p>
+        <ul>
+          <li>Share your budget with your partner (just the home cells)</li>
+          <li>Share your health with your doctor (just the relevant cells)</li>
+          <li>Revoke with a button</li>
+          <li>No central server, no data broker</li>
+        </ul>
+      </div>
+      <div class="feature-visual">
+<div style="color: var(--text-faint);">// Define a room.</div>
+<br>
+<span class="c-kw">room</span> <span style="color: var(--blue);">home</span> {
+  <span class="c-kw">members</span>: [alice, bob];
+  <span class="c-kw">cells</span>: [budget.*, health.*];
+  <span class="c-kw">policy</span>: e2ee;
+}
+<br><br>
+<div style="color: var(--text-faint);">// Server sees only ciphertext.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap" style="background: var(--bg-elev); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">5-year roadmap</span>
+      <h2>From one file to <span class="grad-text">a mesh of devices.</span></h2>
+      <p class="lead">The 12-month plan is below. The 5-year vision is the cell model everywhere: microcontroller, browser, OS, silicon.</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-item done">
+        <div class="tl-q">Q1 2026 — Foundations</div>
+        <div class="tl-h">Time, vault, rooms</div>
+        <div class="tl-d">Every cell gets history. Every cell is encrypted. The room abstraction. The privacy story.</div>
+        <div class="tl-tags">
+          <span class="tl-tag green">✓ quilt-time</span>
+          <span class="tl-tag green">✓ quilt-vault</span>
+          <span class="tl-tag green">✓ quilt-rooms</span>
+        </div>
+      </div>
+      <div class="tl-item active">
+        <div class="tl-q">Q2 2026 — Distribution</div>
+        <div class="tl-h">Mesh, microcontrollers, packs</div>
+        <div class="tl-d">Cells sync across devices, run on $3 chips, and ship as packages. The cell model, scaled out and down.</div>
+        <div class="tl-tags">
+          <span class="tl-tag green">✓ quilt-mesh</span>
+          <span class="tl-tag green">✓ quilt-esp32</span>
+          <span class="tl-tag blue">→ quilt-packs</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-q">Q3 2026 — Intelligence</div>
+        <div class="tl-h">Agents, vision, ZK, build</div>
+        <div class="tl-d">The cell model, scaled up. LLMs are cells. Images are cells. Proofs are cells. Compile to native, WASM, embedded.</div>
+        <div class="tl-tags">
+          <span class="tl-tag green">✓ quilt-agent</span>
+          <span class="tl-tag green">✓ quilt-vision</span>
+          <span class="tl-tag green">✓ quilt-zk</span>
+          <span class="tl-tag">→ quilt-build</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-q">Q4 2026 — Polish</div>
+        <div class="tl-h">Visual, paper, music, fabric, civic, fs</div>
+        <div class="tl-d">Drag-and-drop editor. Print cells. Music cells. Distributed fabric. Public cells. Files as cells.</div>
+        <div class="tl-tags">
+          <span class="tl-tag green">✓ quilt-flow</span>
+          <span class="tl-tag">→ quilt-print</span>
+          <span class="tl-tag">→ quilt-music</span>
+          <span class="tl-tag">→ quilt-fabric</span>
+          <span class="tl-tag">→ quilt-civic</span>
+          <span class="tl-tag">→ quilt-fs</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-q">2027+</div>
+        <div class="tl-h">quilt-os, the public mesh, the cell browser</div>
+        <div class="tl-d">A Linux image where every file is a sheet. A public mesh anyone can read. A browser with cells built in. An OS with cells built in. Silicon with cells in firmware.</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 48px;">
+      <a href="https://github.com/SuperInstance/quilt/blob/main/quilt-roadmap-2026.md" target="_blank" class="btn">Read the full roadmap <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2>Your first cell is <span class="grad-text">5 minutes away.</span></h2>
+    <p>Open Quilt Live. Click "Add cell". Type a value. Add a formula. Watch it compute. Save your work. Download the file. Open it offline. It's all yours.</p>
+    <div class="hero-ctas">
+      <a href="quilt-live.html" class="btn btn-primary">Open Quilt Live <span class="arrow">→</span></a>
+      <a href="https://github.com/SuperInstance/quilt" target="_blank" class="btn">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom: 12px;">
+          <span class="brand-mark"></span>
+          <span>Quilt</span>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.9rem; max-width: 320px;">A reactive, typed, cellular runtime. Built for the era of personal data on personal devices.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Try it</h4>
+        <a href="quilt-live.html">Quilt Live</a>
+        <a href="studio.html">Quilt Studio</a>
+        <a href="showcase.html">All repos</a>
+        <a href="https://superinstance.github.io/quilt/landing/simulator.html">Simulator</a>
+      </div>
+      <div class="footer-col">
+        <h4>Source</h4>
+        <a href="https://github.com/SuperInstance/quilt" target="_blank">quilt (TS)</a>
+        <a href="https://github.com/SuperInstance/quilt-rust" target="_blank">quilt-rust</a>
+        <a href="https://github.com/SuperInstance/quilt-live" target="_blank">quilt-live</a>
+        <a href="https://github.com/SuperInstance/quilt-esp32" target="_blank">quilt-esp32</a>
+        <a href="https://github.com/SuperInstance/quilt-mesh" target="_blank">quilt-mesh</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="https://github.com/SuperInstance/quilt-time" target="_blank">quilt-time</a>
+        <a href="https://github.com/SuperInstance/quilt-vault" target="_blank">quilt-vault</a>
+        <a href="https://github.com/SuperInstance/quilt-agent" target="_blank">quilt-agent</a>
+        <a href="https://github.com/SuperInstance/quilt-vision" target="_blank">quilt-vision</a>
+        <a href="https://github.com/SuperInstance/quilt-zk" target="_blank">quilt-zk</a>
+        <a href="https://github.com/SuperInstance/quilt-flow" target="_blank">quilt-flow</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>MIT licensed. Built by humans, for humans and their cells.</div>
+      <div>2026 — and beyond</div>
+    </div>
+  </div>
+</footer>
+
+<!-- Embedded engine (lazy-loaded) -->
+<script>
+// First, try to load the engine from quilt-live.html's source
+// (the engine is inlined in dist/quilt-live.html, but we want a clean version).
+// We load the source file from quilt-live repo via raw GitHub, or fall back to
+// inlining. For this page, we inline a minimal version of the engine for the
+// hero demo + budget demo.
+</script>
+<script src="engine-inline.js"></script>
+<script>
+// =========================================================================
+// HERO GRAPH ANIMATION
+// =========================================================================
+(function() {
+  const graph = document.getElementById('hero-graph');
+  if (!graph) return;
+
+  // Wait for engine
+  if (typeof QuiltEngine === 'undefined') {
+    graph.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-faint);font-family:JetBrains Mono,monospace;font-size:0.85rem;">Engine not loaded</div>';
+    return;
+  }
+  graph.classList.remove('loading');
+
+  // Build a small reactive sheet: a temperature sensor, an LED, and a fan.
+  const sheet = `
+id: hero
+cells:
+  - id: temperature
+    kind: value
+    value: 22
+  - id: humidity
+    kind: value
+    value: 50
+  - id: fahrenheit
+    kind: formula
+    expr: "temperature * 1.8 + 32"
+  - id: heat_index
+    kind: formula
+    expr: "temperature + (humidity / 100) * 5"
+  - id: comfort
+    kind: formula
+    expr: "heat_index < 26 ? 'cool' : (heat_index < 30 ? 'comfortable' : 'hot')"
+  - id: fan_speed
+    kind: formula
+    expr: "heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)"
+  - id: led_color
+    kind: formula
+    expr: "comfort === 'cool' ? '#5fa8d3' : (comfort === 'comfortable' ? '#7ec699' : '#c67e7e')"
+`;
+
+  const engine = new QuiltEngine();
+  engine.loadSheet(parseSheet(sheet));
+
+  // Layout: arrange cells in a logical flow
+  const positions = {
+    temperature: { x: 30, y: 80 },
+    humidity: { x: 30, y: 220 },
+    fahrenheit: { x: 280, y: 60 },
+    heat_index: { x: 280, y: 180 },
+    comfort: { x: 530, y: 100 },
+    fan_speed: { x: 530, y: 240 },
+    led_color: { x: 760, y: 170 },
+  };
+
+  // Build cell DOM
+  const cellEls = {};
+  for (const [id, pos] of Object.entries(positions)) {
+    const el = document.createElement('div');
+    el.className = 'cell';
+    el.dataset.kind = ['temperature','humidity'].includes(id) ? 'value' : 'formula';
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    el.innerHTML = `<div class="cell-id">${id}</div><div class="cell-value">—</div>`;
+    graph.appendChild(el);
+    cellEls[id] = el;
+  }
+
+  // Build wires SVG
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'wires');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  graph.insertBefore(svg, graph.firstChild);
+
+  const wires = [
+    ['temperature', 'fahrenheit'],
+    ['temperature', 'heat_index'],
+    ['humidity', 'heat_index'],
+    ['heat_index', 'comfort'],
+    ['heat_index', 'fan_speed'],
+    ['comfort', 'led_color'],
+  ];
+
+  function drawWires(activeCells = new Set()) {
+    svg.innerHTML = '';
+    for (const [from, to] of wires) {
+      const a = positions[from], b = positions[to];
+      const x1 = a.x + 110, y1 = a.y + 30;
+      const x2 = b.x, y2 = b.y + 30;
+      const cx = (x1 + x2) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
+      const isActive = activeCells.has(from) || activeCells.has(to);
+      if (isActive) path.classList.add('active');
+      svg.appendChild(path);
+    }
+  }
+  drawWires();
+
+  function render(pulseIds = new Set()) {
+    for (const id of Object.keys(positions)) {
+      const cellEl = cellEls[id];
+      if (!cellEl) continue;
+      const valEl = cellEl.querySelector('.cell-value');
+      // engine.get is async; resolve it
+      engine.get(id).then(r => {
+        const v = r.data;
+        const display = (typeof v === 'number') ? Math.round(v * 10) / 10 : (v ?? '—');
+        valEl.textContent = display;
+        if (id === 'led_color' && typeof v === 'string' && v.startsWith('#')) {
+          cellEl.style.background = v + '22';
+          cellEl.style.borderColor = v;
+          valEl.textContent = '●';
+          valEl.style.color = v;
+        }
+        if (pulseIds.has(id)) {
+          cellEl.classList.remove('pulsing');
+          void cellEl.offsetWidth;
+          cellEl.classList.add('pulsing');
+        }
+      });
+    }
+  }
+
+  // Initial render
+  render();
+
+  // Listen for cell changes via subscribeAll
+  engine.subscribeAll((id, value) => {
+    const affected = new Set([id]);
+    for (const [from, to] of wires) {
+      if (from === id) affected.add(to);
+    }
+    drawWires(affected);
+    setTimeout(() => render(affected), 20);
+  });
+
+  // Controls
+  const heroSheet = (t, h) => `cells:
+  - id: temperature
+    kind: value
+    value: ${t}
+  - id: humidity
+    kind: value
+    value: ${h}
+  - id: fahrenheit
+    kind: formula
+    expr: "temperature * 1.8 + 32"
+  - id: heat_index
+    kind: formula
+    expr: "temperature + (humidity / 100) * 5"
+  - id: comfort
+    kind: formula
+    expr: "heat_index < 26 ? 'cool' : (heat_index < 30 ? 'comfortable' : 'hot')"
+  - id: fan_speed
+    kind: formula
+    expr: "heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)"
+  - id: led_color
+    kind: formula
+    expr: "comfort === 'cool' ? '#5fa8d3' : (comfort === 'comfortable' ? '#7ec699' : '#c67e7e')"`;
+
+  document.getElementById('btn-rand')?.addEventListener('click', () => {
+    const t = Math.round(15 + Math.random() * 25);
+    const h = Math.round(30 + Math.random() * 60);
+    engine.loadSheet(parseSheet(heroSheet(t, h)));
+    setTimeout(() => render(new Set(Object.keys(positions))), 30);
+  });
+  document.getElementById('btn-reset')?.addEventListener('click', () => {
+    engine.loadSheet(parseSheet(heroSheet(22, 50)));
+    setTimeout(() => render(new Set(Object.keys(positions))), 30);
+  });
+  document.getElementById('btn-spike')?.addEventListener('click', () => {
+    engine.loadSheet(parseSheet(heroSheet(38, 80)));
+    setTimeout(() => render(new Set(Object.keys(positions))), 30);
+  });
+})();
+
+// =========================================================================
+// BUDGET DEMO
+// =========================================================================
+(function() {
+  const sheet = `
+id: budget
+cells:
+  - id: budget.total
+    kind: value
+    value: 5000
+  - id: spend.rent
+    kind: value
+    value: 1800
+  - id: spend.food
+    kind: value
+    value: 600
+  - id: spend.transit
+    kind: value
+    value: 120
+  - id: spend.fun
+    kind: value
+    value: 200
+  - id: spend.misc
+    kind: value
+    value: 50
+  - id: spent
+    kind: formula
+    expr: "spend.rent + spend.food + spend.transit + spend.fun + spend.misc"
+  - id: remaining
+    kind: formula
+    expr: "budget.total - spent"
+  - id: percent_used
+    kind: formula
+    expr: "spent / budget.total"
+  - id: status
+    kind: formula
+    expr: "percent_used > 0.9 ? 'danger' : (percent_used > 0.7 ? 'warning' : 'ok')"
+`;
+
+  const engine = new QuiltEngine();
+  engine.loadSheet(parseSheet(sheet));
+
+  const inputs = document.getElementById('budget-inputs');
+  const outputs = document.getElementById('budget-outputs');
+  if (!inputs || !outputs) return;
+
+  const items = [
+    { id: 'budget.total', label: 'Total budget' },
+    { id: 'spend.rent', label: 'rent' },
+    { id: 'spend.food', label: 'food' },
+    { id: 'spend.transit', label: 'transit' },
+    { id: 'spend.fun', label: 'fun' },
+    { id: 'spend.misc', label: 'misc' },
+  ];
+
+  // Build inputs
+  for (const item of items) {
+    const wrap = document.createElement('div');
+    wrap.className = 'budget-input';
+    const label = document.createElement('label');
+    label.textContent = item.label;
+    const input = document.createElement('input');
+    input.type = 'number';
+    // Get initial value (async)
+    engine.get(item.id).then(r => { input.value = r.data; });
+    input.addEventListener('input', (e) => {
+      const v = Number(e.target.value) || 0;
+      const newYaml = buildYamlWith(item.id, v);
+      engine.loadSheet(parseSheet(newYaml));
+      setTimeout(renderOutputs, 30);
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    inputs.appendChild(wrap);
+  }
+
+  function buildYamlWith(changedId, changedVal) {
+    const values = {
+      'budget.total': 5000, 'spend.rent': 1800, 'spend.food': 600,
+      'spend.transit': 120, 'spend.fun': 200, 'spend.misc': 50,
+    };
+    values[changedId] = changedVal;
+    // Get current values from inputs
+    for (const it of items) {
+      const el = inputs.querySelector(`label:contains('${it.label}')`);
+      // Simplified: use the values as-is, then override with current input values
+    }
+    // Read from DOM
+    const labels = inputs.querySelectorAll('label');
+    labels.forEach(l => {
+      const id = items.find(i => i.label === l.textContent)?.id;
+      if (id) {
+        const inp = l.parentElement.querySelector('input');
+        if (inp && id !== changedId) values[id] = Number(inp.value) || 0;
+      }
+    });
+    values[changedId] = changedVal;
+    return `cells:
+  - id: budget.total
+    kind: value
+    value: ${values['budget.total']}
+  - id: spend.rent
+    kind: value
+    value: ${values['spend.rent']}
+  - id: spend.food
+    kind: value
+    value: ${values['spend.food']}
+  - id: spend.transit
+    kind: value
+    value: ${values['spend.transit']}
+  - id: spend.fun
+    kind: value
+    value: ${values['spend.fun']}
+  - id: spend.misc
+    kind: value
+    value: ${values['spend.misc']}
+  - id: spent
+    kind: formula
+    expr: "spend.rent + spend.food + spend.transit + spend.fun + spend.misc"
+  - id: remaining
+    kind: formula
+    expr: "budget.total - spent"
+  - id: percent_used
+    kind: formula
+    expr: "spent / budget.total"
+  - id: status
+    kind: formula
+    expr: "percent_used > 0.9 ? 'danger' : (percent_used > 0.7 ? 'warning' : 'ok')"`;
+  }
+
+  function renderOutputs() {
+    Promise.all([
+      engine.get('spent'),
+      engine.get('remaining'),
+      engine.get('percent_used'),
+      engine.get('status'),
+    ]).then(([spentR, remR, pctR, statR]) => {
+      const spent = spentR.data;
+      const remaining = remR.data;
+      const pct = pctR.data;
+      const status = statR.data;
+      outputs.innerHTML = `
+        <div class="budget-output highlight">
+          <div class="out-label">Spent so far</div>
+          <div class="out-value">$${(spent || 0).toLocaleString()}</div>
+        </div>
+        <div class="budget-output">
+          <div class="out-label">Remaining</div>
+          <div class="out-value">$${(remaining || 0).toLocaleString()}</div>
+        </div>
+        <div class="budget-output ${status || 'ok'}">
+          <div class="out-label">Status</div>
+          <div class="out-value">${Math.round((pct || 0) * 100)}% used · ${status || 'ok'}</div>
+          <div class="out-sub">${status === 'ok' || !status ? '✓ On track' : status === 'warning' ? '⚠ Approaching limit' : '🔥 Over 90%'}</div>
+        </div>
+      `;
+    });
+  }
+  renderOutputs();
+})();
+</script>
+
 </body>
 </html>

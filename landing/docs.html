@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt docs — the cell model, in 5 minutes</title>
+<meta name="description" content="The complete Quilt documentation. The cell model, the 8 cell kinds, the engine, code samples, and the path from idea to ship.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --blue: #5fa8d3;
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --cyan: #7ec6c6;
+  --gray: #888;
+  --radius: 8px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2rem, 4vw, 3rem); }
+h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); margin: 48px 0 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+h3 { font-size: 1.25rem; margin: 32px 0 12px; color: var(--green); }
+h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+/* Top nav */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1100px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* Hero */
+.hero { padding: 64px 0 32px; }
+.hero h1 { margin-bottom: 12px; }
+.hero p { color: var(--text-dim); max-width: 720px; }
+
+/* Side-by-side layout for two-column docs */
+.two-col { display: grid; grid-template-columns: 220px 1fr; gap: 48px; }
+.toc { position: sticky; top: 80px; align-self: start; }
+.toc-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 8px; font-weight: 600; }
+.toc a { display: block; padding: 4px 0; font-size: 0.85rem; color: var(--text-dim); }
+.toc a:hover { color: var(--green); }
+
+/* Content */
+.docs { max-width: 800px; }
+.docs p { color: var(--text-dim); margin-bottom: 16px; }
+.docs ul, .docs ol { color: var(--text-dim); margin: 0 0 16px 24px; }
+.docs li { margin-bottom: 4px; }
+
+/* Code blocks */
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; margin: 16px 0; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+.code .c-fn { color: var(--blue); }
+.code-title { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); padding: 6px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; }
+.code-title + .code { border-radius: 0 0 var(--radius) var(--radius); margin-top: 0; }
+
+/* Tables */
+.table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+.table th, .table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.table th { color: var(--text-faint); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; }
+.table td { color: var(--text-dim); }
+.table td:first-child { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+/* Card grid for cell kinds */
+.kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 24px 0; }
+.kind { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: all 150ms var(--ease); }
+.kind:hover { background: var(--bg-elev-2); border-color: var(--border-strong); }
+.kind-name { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; color: var(--green); margin-bottom: 4px; }
+.kind-icon { font-size: 18px; margin-right: 6px; }
+.kind-desc { font-size: 0.85rem; color: var(--text-dim); }
+
+/* CTA */
+.cta { text-align: center; padding: 64px 0; border-top: 1px solid var(--border); margin-top: 64px; }
+.cta h2 { border: none; padding: 0; margin: 0 0 12px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); margin: 0 4px; }
+.btn:hover { background: var(--bg-elev-2); color: var(--text); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+
+@media (max-width: 900px) {
+  .two-col { grid-template-columns: 1fr; }
+  .toc { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-live.html">Live</a>
+      <a href="studio.html">Studio</a>
+      <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="eyebrow">Documentation</div>
+  <h1>Quilt in <span class="grad-text">5 minutes</span></h1>
+  <p class="lead">The cell model, the 8 cell kinds, the runtime, the API surface. Read this once and you have the whole model.</p>
+</header>
+
+<div class="container two-col">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#what">What is a cell?</a>
+    <a href="#sheet">The sheet</a>
+    <a href="#kinds">8 cell kinds</a>
+    <a href="#reactive">Reactive</a>
+    <a href="#api">API</a>
+    <a href="#first">Your first cell</a>
+    <a href="#patterns">Patterns</a>
+    <a href="#runtime">Runtime</a>
+  </aside>
+
+  <main class="docs">
+    <h2 id="what">What is a cell?</h2>
+    <p>A <strong>cell</strong> is a value with a type, a history, an access policy, dependencies, and formulas. Cells are the unit of computation. Every sheet is a graph of cells. The graph is the program.</p>
+    <p>Compare to:</p>
+    <ul>
+      <li>A <strong>variable</strong> in a program: a name with a value. A cell is a name with a value, a type, a history, a policy, and dependents.</li>
+      <li>A <strong>file</strong> on disk: a static blob. A cell is a live, addressable, reactive value.</li>
+      <li>A <strong>spreadsheet cell</strong>: a value with a formula. A cell is the same, plus history, plus policy, plus composition.</li>
+    </ul>
+
+    <h2 id="sheet">The sheet</h2>
+    <p>A <strong>sheet</strong> is a collection of cells, with their dependencies. Sheets are written in YAML (or JSON). A sheet is a graph. The engine runs the graph.</p>
+
+    <div class="code-title">hello-sheet.yaml</div>
+    <pre class="code"><span class="c-kw">id</span>: hello
+<span class="c-kw">title</span>: <span class="c-str">"Hello, Quilt"</span>
+<span class="c-kw">version</span>: <span class="c-num">0.1.0</span>
+<span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">name</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-str">"world"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">greeting</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"Hello, " + name + "!"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">log</span>
+    <span class="c-kw">kind</span>: listener
+    <span class="c-kw">watch</span>: greeting
+    <span class="c-kw">action</span>: <span class="c-str">"console.log(greeting)"</span></pre>
+
+    <p>Three cells: a <code>value</code> cell (the data), a <code>formula</code> cell (the computation), and a <code>listener</code> cell (the side effect). Change <code>name</code> from <code>"world"</code> to <code>"Quilt"</code> and <code>greeting</code> recomputes, and the listener logs it.</p>
+
+    <h2 id="kinds">8 cell kinds</h2>
+    <p>Every cell is one of these eight kinds. They cover the full space: data, computation, I/O, control flow.</p>
+
+    <div class="kinds">
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--green);">📦</span>value</div><div class="kind-desc">A static value. Number, string, bool, list, object.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--blue);">ƒ</span>formula</div><div class="kind-desc">A reactive expression. Recomputes when its inputs change.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--purple);">▶</span>program</div><div class="kind-desc">A small async expression. Can use <code>runtime.get</code> and <code>runtime.call</code>.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--tan);">👁</span>sensor</div><div class="kind-desc">A polled input source. Polled periodically.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--red);">🌐</span>api</div><div class="kind-desc">An outbound call. Returns a value.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--yellow);">🔔</span>listener</div><div class="kind-desc">Fires when a watched cell changes. Has a condition and an action.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--cyan);">↪</span>router</div><div class="kind-desc">Caller-context-aware dispatch. Picks a destination based on rules.</div></div>
+      <div class="kind"><div class="kind-name"><span class="kind-icon" style="color: var(--gray);">🔌</span>io</div><div class="kind-desc">An outbound port to a physical device. GPIO, I2C, BLE...</div></div>
+    </div>
+
+    <h3>When to use what</h3>
+    <table class="table">
+      <tr><th>kind</th><th>use when</th></tr>
+      <tr><td>value</td><td>The data is known at sheet-author time, or changes externally.</td></tr>
+      <tr><td>formula</td><td>The value is computed from other cells. Sync, pure.</td></tr>
+      <tr><td>program</td><td>The computation needs async, side effects, or runtime state.</td></tr>
+      <tr><td>sensor</td><td>You're reading from a polled source (timer, GPIO, BLE).</td></tr>
+      <tr><td>api</td><td>You're calling out to an external service.</td></tr>
+      <tr><td>listener</td><td>You want to fire on changes (alert, log, write to disk).</td></tr>
+      <tr><td>router</td><td>Multiple callers need different outputs based on context.</td></tr>
+      <tr><td>io</td><td>You're driving a physical actuator.</td></tr>
+    </table>
+
+    <h2 id="reactive">Reactive</h2>
+    <p>The engine is reactive. Change a value, and every cell that depends on it (transitively) recomputes. The graph is a DAG; the engine does a topological sort and evaluates in order.</p>
+    <p>Memoization is per-context: a formula only re-evaluates if its inputs actually changed. The same formula with the same inputs returns the cached result. This makes large sheets fast.</p>
+
+    <div class="code-title">reactive propagation</div>
+    <pre class="code"><span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">a</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">10</span>
+  - <span class="c-kw">id</span>: <span class="c-str">b</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">20</span>
+  - <span class="c-kw">id</span>: <span class="c-str">sum</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"a + b"</span>           <span class="c-com"># 30</span>
+  - <span class="c-kw">id</span>: <span class="c-str">doubled</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"sum * 2"</span>          <span class="c-com"># 60</span>
+  - <span class="c-kw">id</span>: <span class="c-str">status</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">'doubled > 50 ? "big" : "small"'</span>  <span class="c-com"># "big"</span></pre>
+
+    <p>Set <code>a = 100</code>. <code>sum</code> recomputes to 120. <code>doubled</code> recomputes to 240. <code>status</code> recomputes to "big". Three recomputations, all automatic.</p>
+
+    <h2 id="api">API</h2>
+    <p>The public API has three layers.</p>
+
+    <h4>1. Sheet format (YAML/JSON)</h4>
+    <p>Sheets are the canonical form. Any tool that reads/writes sheets can compose with any other tool. Sheets are also human-readable and diff-able.</p>
+
+    <h4>2. Engine API (TypeScript / Rust / etc.)</h4>
+    <div class="code-title">TypeScript</div>
+    <pre class="code"><span class="c-kw">import</span> { QuiltEngine } <span class="c-kw">from</span> <span class="c-str">'@quilt/core'</span>;
+
+<span class="c-kw">const</span> engine = <span class="c-kw">new</span> <span class="c-fn">QuiltEngine</span>();
+engine.<span class="c-fn">parseSheet</span>(yaml);
+engine.<span class="c-fn">set</span>(<span class="c-str">'a'</span>, <span class="c-num">100</span>);
+<span class="c-kw">const</span> sum = engine.<span class="c-fn">get</span>(<span class="c-str">'sum'</span>);  <span class="c-com">// 120</span></pre>
+
+    <div class="code-title">Rust</div>
+    <pre class="code"><span class="c-kw">use</span> quilt_core::{{QuiltEngine, CellKind, CellValue}};
+
+<span class="c-kw">let mut</span> engine = QuiltEngine::new();
+engine.<span class="c-fn">parse_sheet</span>(&yaml)?;
+engine.<span class="c-fn">set</span>(<span class="c-str">"a"</span>, CellValue::Int(<span class="c-num">100</span>))?;
+<span class="c-kw">let</span> sum = engine.<span class="c-fn">get</span>(<span class="c-str">"sum"</span>);  <span class="c-com">// 120</span></pre>
+
+    <h4>3. CLI</h4>
+    <pre class="code">$ quilt run hello-sheet.yaml
+$ quilt eval hello-sheet.yaml --cell sum
+$ quilt fmt hello-sheet.yaml
+$ quilt doc hello-sheet.yaml --html > docs.html</pre>
+
+    <h2 id="first">Your first cell</h2>
+    <p>Three minutes from zero to a working sheet. Open Quilt Live in your browser, no install, no account.</p>
+    <ol>
+      <li>Open <a href="quilt-live.html">quilt-live.html</a></li>
+      <li>Click "Add cell" → pick "Value". Set id to <code>myName</code>, value to your name.</li>
+      <li>Click "Add cell" → pick "Formula". Set id to <code>greeting</code>, expr to <code>"Hello, " + myName + "!"</code></li>
+      <li>Watch <code>greeting</code> compute.</li>
+      <li>Edit <code>myName</code>. Watch <code>greeting</code> recompute.</li>
+      <li>Click "Save state" to save as a cookie. Click "Download" to get the file with your state baked in.</li>
+    </ol>
+    <p>You just built a reactive system. The engine handled all the propagation. You wrote one formula.</p>
+
+    <h2 id="patterns">Patterns</h2>
+    <p>Some patterns come up again and again. Here are the canonical ones.</p>
+
+    <h4>1. Memoization</h4>
+    <p>Formulas cache their result. A formula re-evaluates only when one of its inputs changes. You don't need to add a memoization cell — the engine does it.</p>
+
+    <h4>2. Derive-and-aggregate</h4>
+    <p>Compute a value for each item, then aggregate. Use formulas for the per-item computations, and another formula for the aggregate. The DAG handles the order.</p>
+
+    <div class="code-title">derive-and-aggregate</div>
+    <pre class="code">- <span class="c-kw">id</span>: <span class="c-str">spend.rent</span>
+  <span class="c-kw">kind</span>: value
+  <span class="c-kw">value</span>: <span class="c-num">1800</span>
+- <span class="c-kw">id</span>: <span class="c-str">spend.food</span>
+  <span class="c-kw">kind</span>: value
+  <span class="c-kw">value</span>: <span class="c-num">600</span>
+- <span class="c-kw">id</span>: <span class="c-str">spent</span>
+  <span class="c-kw">kind</span>: formula
+  <span class="c-kw">expr</span>: <span class="c-str">"spend.rent + spend.food + spend.transit + spend.fun"</span></pre>
+
+    <h4>3. Status from threshold</h4>
+    <p>Compute a value, then map it to a status. The status is just another formula, depends on the value.</p>
+
+    <pre class="code">- <span class="c-kw">id</span>: <span class="c-str">percent</span>
+  <span class="c-kw">kind</span>: formula
+  <span class="c-kw">expr</span>: <span class="c-str">"spent / total"</span>
+- <span class="c-kw">id</span>: <span class="c-str">status</span>
+  <span class="c-kw">kind</span>: formula
+  <span class="c-kw">expr</span>: <span class="c-str">"percent > 0.9 ? 'danger' : (percent > 0.7 ? 'warning' : 'ok')"</span></pre>
+
+    <h4>4. Watch and react</h4>
+    <p>A listener cell watches another cell and fires when it changes. Use for alerts, logs, side effects.</p>
+
+    <pre class="code">- <span class="c-kw">id</span>: <span class="c-str">alert</span>
+  <span class="c-kw">kind</span>: listener
+  <span class="c-kw">watch</span>: status
+  <span class="c-kw">condition</span>: <span class="c-str">"status == 'danger'"</span>
+  <span class="c-kw">action</span>: <span class="c-str">"console.log('Over budget!')"</span></pre>
+
+    <h4>5. Compose sub-graphs</h4>
+    <p>Take a sub-graph (a few cells with dependencies) and import it into a larger sheet. The dependencies get rewired automatically. The composition is just YAML.</p>
+
+    <h2 id="runtime">Runtime</h2>
+    <p>The same model runs in many places. Pick the runtime that fits your context.</p>
+
+    <table class="table">
+      <tr><th>Runtime</th><th>Where</th><th>Best for</th></tr>
+      <tr><td>quilt</td><td>Node.js, browser</td><td>The reference. TypeScript-native.</td></tr>
+      <tr><td>quilt-rust</td><td>Native, server</td><td>Performance, no GC, single binary.</td></tr>
+      <tr><td>quilt-live</td><td>Browser (1 file)</td><td>Portable, offline, no install.</td></tr>
+      <tr><td>quilt-esp32</td><td>Microcontroller</td><td>Sensors, actuators, battery-powered.</td></tr>
+      <tr><td>quilt-agent</td><td>Python, Node</td><td>LLM agents, multi-agent graphs.</td></tr>
+      <tr><td>quilt-flow</td><td>Browser</td><td>Visual editor. Drag-and-drop.</td></tr>
+    </table>
+
+    <p>All runtimes share the same sheet format. A sheet written for one runs on all. The model is the API.</p>
+
+    <h2>Next steps</h2>
+    <ul>
+      <li>Open <a href="quilt-live.html">Quilt Live</a> — the fastest way to feel the model.</li>
+      <li>Open <a href="studio.html">Quilt Studio</a> — the visual editor for non-programmers.</li>
+      <li>Read the <a href="https://github.com/SuperInstance/quilt/blob/main/quilt-roadmap-2026.md" target="_blank">5-year roadmap</a> for the bigger picture.</li>
+      <li>Star the <a href="https://github.com/SuperInstance/quilt" target="_blank">main repo</a> and the runtimes you use.</li>
+    </ul>
+  </main>
+</div>
+
+<div class="cta container">
+  <h2>Now go build.</h2>
+  <p style="color: var(--text-dim); margin-bottom: 24px;">The cell model is the API. Pick a runtime, write a sheet, ship.</p>
+  <a href="quilt-live.html" class="btn primary">Open Quilt Live →</a>
+  <a href="studio.html" class="btn">Open Studio</a>
+  <a href="showcase.html" class="btn">See all 11 repos</a>
+</div>
+
+</body>
+</html>

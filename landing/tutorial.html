@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your first cell in 60 seconds — Quilt tutorial</title>
+<meta name="description" content="A 5-step interactive tutorial. Edit code, see live results. Build your first Quilt sheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column; }
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; flex: 1; }
+
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+
+.hero { padding: 48px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 8px; }
+.hero p { color: var(--text-dim); }
+
+/* Stepper */
+.stepper { display: flex; justify-content: center; gap: 4px; margin: 32px 0 48px; padding: 0 24px; }
+.step-dot { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--bg-elev); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-faint); transition: all 200ms var(--ease); }
+.step-dot.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+.step-dot.done { background: var(--bg-elev-2); color: var(--green); border-color: var(--green); }
+.step-num { font-weight: 700; }
+
+/* Step content */
+.step { display: none; }
+.step.active { display: block; animation: fade-in 300ms var(--ease); }
+@keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.step-head { text-align: center; margin-bottom: 32px; }
+.step-title { font-size: 1.75rem; margin-bottom: 8px; }
+.step-desc { color: var(--text-dim); max-width: 600px; margin: 0 auto; }
+
+/* Editor + output */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.panel { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.panel-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+.panel-title { font-family: 'JetBrains Mono', monospace; }
+.panel-tag { font-size: 0.7rem; padding: 3px 8px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; color: var(--text-faint); }
+
+.editor { background: var(--bg-elev); padding: 16px 20px; min-height: 200px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; }
+.editor[contenteditable="true"] { outline: none; white-space: pre-wrap; }
+.editor:focus { box-shadow: inset 0 0 0 1px var(--green); }
+.editor .c-kw { color: var(--purple); }
+.editor .c-str { color: var(--green); }
+.editor .c-num { color: var(--tan); }
+.editor .c-com { color: var(--text-faint); font-style: italic; }
+
+.output { padding: 24px; min-height: 200px; }
+.out-cell { padding: 12px 16px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.out-cell .key { font-family: 'JetBrains Mono', monospace; color: var(--text-dim); font-size: 0.85rem; }
+.out-cell .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); }
+.out-cell .val.green { color: var(--green); }
+.out-cell .val.yellow { color: var(--yellow); }
+.out-cell .val.red { color: var(--red); }
+.out-cell .val.blue { color: var(--blue); }
+
+.status { display: inline-block; padding: 4px 10px; background: var(--bg-elev-2); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); }
+.status.green { background: rgba(126,198,153,0.15); color: var(--green); }
+.status.yellow { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.status.red { background: rgba(198,126,126,0.15); color: var(--red); }
+
+/* Controls */
+.controls { display: flex; justify-content: space-between; margin-top: 24px; }
+.btn { padding: 10px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); background: transparent; cursor: pointer; transition: all 150ms var(--ease); font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.btn.ghost { border-color: transparent; color: var(--text-dim); }
+.btn.ghost:hover { color: var(--text); }
+
+.hint { margin-top: 16px; padding: 12px 16px; background: rgba(95,168,211,0.06); border-left: 2px solid var(--blue); border-radius: 4px; font-size: 0.85rem; color: var(--text-dim); }
+
+footer { padding: 32px 0; text-align: center; color: var(--text-faint); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 32px; }
+
+@media (max-width: 768px) {
+  .split { grid-template-columns: 1fr; }
+  .stepper { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="tutorial.html" class="active">Tutorial</a>
+      <a href="quilt-live.html">Live</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <h1>Your first cell in <span class="grad-text">60 seconds.</span></h1>
+  <p>Five steps. Edit code on the left, see live results on the right. No setup, no install.</p>
+</header>
+
+<div class="container">
+  <div class="stepper">
+    <div class="step-dot active" data-step="1"><span class="step-num">1</span> Value</div>
+    <div class="step-dot" data-step="2"><span class="step-num">2</span> Formula</div>
+    <div class="step-dot" data-step="3"><span class="step-num">3</span> Listen</div>
+    <div class="step-dot" data-step="4"><span class="step-num">4</span> Branch</div>
+    <div class="step-dot" data-step="5"><span class="step-num">5</span> Ship</div>
+  </div>
+
+  <!-- STEP 1: Value -->
+  <div class="step active" data-step="1">
+    <div class="step-head">
+      <h2 class="step-title">A value cell</h2>
+      <p class="step-desc">Every sheet starts with data. Edit the value, watch the cell on the right update.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">my-sheet.yaml</span>
+          <span class="panel-tag">step 1 / 5</span>
+        </div>
+        <div class="editor" contenteditable="true" id="editor-1"><span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">budget.total</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">5000</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">live output</span>
+          <span class="panel-tag green">● live</span>
+        </div>
+        <div class="output" id="output-1">
+          <div class="out-cell">
+            <span class="key">budget.total</span>
+            <span class="val green" id="out-1-total">5000</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">💡 Try editing <code>value: 5000</code> to a different number. The cell on the right updates instantly. That's reactivity.</div>
+    <div class="controls">
+      <button class="btn ghost" disabled>← Back</button>
+      <button class="btn primary" data-next="2">Next: Add a formula →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Formula -->
+  <div class="step" data-step="2">
+    <div class="step-head">
+      <h2 class="step-title">A formula cell</h2>
+      <p class="step-desc">A formula cell computes from other cells. It recomputes automatically when its inputs change.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">my-sheet.yaml</span>
+          <span class="panel-tag">step 2 / 5</span>
+        </div>
+        <div class="editor" contenteditable="true" id="editor-2"><span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">budget.total</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">5000</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">spend</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">2770</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">remaining</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"budget.total - spend"</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">live output</span>
+          <span class="panel-tag green">● live</span>
+        </div>
+        <div class="output" id="output-2">
+          <div class="out-cell"><span class="key">budget.total</span><span class="val green" id="out-2-total">5000</span></div>
+          <div class="out-cell"><span class="key">spend</span><span class="val green" id="out-2-spend">2770</span></div>
+          <div class="out-cell"><span class="key">remaining</span><span class="val blue" id="out-2-remaining">2230</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">💡 Edit <code>value: 2770</code> on the <code>spend</code> cell. <code>remaining</code> recomputes automatically. That's the reactive engine doing its job.</div>
+    <div class="controls">
+      <button class="btn" data-prev="1">← Back</button>
+      <button class="btn primary" data-next="3">Next: Add a listener →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Listener -->
+  <div class="step" data-step="3">
+    <div class="step-head">
+      <h2 class="step-title">A listener cell</h2>
+      <p class="step-desc">A listener fires when a cell changes. Use it for alerts, logs, or any side effect.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">my-sheet.yaml</span>
+          <span class="panel-tag">step 3 / 5</span>
+        </div>
+        <div class="editor" contenteditable="true" id="editor-3"><span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">budget.total</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">5000</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">spend</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">2770</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">remaining</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"budget.total - spend"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">status</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"remaining < 0 ? 'over' : (remaining < 1000 ? 'low' : 'ok')"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">alert</span>
+    <span class="c-kw">kind</span>: listener
+    <span class="c-kw">watch</span>: status
+    <span class="c-kw">condition</span>: <span class="c-str">"status === 'low'"</span>
+    <span class="c-kw">action</span>: <span class="c-str">"console.log('⚠️ Budget low!')"</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">live output</span>
+          <span class="panel-tag green">● live</span>
+        </div>
+        <div class="output" id="output-3">
+          <div class="out-cell"><span class="key">budget.total</span><span class="val green">5000</span></div>
+          <div class="out-cell"><span class="key">spend</span><span class="val green">2770</span></div>
+          <div class="out-cell"><span class="key">remaining</span><span class="val blue" id="out-3-remaining">2230</span></div>
+          <div class="out-cell"><span class="key">status</span><span class="status green" id="out-3-status">ok</span></div>
+          <div class="out-cell"><span class="key">alert (fired?)</span><span class="val" id="out-3-alert">— no —</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">💡 Set <code>spend: 4500</code> and watch: <code>remaining</code> drops, <code>status</code> goes to <code>low</code>, the <code>alert</code> listener fires. Open the browser console to see the log.</div>
+    <div class="controls">
+      <button class="btn" data-prev="2">← Back</button>
+      <button class="btn primary" data-next="4">Next: Branch it →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Branch -->
+  <div class="step" data-step="4">
+    <div class="step-head">
+      <h2 class="step-title">Branch the future</h2>
+      <p class="step-desc">Try a different scenario without losing the original. Click "Branch" to fork the engine.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">branches</span>
+          <span class="panel-tag">2 timelines</span>
+        </div>
+        <div class="output">
+          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button class="status green" data-branch="main" id="branch-main-btn">main</button>
+            <button class="status" data-branch="alt" id="branch-alt-btn">alternate</button>
+          </div>
+          <div class="out-cell"><span class="key">budget.total</span><span class="val green" id="out-4-total">5000</span></div>
+          <div class="out-cell"><span class="key">spend</span><span class="val" id="out-4-spend">2770</span></div>
+          <div class="out-cell"><span class="key">remaining</span><span class="val blue" id="out-4-remaining">2230</span></div>
+          <div class="out-cell"><span class="key">status</span><span class="status green" id="out-4-status">ok</span></div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <input type="number" id="branch-spend" value="4500" style="background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; width: 100px;">
+            <button class="btn" id="branch-set-btn">Set spend on this branch</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">what just happened</span>
+          <span class="panel-tag">3 cells</span>
+        </div>
+        <div class="output" id="out-4-log">
+          <p style="color: var(--text-dim); font-size: 0.9rem; line-height: 1.6;">You branched the engine. Now there are two timelines — <code style="color: var(--green);">main</code> and <code style="color: var(--blue);">alternate</code>. Set a value on one branch. Switch to the other. The other still has the old value.</p>
+          <p style="color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; margin-top: 12px;">This is what <code>quilt-time</code> gives you: <strong>every cell has a history</strong>. You can branch, rewind, replay, merge. Like git for your data, but it's a runtime.</p>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" data-prev="3">← Back</button>
+      <button class="btn primary" data-next="5">Next: Ship it →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Ship -->
+  <div class="step" data-step="5">
+    <div class="step-head">
+      <h2 class="step-title">You shipped a sheet.</h2>
+      <p class="step-desc">Three cells, one formula, one listener. You wrote 15 lines of YAML. You have a reactive system.</p>
+    </div>
+    <div style="max-width: 700px; margin: 0 auto;">
+      <div class="panel" style="margin-bottom: 16px;">
+        <div class="panel-head">
+          <span class="panel-title">your-sheet.yaml</span>
+          <span class="panel-tag">complete</span>
+        </div>
+        <div class="editor"><span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">budget.total</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">5000</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">spend</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-num">2770</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">remaining</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"budget.total - spend"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">status</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"remaining < 0 ? 'over' : (remaining < 1000 ? 'low' : 'ok')"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">alert</span>
+    <span class="c-kw">kind</span>: listener
+    <span class="c-kw">watch</span>: status
+    <span class="c-kw">condition</span>: <span class="c-str">"status === 'low'"</span>
+    <span class="c-kw">action</span>: <span class="c-str">"console.log('⚠️ Budget low!')"</span></div>
+      </div>
+      <div style="background: rgba(126,198,153,0.06); border: 1px solid rgba(126,198,153,0.3); border-radius: 8px; padding: 24px; margin-bottom: 16px; text-align: center;">
+        <h3 style="color: var(--green); margin-bottom: 8px;">🎉 You did it.</h3>
+        <p style="color: var(--text-dim); font-size: 0.95rem;">You just learned the four core concepts of Quilt: <strong>value</strong>, <strong>formula</strong>, <strong>listener</strong>, and <strong>branch</strong>. The whole model fits in your head.</p>
+      </div>
+      <div style="text-align: center; margin: 32px 0;">
+        <h3 style="margin-bottom: 16px;">Where to go next</h3>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="quilt-live.html" class="btn primary">Try it in your browser</a>
+          <a href="studio.html" class="btn">Open Quilt Studio</a>
+          <a href="docs.html" class="btn">Read the full docs</a>
+          <a href="showcase.html" class="btn">See all 11 repos</a>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" data-prev="4">← Back</button>
+      <a href="quilt-live.html" class="btn primary">Open Quilt Live →</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>Quilt — 60-second tutorial. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="docs.html">Docs</a> · <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a></div>
+</footer>
+
+<script>
+// Simple YAML → value extractor (no real engine; pedagogical)
+function parseSimpleYaml(text) {
+  const cells = [];
+  const lines = text.split('\n');
+  let current = null;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idMatch = line.match(/^\s*-\s*id:\s*(.+?)\s*$/);
+    if (idMatch) {
+      if (current) cells.push(current);
+      current = { id: idMatch[1].replace(/['"]/g, '').trim(), kind: 'value', config: {} };
+    } else if (current) {
+      const m = line.match(/^\s*([a-z_]+):\s*(.*?)\s*$/);
+      if (m) {
+        const key = m[1], val = m[2];
+        if (key === 'id') current.id = val.replace(/['"]/g, '');
+        else if (key === 'kind') current.kind = val.trim();
+        else {
+          // Try to parse the value
+          let parsed = val.replace(/^["']|["']$/g, '');
+          if (/^-?\d+$/.test(parsed)) parsed = parseInt(parsed);
+          else if (/^-?\d*\.\d+$/.test(parsed)) parsed = parseFloat(parsed);
+          else if (parsed === 'true') parsed = true;
+          else if (parsed === 'false') parsed = false;
+          else if (parsed.startsWith('[') || parsed.startsWith('{')) {
+            try { parsed = JSON.parse(parsed); } catch (e) {}
+          }
+          current.config[key] = parsed;
+        }
+      }
+    }
+  }
+  if (current) cells.push(current);
+  return cells;
+}
+
+function evalFormula(expr, env) {
+  // Very small expression evaluator (only handles what we need)
+  // Replace bare cell ids with their values
+  let code = expr;
+  for (const [k, v] of Object.entries(env)) {
+    const re = new RegExp('\\b' + k + '\\b', 'g');
+    code = code.replace(re, JSON.stringify(v));
+  }
+  // Handle string concatenation
+  code = code.replace(/"\s*\+\s*/g, '').replace(/\s*\+\s*"/g, '');
+  try {
+    return new Function('return ' + code)();
+  } catch (e) {
+    return '[parse error]';
+  }
+}
+
+function renderOutput(stepNum) {
+  const editor = document.getElementById('editor-' + stepNum);
+  if (!editor) return;
+  const cells = parseSimpleYaml(editor.innerText);
+  const env = {};
+  for (const c of cells) {
+    if (c.kind === 'value') env[c.id] = c.config.value;
+  }
+  for (const c of cells) {
+    if (c.kind === 'formula') {
+      try {
+        env[c.id] = evalFormula(c.config.expr, env);
+      } catch (e) {
+        env[c.id] = '[error: ' + e.message + ']';
+      }
+    }
+  }
+  // Update output displays
+  if (stepNum === 1) {
+    document.getElementById('out-1-total').textContent = env['budget.total'] ?? '—';
+  } else if (stepNum === 2) {
+    document.getElementById('out-2-total').textContent = env['budget.total'] ?? '—';
+    document.getElementById('out-2-spend').textContent = env['spend'] ?? '—';
+    document.getElementById('out-2-remaining').textContent = env['remaining'] ?? '—';
+  } else if (stepNum === 3) {
+    document.getElementById('out-3-remaining').textContent = env['remaining'] ?? '—';
+    const status = env['status'] ?? '—';
+    const statusEl = document.getElementById('out-3-status');
+    statusEl.textContent = status;
+    statusEl.className = 'status ' + (status === 'over' ? 'red' : (status === 'low' ? 'yellow' : 'green'));
+    const fired = status === 'low' ? '✓ fired' : '— no —';
+    document.getElementById('out-3-alert').textContent = fired;
+    document.getElementById('out-3-alert').style.color = status === 'low' ? 'var(--yellow)' : 'var(--text-faint)';
+  }
+}
+
+// Set up live editing for each step
+['1', '2', '3'].forEach(n => {
+  const editor = document.getElementById('editor-' + n);
+  if (editor) {
+    editor.addEventListener('input', () => renderOutput(n));
+    renderOutput(n);
+  }
+});
+
+// Step navigation
+document.querySelectorAll('[data-next]').forEach(btn => {
+  btn.addEventListener('click', () => goToStep(btn.dataset.next));
+});
+document.querySelectorAll('[data-prev]').forEach(btn => {
+  btn.addEventListener('click', () => goToStep(btn.dataset.prev));
+});
+function goToStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active', 'done'));
+  document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
+  for (let i = 1; i < parseInt(n); i++) {
+    const d = document.querySelector(`.step-dot[data-step="${i}"]`);
+    if (d) d.classList.add('done');
+  }
+  document.querySelector(`.step-dot[data-step="${n}"]`).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Step 4: Branching demo
+let branches = {
+  main: { budget: 5000, spend: 2770 },
+  alt:  { budget: 5000, spend: 4500 },
+};
+let currentBranch = 'main';
+
+function renderBranch() {
+  const b = branches[currentBranch];
+  document.getElementById('out-4-total').textContent = b.budget;
+  document.getElementById('out-4-spend').textContent = b.spend;
+  document.getElementById('out-4-remaining').textContent = b.budget - b.spend;
+  const r = b.budget - b.spend;
+  const status = r < 0 ? 'over' : (r < 1000 ? 'low' : 'ok');
+  const statusEl = document.getElementById('out-4-status');
+  statusEl.textContent = status;
+  statusEl.className = 'status ' + (status === 'over' ? 'red' : (status === 'low' ? 'yellow' : 'green'));
+  document.getElementById('branch-main-btn').className = 'status ' + (currentBranch === 'main' ? 'green' : '');
+  document.getElementById('branch-alt-btn').className = 'status ' + (currentBranch === 'alt' ? 'blue' : '');
+  document.getElementById('branch-spend').value = b.spend;
+}
+document.getElementById('branch-main-btn').addEventListener('click', () => { currentBranch = 'main'; renderBranch(); });
+document.getElementById('branch-alt-btn').addEventListener('click', () => { currentBranch = 'alt'; renderBranch(); });
+document.getElementById('branch-set-btn').addEventListener('click', () => {
+  branches[currentBranch].spend = parseInt(document.getElementById('branch-spend').value) || 0;
+  renderBranch();
+});
+renderBranch();
+</script>
+
+</body>
+</html>

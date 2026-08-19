@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Studio — visual cell editor</title>
+<meta name="description" content="A full visual editor for Quilt cells. Drag, wire, compute, time-travel, encrypt.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --bg-elev-3: #232323;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --blue: #5fa8d3;
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --cyan: #7ec6c6;
+  --gray: #888;
+  --radius: 6px;
+  --radius-lg: 12px;
+  --t-fast: 150ms;
+  --t-med: 300ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.5; overflow: hidden; height: 100%; }
+body { display: flex; flex-direction: column; }
+a { color: var(--text); text-decoration: none; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+/* ========================
+   TOP BAR
+   ======================== */
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-elev); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.brand-link { color: var(--text-dim); font-weight: 400; font-size: 0.8rem; margin-left: 4px; }
+.topbar-tools { display: flex; gap: 6px; align-items: center; }
+.tool-btn { padding: 6px 10px; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-dim); font-size: 0.8rem; cursor: pointer; transition: all var(--t-fast) var(--ease); font-family: inherit; }
+.tool-btn:hover { background: var(--bg-elev-2); color: var(--text); border-color: var(--border-strong); }
+.tool-btn.active { background: var(--bg-elev-2); color: var(--text); border-color: var(--green); }
+.tool-btn.primary { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 500; }
+.tool-btn.primary:hover { background: #95d6ad; }
+.divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+/* ========================
+   MAIN LAYOUT
+   ======================== */
+.main { display: grid; grid-template-columns: 220px 1fr 320px; flex: 1; min-height: 0; }
+
+/* ========================
+   PALETTE (left)
+   ======================== */
+.palette { background: var(--bg-elev); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; }
+.palette-section { margin-bottom: 16px; }
+.palette-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); padding: 4px 8px; margin-bottom: 4px; font-weight: 600; }
+.palette-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius); cursor: grab; margin-bottom: 2px; transition: background var(--t-fast) var(--ease); user-select: none; }
+.palette-item:hover { background: var(--bg-elev-2); }
+.palette-item:active { cursor: grabbing; }
+.palette-icon { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.palette-name { font-size: 0.85rem; font-weight: 500; }
+.palette-desc { font-size: 0.7rem; color: var(--text-faint); }
+
+/* ========================
+   CANVAS (center)
+   ======================== */
+.canvas-wrap { position: relative; overflow: hidden; background: var(--bg); }
+.canvas { position: absolute; inset: 0; overflow: auto; }
+.canvas-grid { position: absolute; inset: 0; background-image: radial-gradient(circle, var(--border) 1px, transparent 1px); background-size: 24px 24px; opacity: 0.5; pointer-events: none; }
+.canvas-inner { position: relative; width: 3000px; height: 2000px; }
+
+/* Cell node */
+.node { position: absolute; background: var(--bg-elev); border: 1.5px solid var(--border-strong); border-radius: var(--radius); min-width: 180px; max-width: 240px; cursor: move; user-select: none; transition: box-shadow var(--t-fast) var(--ease); }
+.node:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.node.selected { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), 0 4px 16px rgba(126,198,153,0.2); }
+.node-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 0.75rem; }
+.node-kind { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+.node-id { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node-body { padding: 10px; }
+.node-value { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text); word-break: break-word; max-height: 80px; overflow: auto; }
+.node-value.empty { color: var(--text-faint); font-style: italic; }
+.node-input { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; width: 100%; outline: none; }
+.node-input:focus { border-color: var(--green); }
+.node-port { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--bg-elev-3); border: 1.5px solid var(--text-dim); top: 50%; transform: translateY(-50%); cursor: crosshair; transition: all var(--t-fast) var(--ease); }
+.node-port:hover { transform: translateY(-50%) scale(1.5); background: var(--green); border-color: var(--green); }
+.node-port.in { left: -6px; }
+.node-port.out { right: -6px; }
+.node-port.connected { background: var(--green); border-color: var(--green); }
+
+/* Kind colors */
+.node[data-kind="value"]    { border-color: rgba(126,198,153,0.3); }
+.node[data-kind="value"] .node-kind    { background: rgba(126,198,153,0.15); color: var(--green); }
+.node[data-kind="formula"]  { border-color: rgba(95,168,211,0.3); }
+.node[data-kind="formula"] .node-kind  { background: rgba(95,168,211,0.15); color: var(--blue); }
+.node[data-kind="program"]  { border-color: rgba(187,126,198,0.3); }
+.node[data-kind="program"] .node-kind  { background: rgba(187,126,198,0.15); color: var(--purple); }
+.node[data-kind="sensor"]   { border-color: rgba(198,168,126,0.3); }
+.node[data-kind="sensor"] .node-kind   { background: rgba(198,168,126,0.15); color: var(--tan); }
+.node[data-kind="api"]      { border-color: rgba(198,126,126,0.3); }
+.node[data-kind="api"] .node-kind      { background: rgba(198,126,126,0.15); color: var(--red); }
+.node[data-kind="listener"] { border-color: rgba(198,198,126,0.3); }
+.node[data-kind="listener"] .node-kind { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.node[data-kind="router"]   { border-color: rgba(126,198,198,0.3); }
+.node[data-kind="router"] .node-kind   { background: rgba(126,198,198,0.15); color: var(--cyan); }
+.node[data-kind="io"]       { border-color: rgba(136,136,136,0.3); }
+.node[data-kind="io"] .node-kind       { background: rgba(136,136,136,0.15); color: var(--gray); }
+
+/* Pulse on update */
+.node.updating { animation: node-pulse 600ms var(--ease); }
+@keyframes node-pulse { 0% { box-shadow: 0 0 0 0 var(--green-glow, rgba(126,198,153,0.4)); } 100% { box-shadow: 0 0 0 8px transparent; } }
+
+/* Wires SVG */
+.wires-svg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.wires-svg path { fill: none; stroke: var(--text-faint); stroke-width: 1.5; opacity: 0.5; transition: stroke var(--t-med) var(--ease); }
+.wires-svg path.flowing { stroke: var(--green); opacity: 0.9; stroke-width: 2; filter: drop-shadow(0 0 4px var(--green)); }
+
+/* Canvas controls */
+.canvas-controls { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; padding: 4px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+.cc-btn { padding: 6px 10px; background: transparent; border: none; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; border-radius: 999px; font-family: inherit; }
+.cc-btn:hover { background: var(--bg-elev-2); color: var(--text); }
+.cc-divider { width: 1px; background: var(--border); margin: 2px 0; }
+
+/* Time slider */
+.time-slider { position: absolute; bottom: 16px; right: 16px; width: 320px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; }
+.time-slider.visible { display: block; }
+.time-slider-title { display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; }
+.time-slider input { width: 100%; }
+.time-slider .t-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+/* Status bar */
+.status { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 10; }
+.status-pill { padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.status-pill.green { color: var(--green); border-color: rgba(126,198,153,0.3); }
+.status-pill.blue { color: var(--blue); border-color: rgba(95,168,211,0.3); }
+
+/* Welcome overlay */
+.welcome { position: absolute; inset: 0; background: rgba(10,10,10,0.92); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.welcome-card { max-width: 600px; padding: 40px; text-align: center; }
+.welcome h2 { font-size: 2rem; margin-bottom: 12px; }
+.welcome p { color: var(--text-dim); margin-bottom: 24px; }
+.welcome-templates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; text-align: left; }
+.welcome-tpl { padding: 16px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all var(--t-fast) var(--ease); }
+.welcome-tpl:hover { background: var(--bg-elev-2); border-color: var(--green); transform: translateY(-2px); }
+.welcome-tpl h4 { font-size: 0.95rem; margin-bottom: 4px; }
+.welcome-tpl p { font-size: 0.8rem; color: var(--text-dim); margin: 0; }
+
+/* ========================
+   INSPECTOR (right)
+   ======================== */
+.inspector { background: var(--bg-elev); border-left: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+.inspector-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.inspector-section:last-child { border-bottom: none; }
+.inspector-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; font-weight: 600; }
+.inspector-field { margin-bottom: 10px; }
+.inspector-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+.inspector-input { width: 100%; padding: 6px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; outline: none; }
+.inspector-input:focus { border-color: var(--green); }
+.inspector-textarea { width: 100%; padding: 8px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; outline: none; resize: vertical; min-height: 80px; }
+.inspector-textarea:focus { border-color: var(--green); }
+.inspector-actions { display: flex; gap: 6px; }
+.inspector-btn { flex: 1; padding: 6px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+.inspector-btn:hover { background: var(--bg-elev-3); color: var(--text); }
+.inspector-btn.danger { color: var(--red); }
+.inspector-btn.danger:hover { background: rgba(198,126,126,0.1); border-color: var(--red); }
+.inspector-empty { color: var(--text-faint); font-size: 0.85rem; text-align: center; padding: 32px 0; font-style: italic; }
+
+/* History sidebar (when time travel enabled) */
+.history-list { max-height: 240px; overflow-y: auto; }
+.history-item { padding: 6px 10px; font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; border-left: 2px solid transparent; margin-bottom: 2px; cursor: pointer; }
+.history-item:hover { background: var(--bg-elev-2); border-left-color: var(--green); color: var(--text); }
+
+/* Encryption panel */
+.encrypt-status { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-elev-2); border-radius: 4px; font-size: 0.8rem; }
+.encrypt-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); }
+.encrypt-status.on .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.encrypt-status.off .dot { background: var(--gray); }
+
+/* Bottom status bar */
+.bottombar { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px; background: var(--bg-elev); border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+.bottombar-left, .bottombar-right { display: flex; gap: 16px; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- ======================== TOP BAR ======================== -->
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <span>Quilt Studio</span>
+    <a href="index.html" class="brand-link">← back to quilt</a>
+  </div>
+  <div class="topbar-tools">
+    <button class="tool-btn" id="btn-undo" title="Undo (Cmd/Ctrl+Z)">↶ Undo</button>
+    <button class="tool-btn" id="btn-redo" title="Redo (Cmd/Ctrl+Y)">↷ Redo</button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-time" title="Toggle time travel">⏱ Time</button>
+    <button class="tool-btn" id="btn-encrypt" title="Toggle encryption">🔒 Encrypt</button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-import">Import</button>
+    <button class="tool-btn" id="btn-export">Export</button>
+    <button class="tool-btn primary" id="btn-save">Save</button>
+  </div>
+</div>
+
+<!-- ======================== MAIN ======================== -->
+<div class="main">
+  <!-- Palette -->
+  <aside class="palette">
+    <div class="palette-section">
+      <div class="palette-title">Data</div>
+      <div class="palette-item" draggable="true" data-kind="value">
+        <div class="palette-icon" style="background: rgba(126,198,153,0.15); color: var(--green);">📦</div>
+        <div><div class="palette-name">Value</div><div class="palette-desc">Static value</div></div>
+      </div>
+      <div class="palette-item" draggable="true" data-kind="formula">
+        <div class="palette-icon" style="background: rgba(95,168,211,0.15); color: var(--blue);">ƒ</div>
+        <div><div class="palette-name">Formula</div><div class="palette-desc">Reactive expression</div></div>
+      </div>
+      <div class="palette-item" draggable="true" data-kind="program">
+        <div class="palette-icon" style="background: rgba(187,126,198,0.15); color: var(--purple);">▶</div>
+        <div><div class="palette-name">Program</div><div class="palette-desc">Async function</div></div>
+      </div>
+    </div>
+
+    <div class="palette-section">
+      <div class="palette-title">I/O</div>
+      <div class="palette-item" draggable="true" data-kind="sensor">
+        <div class="palette-icon" style="background: rgba(198,168,126,0.15); color: var(--tan);">👁</div>
+        <div><div class="palette-name">Sensor</div><div class="palette-desc">Polled input</div></div>
+      </div>
+      <div class="palette-item" draggable="true" data-kind="api">
+        <div class="palette-icon" style="background: rgba(198,126,126,0.15); color: var(--red);">🌐</div>
+        <div><div class="palette-name">API</div><div class="palette-desc">Outbound call</div></div>
+      </div>
+      <div class="palette-item" draggable="true" data-kind="io">
+        <div class="palette-icon" style="background: rgba(136,136,136,0.15); color: var(--gray);">🔌</div>
+        <div><div class="palette-name">I/O</div><div class="palette-desc">Physical port</div></div>
+      </div>
+    </div>
+
+    <div class="palette-section">
+      <div class="palette-title">Logic</div>
+      <div class="palette-item" draggable="true" data-kind="listener">
+        <div class="palette-icon" style="background: rgba(198,198,126,0.15); color: var(--yellow);">🔔</div>
+        <div><div class="palette-name">Listener</div><div class="palette-desc">React to change</div></div>
+      </div>
+      <div class="palette-item" draggable="true" data-kind="router">
+        <div class="palette-icon" style="background: rgba(126,198,198,0.15); color: var(--cyan);">↪</div>
+        <div><div class="palette-name">Router</div><div class="palette-desc">Context dispatch</div></div>
+      </div>
+    </div>
+
+    <div class="palette-section">
+      <div class="palette-title">Saved</div>
+      <div id="saved-list" style="padding: 4px 8px; color: var(--text-faint); font-size: 0.8rem; font-style: italic;">No sheets yet</div>
+    </div>
+  </aside>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap" id="canvas-wrap">
+    <div class="canvas" id="canvas">
+      <div class="canvas-grid"></div>
+      <div class="canvas-inner" id="canvas-inner">
+        <svg class="wires-svg" id="wires-svg">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text-faint)" />
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="status">
+      <div class="status-pill green"><span id="cell-count">0</span> cells</div>
+      <div class="status-pill blue" id="status-eval">idle</div>
+    </div>
+
+    <div class="canvas-controls">
+      <button class="cc-btn" id="btn-clear">Clear</button>
+      <div class="cc-divider"></div>
+      <button class="cc-btn" id="btn-zoom-out">−</button>
+      <span class="cc-btn" id="zoom-label">100%</span>
+      <button class="cc-btn" id="btn-zoom-in">+</button>
+      <div class="cc-divider"></div>
+      <button class="cc-btn" id="btn-fit">Fit</button>
+    </div>
+
+    <div class="time-slider" id="time-slider">
+      <div class="time-slider-title">
+        <span>⏱ Time travel</span>
+        <span id="time-now">t=0</span>
+      </div>
+      <input type="range" id="time-range" min="0" max="100" value="100">
+      <div class="t-label">
+        <span>past</span>
+        <span>present</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inspector -->
+  <aside class="inspector" id="inspector">
+    <div class="inspector-section" id="inspector-content">
+      <div class="inspector-empty">Select a cell to inspect, or drag one from the palette.</div>
+    </div>
+  </aside>
+</div>
+
+<!-- Bottom status bar -->
+<div class="bottombar">
+  <div class="bottombar-left">
+    <span>Quilt v0.2.0</span>
+    <span id="status-sheet">untitled</span>
+  </div>
+  <div class="bottombar-right">
+    <span id="status-cells">0 cells · 0 wires</span>
+    <span id="status-encryption" class="encrypt-status off"><span class="dot"></span> plaintext</span>
+  </div>
+</div>
+
+<!-- Welcome overlay -->
+<div class="welcome" id="welcome">
+  <div class="welcome-card">
+    <h2>Welcome to Quilt Studio</h2>
+    <p>Pick a template to start, or drag cells from the palette to build your own.</p>
+    <div class="welcome-templates">
+      <div class="welcome-tpl" data-template="blank">
+        <h4>📄 Blank sheet</h4>
+        <p>Start from scratch.</p>
+      </div>
+      <div class="welcome-tpl" data-template="budget">
+        <h4>💰 Budget tracker</h4>
+        <p>Reactive budget with line items and status.</p>
+      </div>
+      <div class="welcome-tpl" data-template="weather">
+        <h4>🌡 Weather station</h4>
+        <p>Sensor cells, formulas, derived comfort.</p>
+      </div>
+      <div class="welcome-tpl" data-template="agent">
+        <h4>🤖 Simple agent</h4>
+        <p>Memory, reasoning, output cells.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="engine-inline.js"></script>
+<script>
+// =========================================================================
+// QUILT STUDIO — full visual editor for Quilt cells
+// =========================================================================
+
+const Studio = {
+  engine: null,
+  cells: new Map(),      // id -> { id, kind, x, y, config }
+  wires: [],             // [{ from, to }]
+  selectedId: null,
+  zoom: 1,
+  history: [],
+  historyIndex: -1,
+  historyEnabled: false,
+  encryptionEnabled: false,
+  currentSheetName: 'untitled',
+};
+
+// Initialize engine
+if (typeof QuiltEngine !== 'undefined') {
+  Studio.engine = new QuiltEngine();
+} else {
+  document.body.innerHTML = '<div style="padding:40px;color:#c67e7e">Engine not loaded. Check that engine-inline.js is present.</div>';
+}
+
+// =========================================================================
+// Templates
+// =========================================================================
+const TEMPLATES = {
+  blank: { id: 'untitled', title: 'Untitled sheet', cells: [], wires: [] },
+  budget: {
+    id: 'budget', title: 'Monthly budget',
+    cells: [
+      { id: 'budget.total', kind: 'value', x: 60, y: 60, config: { value: 5000 } },
+      { id: 'spend.rent', kind: 'value', x: 60, y: 180, config: { value: 1800 } },
+      { id: 'spend.food', kind: 'value', x: 60, y: 300, config: { value: 600 } },
+      { id: 'spend.transit', kind: 'value', x: 60, y: 420, config: { value: 120 } },
+      { id: 'spend.fun', kind: 'value', x: 60, y: 540, config: { value: 200 } },
+      { id: 'spent', kind: 'formula', x: 360, y: 240, config: { expr: 'spend.rent + spend.food + spend.transit + spend.fun' } },
+      { id: 'remaining', kind: 'formula', x: 360, y: 380, config: { expr: 'budget.total - spent' } },
+      { id: 'percent', kind: 'formula', x: 660, y: 240, config: { expr: 'spent / budget.total' } },
+      { id: 'status', kind: 'formula', x: 660, y: 380, config: { expr: 'percent > 0.9 ? "danger" : (percent > 0.7 ? "warning" : "ok")' } },
+    ],
+    wires: [
+      ['budget.total', 'remaining'],
+      ['spend.rent', 'spent'], ['spend.food', 'spent'], ['spend.transit', 'spent'], ['spend.fun', 'spent'],
+      ['spent', 'remaining'], ['spent', 'percent'], ['percent', 'status'],
+    ],
+  },
+  weather: {
+    id: 'weather', title: 'Weather station',
+    cells: [
+      { id: 'sensor.temp', kind: 'sensor', x: 60, y: 60, config: { source: 'dht22', default: 22 } },
+      { id: 'sensor.humid', kind: 'sensor', x: 60, y: 220, config: { source: 'dht22', default: 50 } },
+      { id: 'fahrenheit', kind: 'formula', x: 360, y: 60, config: { expr: 'sensor.temp * 1.8 + 32' } },
+      { id: 'heat_index', kind: 'formula', x: 360, y: 220, config: { expr: 'sensor.temp + (sensor.humid / 100) * 5' } },
+      { id: 'comfort', kind: 'formula', x: 660, y: 100, config: { expr: 'heat_index < 26 ? "cool" : (heat_index < 30 ? "comfortable" : "hot")' } },
+      { id: 'fan.speed', kind: 'formula', x: 660, y: 260, config: { expr: 'heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)' } },
+    ],
+    wires: [
+      ['sensor.temp', 'fahrenheit'], ['sensor.temp', 'heat_index'],
+      ['sensor.humid', 'heat_index'],
+      ['heat_index', 'comfort'], ['heat_index', 'fan.speed'],
+    ],
+  },
+  agent: {
+    id: 'simple-agent', title: 'Simple agent',
+    cells: [
+      { id: 'input.task', kind: 'value', x: 60, y: 60, config: { value: 'What is Quilt?' } },
+      { id: 'memory.facts', kind: 'value', x: 60, y: 220, config: { value: [] } },
+      { id: 'reasoning.prompt', kind: 'formula', x: 360, y: 60, config: { expr: '"You are an agent. The user asked: " + input.task' } },
+      { id: 'reasoning.respond', kind: 'program', x: 360, y: 240, config: { code: 'return "I would research " + runtime.get("input.task").data + " then summarize.";' } },
+      { id: 'output.response', kind: 'formula', x: 660, y: 180, config: { expr: 'reasoning.respond' } },
+    ],
+    wires: [
+      ['input.task', 'reasoning.prompt'],
+      ['input.task', 'reasoning.respond'],
+      ['reasoning.respond', 'output.response'],
+    ],
+  },
+};
+
+// =========================================================================
+// Load sheet
+// =========================================================================
+function loadSheet(sheet) {
+  // Clear
+  Studio.cells.clear();
+  Studio.wires = [];
+  Studio.engine = new QuiltEngine();
+
+  // Build cell map
+  for (const c of sheet.cells || []) {
+    Studio.cells.set(c.id, { id: c.id, kind: c.kind, x: c.x || 100, y: c.y || 100, config: c.config || {} });
+  }
+  for (const w of sheet.wires || []) {
+    Studio.wires.push({ from: w[0], to: w[1] });
+  }
+
+  // Build engine sheet YAML
+  const yaml = cellsToYaml();
+  Studio.engine.loadSheet(parseSheet(yaml));
+  Studio.currentSheetName = sheet.id || 'untitled';
+  document.getElementById('status-sheet').textContent = Studio.currentSheetName;
+  document.getElementById('inspector-content').innerHTML = '<div class="inspector-empty">Select a cell to inspect.</div>';
+
+  renderAll();
+  saveToLocal();
+}
+
+function cellsToYaml() {
+  const lines = ['cells:'];
+  for (const [id, c] of Studio.cells) {
+    lines.push(`  - id: ${id}`);
+    lines.push(`    kind: ${c.kind}`);
+    for (const [k, v] of Object.entries(c.config)) {
+      if (typeof v === 'string') lines.push(`    ${k}: ${JSON.stringify(v)}`);
+      else lines.push(`    ${k}: ${JSON.stringify(v)}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+// =========================================================================
+// Render
+// =========================================================================
+function renderAll() {
+  const inner = document.getElementById('canvas-inner');
+  // Remove all nodes (keep SVG)
+  inner.querySelectorAll('.node').forEach(n => n.remove());
+  // Render cells
+  for (const c of Studio.cells.values()) {
+    renderCell(c);
+  }
+  // Render wires
+  renderWires();
+  // Update status
+  document.getElementById('cell-count').textContent = Studio.cells.size;
+  document.getElementById('status-cells').textContent = `${Studio.cells.size} cells · ${Studio.wires.length} wires`;
+}
+
+function renderCell(c) {
+  const inner = document.getElementById('canvas-inner');
+  const node = document.createElement('div');
+  node.className = 'node';
+  node.dataset.id = c.id;
+  node.dataset.kind = c.kind;
+  node.style.left = c.x + 'px';
+  node.style.top = c.y + 'px';
+  if (Studio.selectedId === c.id) node.classList.add('selected');
+
+  node.innerHTML = `
+    <div class="node-head">
+      <span class="node-kind">${c.kind}</span>
+      <span class="node-id">${c.id}</span>
+    </div>
+    <div class="node-body">
+      ${renderCellBody(c)}
+    </div>
+    <div class="node-port in" data-port="in"></div>
+    <div class="node-port out" data-port="out"></div>
+  `;
+
+  // Drag
+  let isDragging = false, dragStartX, dragStartY, nodeStartX, nodeStartY;
+  node.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('node-port')) return;
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    nodeStartX = c.x;
+    nodeStartY = c.y;
+    selectCell(c.id);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    c.x = nodeStartX + (e.clientX - dragStartX) / Studio.zoom;
+    c.y = nodeStartY + (e.clientY - dragStartY) / Studio.zoom;
+    node.style.left = c.x + 'px';
+    node.style.top = c.y + 'px';
+    renderWires();
+  });
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      saveToLocal();
+    }
+  });
+
+  // Select
+  node.addEventListener('click', (e) => {
+    if (e.target.classList.contains('node-port')) return;
+    selectCell(c.id);
+  });
+
+  // Inline edit (for value cells, click to edit)
+  if (c.kind === 'value' || c.kind === 'formula') {
+    setTimeout(() => {
+      const input = node.querySelector('.node-input');
+      if (input) {
+        input.addEventListener('input', (e) => {
+          const v = c.kind === 'value' ? coerceValue(e.target.value) : e.target.value;
+          if (c.kind === 'value') c.config.value = v;
+          else c.config.expr = e.target.value;
+          rebuildEngine();
+          updateCellValue(c.id);
+          saveToLocal();
+        });
+      }
+    }, 0);
+  }
+
+  // Ports
+  const portIn = node.querySelector('.node-port.in');
+  const portOut = node.querySelector('.node-port.out');
+  portOut.addEventListener('mousedown', (e) => startWire(c.id, 'out', e));
+  portIn.addEventListener('mousedown', (e) => startWire(c.id, 'in', e));
+
+  inner.appendChild(node);
+}
+
+function renderCellBody(c) {
+  if (c.kind === 'value') {
+    const v = c.config.value;
+    return `<input class="node-input" type="text" value="${escapeAttr(String(v))}" />`;
+  }
+  if (c.kind === 'formula') {
+    return `<input class="node-input" type="text" value="${escapeAttr(c.config.expr || '')}" placeholder="expression..." />`;
+  }
+  if (c.kind === 'program') {
+    return `<div class="node-value">${escapeHtml((c.config.code || '').slice(0, 100))}${(c.config.code || '').length > 100 ? '...' : ''}</div>`;
+  }
+  if (c.kind === 'sensor') {
+    return `<div class="node-value empty" data-cell-display="${c.id}">polling ${escapeHtml(c.config.source || '')}</div>`;
+  }
+  if (c.kind === 'api') {
+    return `<div class="node-value">${escapeHtml(c.config.endpoint || c.config.method || 'API')}</div>`;
+  }
+  if (c.kind === 'listener') {
+    return `<div class="node-value">on ${escapeHtml(c.config.watch || '?')}</div>`;
+  }
+  if (c.kind === 'router') {
+    return `<div class="node-value">${(c.config.rules || []).length} rules</div>`;
+  }
+  if (c.kind === 'io') {
+    return `<div class="node-value">${escapeHtml(c.config.port || '')}</div>`;
+  }
+  return '';
+}
+
+async function updateCellValue(id) {
+  const c = Studio.cells.get(id);
+  if (!c) return;
+  const node = document.querySelector(`.node[data-id="${id}"]`);
+  if (!node) return;
+  // Re-render body
+  const body = node.querySelector('.node-body');
+  body.innerHTML = renderCellBody(c);
+  // Re-bind input handlers
+  if (c.kind === 'value' || c.kind === 'formula') {
+    const input = body.querySelector('.node-input');
+    if (input) {
+      input.addEventListener('input', (e) => {
+        const v = c.kind === 'value' ? coerceValue(e.target.value) : e.target.value;
+        if (c.kind === 'value') c.config.value = v;
+        else c.config.expr = e.target.value;
+        rebuildEngine();
+        updateCellValue(c.id);
+        for (const w of Studio.wires) {
+          if (w.from === c.id) {
+            const dn = document.querySelector(`.node[data-id="${w.to}"]`);
+            if (dn) { dn.classList.remove('updating'); void dn.offsetWidth; dn.classList.add('updating'); }
+          }
+        }
+        saveToLocal();
+      });
+    }
+  }
+  // For sensor/api cells, fetch current value
+  const display = node.querySelector(`[data-cell-display="${id}"]`);
+  if (display) {
+    try {
+      const r = await Studio.engine.get(id);
+      if (r && r.data !== null && r.data !== undefined) {
+        display.classList.remove('empty');
+        display.textContent = String(r.data);
+      }
+    } catch (e) {}
+  }
+}
+
+function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function escapeAttr(s) { return s.replace(/"/g, '&quot;'); }
+function coerceValue(s) {
+  if (s === 'true') return true;
+  if (s === 'false') return false;
+  if (s === 'null') return null;
+  if (/^-?\d+$/.test(s)) return Number(s);
+  if (/^-?\d*\.\d+$/.test(s)) return Number(s);
+  if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);
+  if (s.startsWith('[') || s.startsWith('{')) { try { return JSON.parse(s); } catch (e) {} }
+  return s;
+}
+
+function renderWires() {
+  const svg = document.getElementById('wires-svg');
+  // Clear paths
+  svg.querySelectorAll('path').forEach(p => p.remove());
+  for (const w of Studio.wires) {
+    const fromNode = document.querySelector(`.node[data-id="${w.from}"]`);
+    const toNode = document.querySelector(`.node[data-id="${w.to}"]`);
+    if (!fromNode || !toNode) continue;
+    const x1 = parseFloat(fromNode.style.left) + fromNode.offsetWidth;
+    const y1 = parseFloat(fromNode.style.top) + fromNode.offsetHeight / 2;
+    const x2 = parseFloat(toNode.style.left);
+    const y2 = parseFloat(toNode.style.top) + toNode.offsetHeight / 2;
+    const cx = (x1 + x2) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
+    svg.appendChild(path);
+  }
+}
+
+// =========================================================================
+// Wire dragging
+// =========================================================================
+let wireStart = null;
+function startWire(cellId, port, e) {
+  wireStart = { cellId, port };
+  const svg = document.getElementById('wires-svg');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.id = 'wire-tmp';
+  path.setAttribute('stroke', 'var(--green)');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  svg.appendChild(path);
+
+  const onMove = (ev) => {
+    const fromNode = document.querySelector(`.node[data-id="${cellId}"]`);
+    if (!fromNode) return;
+    const x1 = port === 'out' ? parseFloat(fromNode.style.left) + fromNode.offsetWidth : parseFloat(fromNode.style.left);
+    const y1 = parseFloat(fromNode.style.top) + fromNode.offsetHeight / 2;
+    const canvasWrap = document.getElementById('canvas');
+    const rect = canvasWrap.getBoundingClientRect();
+    const x2 = (ev.clientX - rect.left + canvasWrap.scrollLeft) / Studio.zoom;
+    const y2 = (ev.clientY - rect.top + canvasWrap.scrollTop) / Studio.zoom;
+    const cx = (x1 + x2) / 2;
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
+  };
+  const onUp = (ev) => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    path.remove();
+    // Find target port
+    const target = document.elementFromPoint(ev.clientX, ev.clientY);
+    if (target && target.classList.contains('node-port')) {
+      const targetNode = target.closest('.node');
+      const targetCellId = targetNode.dataset.id;
+      const targetPort = target.dataset.port;
+      // Only connect out -> in
+      if (wireStart.port === 'out' && targetPort === 'in' && wireStart.cellId !== targetCellId) {
+        // Check for duplicates
+        if (!Studio.wires.some(w => w.from === wireStart.cellId && w.to === targetCellId)) {
+          Studio.wires.push({ from: wireStart.cellId, to: targetCellId });
+          rebuildEngine();
+          renderAll();
+          saveToLocal();
+        }
+      } else if (wireStart.port === 'in' && targetPort === 'out' && wireStart.cellId !== targetCellId) {
+        if (!Studio.wires.some(w => w.from === targetCellId && w.to === wireStart.cellId)) {
+          Studio.wires.push({ from: targetCellId, to: wireStart.cellId });
+          rebuildEngine();
+          renderAll();
+          saveToLocal();
+        }
+      }
+    }
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+// =========================================================================
+// Selection + Inspector
+// =========================================================================
+function selectCell(id) {
+  Studio.selectedId = id;
+  document.querySelectorAll('.node.selected').forEach(n => n.classList.remove('selected'));
+  const node = document.querySelector(`.node[data-id="${id}"]`);
+  if (node) node.classList.add('selected');
+  renderInspector();
+}
+
+function renderInspector() {
+  const container = document.getElementById('inspector-content');
+  if (!Studio.selectedId) {
+    container.innerHTML = '<div class="inspector-empty">Select a cell to inspect, or drag one from the palette.</div>';
+    return;
+  }
+  const c = Studio.cells.get(Studio.selectedId);
+  if (!c) return;
+  let fields = '';
+  // ID (editable)
+  fields += `<div class="inspector-field">
+    <div class="inspector-label">id</div>
+    <input class="inspector-input" id="insp-id" value="${escapeAttr(c.id)}" />
+  </div>`;
+  // Kind-specific fields
+  for (const [k, v] of Object.entries(c.config)) {
+    const isLong = typeof v === 'string' && v.length > 40;
+    const inputType = isLong ? 'textarea' : 'input';
+    fields += `<div class="inspector-field">
+      <div class="inspector-label">${k}</div>
+      ${inputType === 'textarea'
+        ? `<textarea class="inspector-textarea" data-field="${k}">${escapeHtml(String(v))}</textarea>`
+        : `<input class="inspector-input" data-field="${k}" value="${escapeAttr(String(v))}" />`
+      }
+    </div>`;
+  }
+  // Add field button
+  fields += `<div class="inspector-actions" style="margin-top: 12px;">
+    <button class="inspector-btn" id="insp-add-field">+ Add field</button>
+    <button class="inspector-btn" id="insp-add-dep">+ Add dependency</button>
+  </div>`;
+  // Compute value (async)
+  fields += `<div class="inspector-section" style="margin-top: 20px; padding-top: 16px;">
+    <div class="inspector-title">Current value</div>
+    <div class="mono" id="insp-current-value" style="padding: 8px 12px; background: var(--bg-elev-2); border-radius: 4px; max-height: 120px; overflow: auto; word-break: break-word; color: var(--text-faint); font-style: italic;">computing...</div>
+  </div>`;
+  // History (if cell has history)
+  if (Studio.historyEnabled) {
+    const hist = Studio.engine.getHistory ? Studio.engine.getHistory(c.id) : [];
+    if (hist.length > 1) {
+      fields += `<div class="inspector-section">
+        <div class="inspector-title">History (${hist.length})</div>
+        <div class="history-list">${
+          hist.slice(-10).reverse().map((h, i) => `<div class="history-item">t=${hist.length - 1 - i}: ${escapeHtml(JSON.stringify(h.value).slice(0, 60))}</div>`).join('')
+        }</div>
+      </div>`;
+    }
+  }
+  // Delete
+  fields += `<div class="inspector-actions" style="margin-top: 16px;">
+    <button class="inspector-btn danger" id="insp-delete">Delete cell</button>
+  </div>`;
+
+  container.innerHTML = fields;
+
+  // Async-fetch the current value
+  Studio.engine.get(c.id).then(r => {
+    const el = document.getElementById('insp-current-value');
+    if (el) {
+      if (r && r.data !== null && r.data !== undefined) {
+        el.textContent = JSON.stringify(r.data, null, 2);
+        el.style.color = 'var(--text)';
+        el.style.fontStyle = 'normal';
+      } else if (r && r.error) {
+        el.textContent = 'Error: ' + r.error.message;
+        el.style.color = 'var(--red)';
+        el.style.fontStyle = 'normal';
+      } else {
+        el.textContent = 'no value';
+      }
+    }
+  }).catch(() => {});
+
+  // Bind id edit
+  document.getElementById('insp-id').addEventListener('change', (e) => {
+    const newId = e.target.value.trim();
+    if (!newId || newId === c.id) return;
+    if (Studio.cells.has(newId)) { alert('Cell id already exists'); e.target.value = c.id; return; }
+    // Update all wires
+    for (const w of Studio.wires) {
+      if (w.from === c.id) w.from = newId;
+      if (w.to === c.id) w.to = newId;
+    }
+    Studio.cells.delete(c.id);
+    c.id = newId;
+    Studio.cells.set(newId, c);
+    Studio.selectedId = newId;
+    rebuildEngine();
+    renderAll();
+    saveToLocal();
+  });
+  // Bind field edits
+  container.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const k = e.target.dataset.field;
+      const raw = e.target.value;
+      // Try to parse as number/bool for known fields
+      let v = raw;
+      if (typeof c.config[k] === 'number') v = Number(raw) || 0;
+      else if (typeof c.config[k] === 'boolean') v = raw === 'true';
+      c.config[k] = v;
+      rebuildEngine();
+      updateCellValue(c.id);
+      saveToLocal();
+    });
+  });
+  // Add field
+  document.getElementById('insp-add-field').addEventListener('click', () => {
+    const k = prompt('Field name:');
+    if (!k) return;
+    c.config[k] = '';
+    renderInspector();
+    rebuildEngine();
+    saveToLocal();
+  });
+  // Add dependency (wire)
+  document.getElementById('insp-add-dep').addEventListener('click', () => {
+    const others = [...Studio.cells.keys()].filter(id => id !== c.id);
+    if (others.length === 0) { alert('No other cells to depend on'); return; }
+    const dep = prompt(`Add dependency on which cell?\n\nAvailable: ${others.join(', ')}`);
+    if (!dep || !Studio.cells.has(dep)) return;
+    if (!Studio.wires.some(w => w.from === dep && w.to === c.id)) {
+      Studio.wires.push({ from: dep, to: c.id });
+      rebuildEngine();
+      renderAll();
+      saveToLocal();
+    }
+  });
+  // Delete
+  document.getElementById('insp-delete').addEventListener('click', () => {
+    if (!confirm(`Delete cell "${c.id}"?`)) return;
+    Studio.cells.delete(c.id);
+    Studio.wires = Studio.wires.filter(w => w.from !== c.id && w.to !== c.id);
+    Studio.selectedId = null;
+    rebuildEngine();
+    renderAll();
+    saveToLocal();
+  });
+}
+
+// =========================================================================
+// Engine rebuild
+// =========================================================================
+function rebuildEngine() {
+  const yaml = cellsToYaml();
+  Studio.engine = new QuiltEngine();
+  try { Studio.engine.loadSheet(parseSheet(yaml)); } catch (e) { console.warn('Parse error:', e); }
+  // Re-evaluate all values into the cells
+  renderAll();
+}
+
+// =========================================================================
+// Drag from palette
+// =========================================================================
+document.querySelectorAll('.palette-item').forEach(item => {
+  item.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('kind', item.dataset.kind);
+  });
+});
+
+const canvasInner = document.getElementById('canvas-inner');
+canvasInner.addEventListener('dragover', (e) => e.preventDefault());
+canvasInner.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const kind = e.dataTransfer.getData('kind');
+  if (!kind) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left + canvas.scrollLeft) / Studio.zoom - 90;
+  const y = (e.clientY - rect.top + canvas.scrollTop) / Studio.zoom - 30;
+  addCell(kind, x, y);
+});
+
+function addCell(kind, x, y) {
+  const id = `${kind}.${[...Studio.cells.keys()].filter(k => k.startsWith(kind + '.')).length + 1}`;
+  const config = {};
+  if (kind === 'value') config.value = 0;
+  if (kind === 'formula') config.expr = '0';
+  if (kind === 'program') config.code = 'return null;';
+  if (kind === 'sensor') { config.source = 'default'; config.default = 0; }
+  if (kind === 'api') { config.endpoint = 'https://api.example.com'; config.method = 'GET'; }
+  if (kind === 'listener') { config.watch = id; config.condition = 'true'; config.action = 'console.log("changed")'; }
+  if (kind === 'router') config.rules = [];
+  if (kind === 'io') { config.port = 'gpio1'; config.direction = 'out'; }
+  Studio.cells.set(id, { id, kind, x, y, config });
+  rebuildEngine();
+  selectCell(id);
+  saveToLocal();
+}
+
+// =========================================================================
+// Save / Load
+// =========================================================================
+function saveToLocal() {
+  const sheet = {
+    id: Studio.currentSheetName,
+    title: Studio.currentSheetName,
+    cells: [...Studio.cells.values()],
+    wires: Studio.wires.map(w => [w.from, w.to]),
+  };
+  try { localStorage.setItem('quilt-studio-current', JSON.stringify(sheet)); } catch (e) {}
+  // Also save to "saved" list
+  const saved = JSON.parse(localStorage.getItem('quilt-studio-saved') || '[]');
+  const existing = saved.findIndex(s => s.id === sheet.id);
+  if (existing >= 0) saved[existing] = { ...sheet, savedAt: Date.now() };
+  else saved.push({ ...sheet, savedAt: Date.now() });
+  localStorage.setItem('quilt-studio-saved', JSON.stringify(saved.slice(-20)));
+  renderSavedList();
+}
+
+function renderSavedList() {
+  const list = document.getElementById('saved-list');
+  const saved = JSON.parse(localStorage.getItem('quilt-studio-saved') || '[]');
+  if (saved.length === 0) {
+    list.innerHTML = '<div style="padding: 4px 8px; color: var(--text-faint); font-size: 0.8rem; font-style: italic;">No sheets yet</div>';
+    return;
+  }
+  list.innerHTML = saved.map(s => `<div class="palette-item" data-saved-id="${s.id}" style="cursor: pointer;">
+    <div class="palette-icon" style="background: var(--bg-elev-2); color: var(--green);">📄</div>
+    <div style="flex: 1; min-width: 0;">
+      <div class="palette-name" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(s.title || s.id)}</div>
+      <div class="palette-desc">${s.cells ? s.cells.length : 0} cells</div>
+    </div>
+  </div>`).join('');
+  list.querySelectorAll('[data-saved-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      const saved = JSON.parse(localStorage.getItem('quilt-studio-saved') || '[]');
+      const s = saved.find(x => x.id === el.dataset.savedId);
+      if (s) loadSheet(s);
+    });
+  });
+}
+
+// =========================================================================
+// Export / Import
+// =========================================================================
+document.getElementById('btn-export').addEventListener('click', () => {
+  const yaml = sheetToYaml();
+  const blob = new Blob([yaml], { type: 'text/yaml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${Studio.currentSheetName}.yaml`;
+  a.click();
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.yaml,.yml,.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const content = ev.target.result;
+        // Try to parse as visual sheet first, then as Quilt YAML
+        if (file.name.endsWith('.json')) {
+          const sheet = JSON.parse(content);
+          loadSheet(sheet);
+        } else {
+          // Parse as Quilt YAML
+          const sheet = yamlToVisualSheet(content);
+          loadSheet(sheet);
+        }
+      } catch (err) {
+        alert('Failed to import: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+function sheetToYaml() {
+  const lines = [`id: ${Studio.currentSheetName}`, `title: "${Studio.currentSheetName}"`, 'cells:'];
+  for (const [id, c] of Studio.cells) {
+    lines.push(`  - id: ${id}`);
+    lines.push(`    kind: ${c.kind}`);
+    for (const [k, v] of Object.entries(c.config)) {
+      lines.push(`    ${k}: ${JSON.stringify(v)}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function yamlToVisualSheet(yaml) {
+  // Lightweight YAML-to-visual-sheet converter
+  const cells = [];
+  const lines = yaml.split('\n');
+  let current = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(/^\s*-\s*id:\s*(.+)$/);
+    if (m) {
+      if (current) cells.push(current);
+      current = { id: m[1].trim(), kind: 'value', x: 100, y: 100, config: {} };
+    } else if (current) {
+      const fm = line.match(/^\s*-\s*kind:\s*(.+)$/);
+      if (fm) current.kind = fm[1].trim();
+      const km = line.match(/^\s*([a-z_]+):\s*(.+)$/);
+      if (km && !['id', 'kind'].includes(km[1])) {
+        let v = km[2].trim();
+        try { v = JSON.parse(v); } catch (e) { v = v.replace(/^["']|["']$/g, ''); }
+        current.config[km[1]] = v;
+      }
+    }
+  }
+  if (current) cells.push(current);
+  // Lay out in a grid
+  cells.forEach((c, i) => {
+    c.x = 60 + (i % 4) * 280;
+    c.y = 60 + Math.floor(i / 4) * 200;
+  });
+  // Wires: parse from formulas' deps (if any)
+  const wires = [];
+  return { id: 'imported', title: 'Imported', cells, wires };
+}
+
+document.getElementById('btn-save').addEventListener('click', () => {
+  const name = prompt('Save as:', Studio.currentSheetName);
+  if (!name) return;
+  Studio.currentSheetName = name;
+  saveToLocal();
+  document.getElementById('status-sheet').textContent = name;
+});
+
+// =========================================================================
+// Welcome
+// =========================================================================
+document.querySelectorAll('.welcome-tpl').forEach(tpl => {
+  tpl.addEventListener('click', () => {
+    const t = tpl.dataset.template;
+    loadSheet(JSON.parse(JSON.stringify(TEMPLATES[t])));
+    document.getElementById('welcome').style.display = 'none';
+  });
+});
+
+// Try to auto-load from localStorage
+try {
+  const saved = localStorage.getItem('quilt-studio-current');
+  if (saved) {
+    loadSheet(JSON.parse(saved));
+    document.getElementById('welcome').style.display = 'none';
+  }
+} catch (e) {}
+
+// =========================================================================
+// Toolbar
+// =========================================================================
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!confirm('Clear all cells?')) return;
+  Studio.cells.clear();
+  Studio.wires = [];
+  Studio.engine = new QuiltEngine();
+  renderAll();
+  saveToLocal();
+});
+
+document.getElementById('btn-zoom-in').addEventListener('click', () => {
+  Studio.zoom = Math.min(2, Studio.zoom * 1.2);
+  document.getElementById('zoom-label').textContent = Math.round(Studio.zoom * 100) + '%';
+  document.getElementById('canvas-inner').style.transform = `scale(${Studio.zoom})`;
+  document.getElementById('canvas-inner').style.transformOrigin = '0 0';
+});
+
+document.getElementById('btn-zoom-out').addEventListener('click', () => {
+  Studio.zoom = Math.max(0.3, Studio.zoom / 1.2);
+  document.getElementById('zoom-label').textContent = Math.round(Studio.zoom * 100) + '%';
+  document.getElementById('canvas-inner').style.transform = `scale(${Studio.zoom})`;
+  document.getElementById('canvas-inner').style.transformOrigin = '0 0';
+});
+
+document.getElementById('btn-fit').addEventListener('click', () => {
+  Studio.zoom = 1;
+  document.getElementById('zoom-label').textContent = '100%';
+  document.getElementById('canvas-inner').style.transform = 'scale(1)';
+  document.getElementById('canvas').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+});
+
+document.getElementById('btn-time').addEventListener('click', () => {
+  Studio.historyEnabled = !Studio.historyEnabled;
+  document.getElementById('btn-time').classList.toggle('active', Studio.historyEnabled);
+  document.getElementById('time-slider').classList.toggle('visible', Studio.historyEnabled);
+  if (Studio.historyEnabled) {
+    document.getElementById('status-encryption').innerHTML = '<span class="dot"></span> time-travel on';
+  }
+});
+
+document.getElementById('btn-encrypt').addEventListener('click', () => {
+  Studio.encryptionEnabled = !Studio.encryptionEnabled;
+  const el = document.getElementById('status-encryption');
+  if (Studio.encryptionEnabled) {
+    el.innerHTML = '<span class="dot"></span> encrypted';
+    el.className = 'encrypt-status on';
+    document.getElementById('btn-encrypt').classList.add('active');
+  } else {
+    el.innerHTML = '<span class="dot"></span> plaintext';
+    el.className = 'encrypt-status off';
+    document.getElementById('btn-encrypt').classList.remove('active');
+  }
+});
+
+// Undo/redo (lightweight)
+let undoStack = [];
+let redoStack = [];
+function snapshot() {
+  undoStack.push(JSON.stringify({ cells: [...Studio.cells.values()], wires: Studio.wires }));
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+document.getElementById('btn-undo').addEventListener('click', () => {
+  if (undoStack.length === 0) return;
+  redoStack.push(JSON.stringify({ cells: [...Studio.cells.values()], wires: Studio.wires }));
+  const s = JSON.parse(undoStack.pop());
+  Studio.cells = new Map(s.cells.map(c => [c.id, c]));
+  Studio.wires = s.wires;
+  rebuildEngine();
+  renderAll();
+  saveToLocal();
+});
+document.getElementById('btn-redo').addEventListener('click', () => {
+  if (redoStack.length === 0) return;
+  undoStack.push(JSON.stringify({ cells: [...Studio.cells.values()], wires: Studio.wires }));
+  const s = JSON.parse(redoStack.pop());
+  Studio.cells = new Map(s.cells.map(c => [c.id, c]));
+  Studio.wires = s.wires;
+  rebuildEngine();
+  renderAll();
+  saveToLocal();
+});
+
+// Hook snapshot into addCell, delete, wire, edit
+const origAddCell = addCell;
+addCell = function(...args) { snapshot(); origAddCell(...args); };
+
+// Render initial
+renderSavedList();
+
+// Clear canvas click to deselect
+document.getElementById('canvas').addEventListener('click', (e) => {
+  if (e.target.id === 'canvas' || e.target.classList.contains('canvas-grid') || e.target.id === 'canvas-inner') {
+    Studio.selectedId = null;
+    document.querySelectorAll('.node.selected').forEach(n => n.classList.remove('selected'));
+    renderInspector();
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) document.getElementById('btn-redo').click();
+    else document.getElementById('btn-undo').click();
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (Studio.selectedId && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      const c = Studio.cells.get(Studio.selectedId);
+      if (c) {
+        Studio.cells.delete(c.id);
+        Studio.wires = Studio.wires.filter(w => w.from !== c.id && w.to !== c.id);
+        Studio.selectedId = null;
+        rebuildEngine();
+        renderAll();
+        saveToLocal();
+      }
+    }
+  }
+});
+
+</script>
+</body>
+</html>
