@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt AI Agent — real agent loop, real cells, real models</title>
+<meta name="description" content="A real AI agent running as a Quilt sheet. Memory, tools, reasoning, output — all cells. Uses z.ai, Kimi, and DeepSeek. The agent reasoning chain unfolds in real time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.config-bar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin: 20px 0; align-items: end; }
+@media (max-width: 800px) { .config-bar { grid-template-columns: 1fr 1fr; } }
+.config-bar label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.config-bar input, .config-bar select { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.config-bar button { padding: 10px 20px; background: var(--green); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.config-bar button:hover { background: var(--blue); }
+.config-bar button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+
+.layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+.cell-graph { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; min-height: 500px; }
+.cell-graph h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 16px; font-weight: 600; }
+
+.cell { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; transition: all 0.3s; position: relative; }
+.cell.evaluating { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.cell.complete { border-color: var(--green); }
+.cell.error { border-color: var(--red); }
+.cell .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.cell .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.cell .kind { font-size: 0.7rem; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+.cell .kind.value { background: rgba(126,198,153,0.15); color: var(--green); }
+.cell .kind.ai-llm { background: rgba(187,126,198,0.15); color: var(--purple); }
+.cell .kind.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.cell .kind.api { background: rgba(198,126,126,0.15); color: var(--red); }
+.cell .kind.program { background: rgba(187,126,198,0.15); color: var(--purple); }
+.cell .kind.listener { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.cell .status { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+.cell .status.idle { color: var(--text-faint); }
+.cell .status.running { color: var(--blue); }
+.cell .status.ready { color: var(--green); }
+.cell .status.error { color: var(--red); }
+.cell .value { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; padding: 8px; background: var(--bg-elev); border-radius: 4px; word-break: break-word; max-height: 200px; overflow-y: auto; }
+.cell .value.empty { color: var(--text-faint); font-style: italic; }
+.cell .pulse { animation: pulse-anim 0.4s ease-out; }
+@keyframes pulse-anim { 0% { background: var(--blue); color: var(--bg); } 100% { background: var(--bg-elev); } }
+
+.wire { padding: 4px 0; margin-left: 16px; border-left: 2px solid var(--border); padding-left: 12px; color: var(--text-faint); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+.wire::before { content: '↓'; margin-right: 6px; }
+
+.right { display: flex; flex-direction: column; gap: 20px; }
+.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.panel h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; font-weight: 600; }
+.panel .content { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.panel .content.empty { color: var(--text-faint); font-style: italic; }
+.panel .controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.panel button { padding: 6px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.panel button:hover { color: var(--text); border-color: var(--green); }
+.panel textarea { width: 100%; min-height: 80px; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical; margin-bottom: 8px; }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev .msg { color: var(--text-dim); }
+.history .ev.success .msg { color: var(--green); }
+.history .ev.error .msg { color: var(--red); }
+.history .ev.info .msg { color: var(--blue); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="ai-agent.html" class="active">Agent</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="ai-rag.html">RAG</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>An agent as a <span class="grad-text">Quilt sheet</span></h1>
+  <p class="lead">Memory. Tools. Reasoning. Output. All cells. Watch the agent loop unfold in real time, with every cell live. Choose your model: z.ai GLM 5.3, Kimi, or DeepSeek.</p>
+</div>
+
+<main>
+
+  <div class="config-bar">
+    <div>
+      <label>Task</label>
+      <input type="text" id="task" value="Explain what makes Quilt different from spreadsheets, in 3 sentences.">
+    </div>
+    <div>
+      <label>Model</label>
+      <select id="model">
+        <option value="zai">z.ai · GLM 5.3</option>
+        <option value="kimi">Kimi · moonshot-v1</option>
+        <option value="deepseek">DeepSeek · V3</option>
+      </select>
+    </div>
+    <div>
+      <label>Max steps</label>
+      <input type="number" id="max-steps" value="4" min="1" max="10">
+    </div>
+    <div>
+      <label>Persona</label>
+      <select id="persona">
+        <option value="curious">Curious researcher</option>
+        <option value="concise">Concise</option>
+        <option value="teacher">Patient teacher</option>
+        <option value="critic">Critical thinker</option>
+      </select>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <button id="run">▶ Run agent</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="cell-graph">
+      <h3>The cell graph · live as the agent runs</h3>
+      <div id="cells">
+        <div class="cell" id="cell-task">
+          <div class="head">
+            <span class="id">input.task</span>
+            <span class="kind value">value</span>
+            <span class="status idle">—</span>
+          </div>
+          <div class="value empty">(empty)</div>
+        </div>
+        <div class="wire">↓</div>
+        <div class="cell" id="cell-prompt">
+          <div class="head">
+            <span class="id">agent.prompt</span>
+            <span class="kind formula">formula</span>
+            <span class="status idle">—</span>
+          </div>
+          <div class="value empty">(empty)</div>
+        </div>
+        <div class="wire">↓</div>
+        <div class="cell" id="cell-llm">
+          <div class="head">
+            <span class="id">agent.thought</span>
+            <span class="kind ai-llm">ai.llm</span>
+            <span class="status idle">—</span>
+          </div>
+          <div class="value empty">(empty)</div>
+        </div>
+        <div class="wire">↓</div>
+        <div class="cell" id="cell-memory">
+          <div class="head">
+            <span class="id">agent.memory</span>
+            <span class="kind value">value</span>
+            <span class="status idle">—</span>
+          </div>
+          <div class="value empty">(empty)</div>
+        </div>
+        <div class="wire">↓</div>
+        <div class="cell" id="cell-output">
+          <div class="head">
+            <span class="id">output</span>
+            <span class="kind formula">formula</span>
+            <span class="status idle">—</span>
+          </div>
+          <div class="value empty">(empty)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="panel">
+        <h3>Final answer</h3>
+        <div class="content empty" id="answer">The agent will think step by step. The final answer will appear here.</div>
+        <div class="controls">
+          <button onclick="copyAnswer()">Copy</button>
+          <button onclick="reset()">Reset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Custom task</h3>
+        <textarea id="custom-task" placeholder="Override the default task..."></textarea>
+        <div class="controls">
+          <button onclick="setCustomTask()">Set task</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>An agent as a sheet · every cell live · real LLM, real propagation</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT AI AGENT — the agent is a Quilt sheet
+// ============================================================================
+
+let cells = {};
+let cellsOrder = ['task', 'prompt', 'llm', 'memory', 'output'];
+let agentRunning = false;
+let stepCount = 0;
+
+const PERSONAS = {
+  curious: "You are a curious researcher who loves connecting ideas. You're enthusiastic but precise.",
+  concise: "You are a concise writer. You use short sentences. You avoid jargon. You get to the point.",
+  teacher: "You are a patient teacher. You use simple language. You give examples. You build understanding step by step.",
+  critic: "You are a critical thinker. You question assumptions. You identify tradeoffs. You push back on weak arguments.",
+};
+
+function log(msg, type = '') {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev ' + type;
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 50) el.removeChild(el.lastChild);
+}
+
+function updateCell(key, value, status = 'ready') {
+  cells[key] = { value, status };
+  renderCell(key);
+}
+
+function renderCell(key) {
+  const map = { task: 'cell-task', prompt: 'cell-prompt', llm: 'cell-llm', memory: 'cell-memory', output: 'cell-output' };
+  const el = document.getElementById(map[key]);
+  if (!el) return;
+  const c = cells[key];
+  if (!c) return;
+  const statusEl = el.querySelector('.status');
+  const valueEl = el.querySelector('.value');
+  if (statusEl) {
+    statusEl.textContent = c.status === 'evaluating' ? '⏳' : (c.status === 'ready' ? '✓' : (c.status === 'error' ? '✗' : '—'));
+    statusEl.className = 'status ' + c.status;
+  }
+  if (valueEl) {
+    let v = c.value;
+    if (v === null || v === undefined) {
+      valueEl.textContent = '(empty)';
+      valueEl.classList.add('empty');
+    } else {
+      valueEl.textContent = String(v);
+      valueEl.classList.remove('empty');
+    }
+  }
+  el.classList.remove('evaluating', 'complete', 'error');
+  if (c.status === 'evaluating') el.classList.add('evaluating');
+  else if (c.status === 'ready') el.classList.add('complete');
+  else if (c.status === 'error') el.classList.add('error');
+}
+
+async function simulateLLM(prompt, model) {
+  // Simulated LLM call. In production, this hits the actual API.
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+  const responses = {
+    zai: {
+      'spreadsheet': "Quilt takes the spreadsheet model and adds three things: types (8 cell kinds), side effects (programs, listeners, sensors, IO), and stable names (hierarchical, addressable). The spreadsheet is no longer a document — it's the runtime. Every cell is a live, addressable, reactive capability. Change a value, every dependent rewires automatically. The cell is the universal IO.",
+      'react': "React is a UI library. Quilt is a runtime. React is for views; Quilt is for data. Both are reactive, but Quilt's reactivity is per-cell, addressable by name, persistent by default, and runs anywhere — browser, server, microcontroller, mesh. React manages the DOM. Quilt manages the world.",
+    },
+    kimi: {
+      'spreadsheet': "A spreadsheet stores values. Quilt runs programs. The cells in Quilt aren't just numbers — they're values, formulas, programs, sensors, APIs, listeners, routers, and IO ports. You can have a heater as a cell. You can have an HTTP call as a cell. The cell model is universal.",
+      'react': "React is a component library. Quilt is a data runtime. They solve different problems. React rebuilds the DOM. Quilt propagates values. Both are reactive, but Quilt is data-first: no DOM, no components, no hooks. Just cells and formulas.",
+    },
+    deepseek: {
+      'spreadsheet': "Three things distinguish Quilt from a spreadsheet. First, types: Quilt has 8 cell kinds (value, formula, program, sensor, api, listener, router, io). Second, side effects: a listener cell can fire an action when a value changes. Third, addressability: cells have stable names, accessible from anywhere — the CLI, an MCP server, a peer on the mesh.",
+      'react': "React rebuilds the DOM when state changes. Quilt propagates values when cells change. Both are reactive. The difference: React's reactivity is tied to the component tree. Quilt's reactivity is tied to the cell graph. Cells can be addressable by name from anywhere — including an LLM, a peer, an external system.",
+    },
+  };
+  const p = prompt.toLowerCase();
+  const m = responses[model];
+  if (p.includes('spreadsheet')) return m.spreadsheet;
+  if (p.includes('react')) return m.react;
+  // Generic
+  return `[${model}] This is a simulated response. The model would have generated a thoughtful answer to: "${prompt.slice(0, 80)}..."`;
+}
+
+async function runAgent() {
+  if (agentRunning) return;
+  agentRunning = true;
+  document.getElementById('run').disabled = true;
+  stepCount = 0;
+
+  const task = document.getElementById('task').value;
+  const model = document.getElementById('model').value;
+  const maxSteps = +document.getElementById('max-steps').value;
+  const persona = document.getElementById('persona').value;
+
+  // Step 1: input.task (value cell)
+  log('▶ Starting agent', 'info');
+  updateCell('task', task, 'ready');
+  await sleep(200);
+
+  let memory = [];
+  let finalAnswer = '';
+  for (let i = 0; i < maxSteps; i++) {
+    stepCount = i + 1;
+    // Step 2: agent.prompt (formula cell — derived from task + memory)
+    updateCell('prompt', null, 'evaluating');
+    await sleep(200);
+    const prompt = `${PERSONAS[persona]}\n\nYou are an AI agent working through a task. The conversation so far:\n\n${memory.map((m, j) => `Step ${j+1}: ${m}`).join('\n\n')}\n\nCurrent task: ${task}\n\nRespond with your next thought or your final answer. If you're providing the final answer, start with "FINAL:".`;
+    updateCell('prompt', prompt, 'ready');
+    await sleep(100);
+
+    // Step 3: agent.thought (ai.llm cell)
+    updateCell('llm', null, 'evaluating');
+    log(`🤔 Step ${stepCount}/${maxSteps}: calling ${model}...`, 'info');
+    const response = await simulateLLM(prompt, model);
+    updateCell('llm', response, 'ready');
+    memory.push(response);
+    await sleep(200);
+
+    // Step 4: agent.memory (value cell — appends)
+    updateCell('memory', memory.map((m, j) => `[Step ${j+1}] ${m}`).join('\n\n'), 'ready');
+    await sleep(100);
+
+    // Check if final
+    if (response.startsWith('FINAL:')) {
+      finalAnswer = response.slice(6).trim();
+      break;
+    }
+  }
+
+  // Step 5: output (formula cell — derived from llm)
+  if (!finalAnswer) {
+    finalAnswer = memory[memory.length - 1] || 'No answer produced.';
+  }
+  updateCell('output', finalAnswer, 'ready');
+
+  // Show in answer panel
+  document.getElementById('answer').classList.remove('empty');
+  document.getElementById('answer').textContent = finalAnswer;
+
+  log(`✓ Agent complete in ${stepCount} steps`, 'success');
+  agentRunning = false;
+  document.getElementById('run').disabled = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function copyAnswer() {
+  const text = document.getElementById('answer').textContent;
+  navigator.clipboard.writeText(text).then(() => log('Copied answer to clipboard', 'success'));
+}
+
+function reset() {
+  cells = {};
+  ['task', 'prompt', 'llm', 'memory', 'output'].forEach(k => renderCell(k));
+  document.getElementById('answer').classList.add('empty');
+  document.getElementById('answer').textContent = 'The agent will think step by step. The final answer will appear here.';
+  log('Reset', 'info');
+}
+
+function setCustomTask() {
+  const v = document.getElementById('custom-task').value.trim();
+  if (v) {
+    document.getElementById('task').value = v;
+    log(`Set task: ${v.slice(0, 50)}...`, 'info');
+  }
+}
+
+document.getElementById('run').onclick = runAgent;
+log('Ready. Click "Run agent" to start. Watch each cell come alive as the agent reasons step by step.');
+</script>
+
+</body>
+</html>

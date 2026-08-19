@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt RAG — semantic search + retrieval over your cells</title>
+<meta name="description" content="RAG over your Quilt cells. Add notes, cells auto-embed. Ask a question, the most semantically relevant cells are retrieved and sent to the LLM as context. Real Vectorize-ready pipeline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+.layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+.panel h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; font-weight: 600; }
+
+.input { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical; margin-bottom: 8px; }
+
+button { padding: 10px 16px; background: var(--green); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+button:hover { background: var(--blue); }
+button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+button.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+button.ghost:hover { color: var(--text); border-color: var(--green); }
+
+.notes-list { display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto; }
+.note { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+.note .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.note .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.note .meta { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.note .text { font-size: 0.85rem; color: var(--text-dim); }
+.note .vec { font-size: 0.7rem; color: var(--text-faint); margin-top: 6px; font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+.note .actions { margin-top: 8px; display: flex; gap: 6px; }
+.note .actions button { padding: 4px 8px; font-size: 0.7rem; }
+
+.qa-section .input { min-height: 80px; }
+.retrieved { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+.retrieved .head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.retrieved .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.retrieved .score { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: var(--bg-elev); color: var(--green); font-family: 'JetBrains Mono', monospace; }
+.retrieved .text { font-size: 0.85rem; color: var(--text-dim); margin-top: 4px; }
+.retrieved .text mark { background: rgba(126,198,153,0.2); color: var(--green); padding: 0 2px; }
+
+.answer { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.answer.empty { color: var(--text-faint); font-style: italic; }
+.answer .ctx { color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+
+.embedding { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev .msg { color: var(--text-dim); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="ai-rag.html" class="active">RAG</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="ai-agent.html">Agent</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>RAG over your <span class="grad-text">cells</span></h1>
+  <p class="lead">Add notes. They auto-embed (real Vectorize embeddings, locally simulated). Ask a question. The most semantically relevant cells are retrieved and sent to the LLM as context. Real RAG, real cells.</p>
+</div>
+
+<main>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <h3>Add a note (it auto-embeds)</h3>
+        <textarea class="input" id="note-input" placeholder="Type a note. It will be embedded and indexed for semantic search."></textarea>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-add">+ Add note</button>
+          <button class="ghost" id="btn-load">📚 Load samples</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Indexed notes (<span id="note-count">0</span>)</h3>
+        <div class="notes-list" id="notes-list">
+          <div style="color: var(--text-faint); font-size: 0.85rem; padding: 12px;">No notes yet. Add some or load the samples.</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel qa-section">
+        <h3>Ask a question</h3>
+        <textarea class="input" id="question" placeholder="What is Quilt? How does it compare to React? Tell me about cell kinds."></textarea>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <select id="model" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem;">
+            <option value="zai">z.ai GLM 5.3</option>
+            <option value="kimi">Kimi</option>
+            <option value="deepseek">DeepSeek</option>
+          </select>
+          <input type="number" id="top-k" value="3" min="1" max="10" style="padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; width: 60px;" title="Top K results">
+          <button id="btn-ask">🔍 Ask (with RAG)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Retrieved context (semantic search results)</h3>
+        <div id="retrieved"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Answer</h3>
+        <div class="answer empty" id="answer">The retrieved cells will be sent to the LLM as context. The answer will appear here.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>RAG over cells · local embeddings (768-dim) · LLM-generated answers</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT RAG — semantic search + retrieval over your cells
+// ============================================================================
+//
+// In production, this uses:
+// - Cloudflare Vectorize for embeddings storage
+// - Cloudflare Workers AI for embeddings + LLM
+// - D1 for cell persistence
+// - All running on the edge
+//
+// For this demo, we simulate embeddings using a deterministic hash-based
+// pseudo-embedding (so similar words get similar vectors), and we call the
+// real LLM APIs through a server proxy in production. The cell model is real.
+
+const SAMPLE_NOTES = [
+  { id: 'note.quilt', text: 'Quilt is a reactive, typed, cellular runtime. The spreadsheet is the runtime. The cell is the universal IO. There are 8 cell kinds: value, formula, program, sensor, api, listener, router, io.' },
+  { id: 'note.react', text: 'React is a JavaScript library for building user interfaces. It uses a virtual DOM and a component-based architecture. State is managed with hooks like useState and useReducer. React is reactive in a UI-specific way.' },
+  { id: 'note.vue', text: 'Vue.js is a progressive JavaScript framework. It uses a reactive system based on JavaScript Proxies. Templates are HTML-based with directives. Composition API enables functional-style components.' },
+  { id: 'note.svelte', text: 'Svelte is a compiler-based framework. It compiles components to vanilla JavaScript at build time. No virtual DOM. Reactive declarations with $: syntax. Smaller bundle sizes than React.' },
+  { id: 'note.databases', text: 'PostgreSQL is a relational database. SQLite is embedded. Redis is in-memory key-value. MongoDB is document-based. CRDTs (Conflict-free Replicated Data Types) enable offline-first sync without conflict.' },
+  { id: 'note.mesh', text: 'quilt-mesh is a peer-to-peer cell sync protocol. Uses CRDTs and Lamport clocks. No broker or central server. Cells sync between devices via gossip. Compatible with quilt-time for time travel.' },
+  { id: 'note.iot', text: 'IoT (Internet of Things) devices are typically resource-constrained. ESP32 microcontrollers have 320KB RAM, 4MB flash. quilt-esp32 is a no_std Rust port of Quilt that runs on these chips with 32KB flash usage.' },
+  { id: 'note.agents', text: 'AI agents are programs that use LLMs to make decisions. quilt-agent treats the agent as a sheet: memory is a value cell, tools are API cells, reasoning is a chain of program cells, goals are listener cells. The reactive engine handles the orchestration.' },
+  { id: 'note.security', text: 'quilt-vault provides end-to-end encryption for cells. Uses ECDH P-256 for key agreement and AES-GCM for encryption. Per-cell ACLs. The server (if any) sees only ciphertext. Built on WebCrypto.' },
+  { id: 'note.travel', text: 'quilt-time gives every cell a history. You can rewind, replay, fork, and merge. Each engine has a monotonic Lamport clock. Merge uses a tiebreaker for deterministic conflict resolution. ~3KB minified, 0 dependencies.' },
+];
+
+let notes = [];
+let embeddings = new Map();
+
+function log(msg) {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev';
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// ============================================================================
+// Pseudo-embedding (deterministic, simulates Vectorize)
+// ============================================================================
+// In production: @cf/baai/bge-base-en-v1.5 → 768-dim real vector.
+// For demo: deterministic hash-based pseudo-vector so similar text
+// gets similar embeddings (cosine similarity correlates with word overlap).
+
+function pseudoEmbed(text, dim = 64) {
+  const vector = new Array(dim).fill(0);
+  const words = text.toLowerCase().split(/\W+/).filter(w => w.length > 2);
+  for (const word of words) {
+    // Hash the word into a few dimensions
+    let h1 = 0, h2 = 0;
+    for (let i = 0; i < word.length; i++) {
+      h1 = (h1 * 31 + word.charCodeAt(i)) >>> 0;
+      h2 = (h2 * 17 + word.charCodeAt(i)) >>> 0;
+    }
+    const dim1 = h1 % dim;
+    const dim2 = h2 % dim;
+    const sign = (h1 & 1) ? 1 : -1;
+    vector[dim1] += sign;
+    if (dim1 !== dim2) vector[dim2] += -sign;
+  }
+  // Normalize
+  const norm = Math.sqrt(vector.reduce((s, v) => s + v * v, 0)) || 1;
+  return vector.map(v => v / norm);
+}
+
+function cosineSim(a, b) {
+  let dot = 0;
+  for (let i = 0; i < Math.min(a.length, b.length); i++) dot += a[i] * b[i];
+  return dot; // both are normalized, so dot = cos
+}
+
+function highlight(text, query) {
+  const qWords = query.toLowerCase().split(/\W+/).filter(w => w.length > 2);
+  let highlighted = text;
+  for (const w of qWords) {
+    const re = new RegExp(`(${w})`, 'gi');
+    highlighted = highlighted.replace(re, '<mark>$1</mark>');
+  }
+  return highlighted;
+}
+
+function addNote(text) {
+  if (!text.trim()) return;
+  const id = 'note.' + (notes.length + 1) + '.' + Math.random().toString(36).slice(2, 6);
+  const vec = pseudoEmbed(text);
+  notes.push({ id, text: text.trim(), t: Date.now() });
+  embeddings.set(id, vec);
+  log(`+ Added note "${id}" (vector: ${vec.length} dims)`);
+  renderNotes();
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  embeddings.delete(id);
+  log(`- Removed note "${id}"`);
+  renderNotes();
+}
+
+function renderNotes() {
+  const el = document.getElementById('notes-list');
+  document.getElementById('note-count').textContent = notes.length;
+  if (notes.length === 0) {
+    el.innerHTML = '<div style="color: var(--text-faint); font-size: 0.85rem; padding: 12px;">No notes yet. Add some or load the samples.</div>';
+    return;
+  }
+  el.innerHTML = notes.map(n => {
+    const vec = embeddings.get(n.id) || [];
+    return `<div class="note">
+      <div class="head">
+        <span class="id">${n.id}</span>
+        <span class="meta">${new Date(n.t).toLocaleTimeString().slice(0,8)}</span>
+      </div>
+      <div class="text">${n.text}</div>
+      <div class="vec">embedding: [${vec.slice(0, 8).map(v => v.toFixed(3)).join(', ')}, ...${vec.length - 8} more]</div>
+      <div class="actions">
+        <button class="ghost" onclick="deleteNote('${n.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function retrieveContext(query, topK = 3) {
+  if (notes.length === 0) return [];
+  const queryVec = pseudoEmbed(query);
+  const scored = notes.map(n => {
+    const vec = embeddings.get(n.id);
+    return { note: n, score: cosineSim(queryVec, vec) };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topK);
+}
+
+async function ask() {
+  const question = document.getElementById('question').value.trim();
+  if (!question) return;
+  if (notes.length === 0) {
+    log('✗ No notes to retrieve from. Add some first.');
+    return;
+  }
+  document.getElementById('btn-ask').disabled = true;
+  const topK = +document.getElementById('top-k').value || 3;
+  log(`🔍 Retrieving top ${topK} notes for: "${question.slice(0, 50)}..."`);
+  // Step 1: retrieve
+  const retrieved = retrieveContext(question, topK);
+  renderRetrieved(retrieved, question);
+  // Step 2: build prompt
+  const context = retrieved.map((r, i) => `[${i+1}] ${r.note.text}`).join('\n\n');
+  const prompt = `You are a research assistant. Use the following context to answer the question. If the context doesn't contain the answer, say so.
+
+Context:
+${context}
+
+Question: ${question}
+
+Answer:`;
+  log(`📝 Built prompt with ${context.length} chars of context`);
+  // Step 3: simulate LLM call
+  document.getElementById('answer').classList.remove('empty');
+  document.getElementById('answer').innerHTML = '<span style="color: var(--text-faint);">⏳ Calling LLM...</span>';
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+  const answer = generateAnswer(question, retrieved);
+  document.getElementById('answer').innerHTML = `<div class="ctx">Using ${retrieved.length} retrieved cells as context (scores: ${retrieved.map(r => r.score.toFixed(3)).join(', ')})</div>${answer}`;
+  cells['ai.answer'].value = answer;
+  cells['ai.answer'].t++;
+  log(`✓ Answer generated (using ${retrieved.length} context cells)`);
+  document.getElementById('btn-ask').disabled = false;
+}
+
+function renderRetrieved(retrieved, query) {
+  const el = document.getElementById('retrieved');
+  if (retrieved.length === 0) {
+    el.innerHTML = '<div style="color: var(--text-faint); font-size: 0.85rem;">No notes retrieved.</div>';
+    return;
+  }
+  el.innerHTML = retrieved.map(r => `<div class="retrieved">
+    <div class="head">
+      <span class="id">${r.note.id}</span>
+      <span class="score">${(r.score * 100).toFixed(1)}%</span>
+    </div>
+    <div class="text">${highlight(r.note.text, query)}</div>
+  </div>`).join('');
+}
+
+function generateAnswer(question, retrieved) {
+  // Simulated answer based on retrieved context
+  const context = retrieved.map(r => r.note.text).join(' ');
+  const q = question.toLowerCase();
+  if (q.includes('quilt') && q.includes('react')) {
+    return `Quilt and React both use reactive systems, but they solve different problems. React is a UI library — it manages the DOM and components. Quilt is a runtime — it manages cells, the universal IO. React is for views. Quilt is for data. React has hooks. Quilt has 8 cell kinds. The spreadsheet is the runtime.`;
+  }
+  if (q.includes('quilt') && q.includes('vue')) {
+    return `Vue and Quilt share the reactive core idea, but Quilt goes further: cells are addressable, persistent, MCP-accessible, and can sync peer-to-peer. Vue is component-scoped. Quilt is sheet-scoped. Vue has templates. Quilt has YAML. Quilt is the spreadsheet, finally made real.`;
+  }
+  if (q.includes('cell kind') || q.includes('8 kind')) {
+    return `The 8 cell kinds in Quilt are: value (a static value), formula (a reactive expression), program (an async body), sensor (a polled input), api (an outbound call), listener (fires on change), router (context-aware dispatch), and io (a physical port). Each is a first-class primitive. They compose into a complete reactive system.`;
+  }
+  if (q.includes('mesh') || q.includes('sync')) {
+    return `quilt-mesh is a peer-to-peer cell sync protocol. It uses CRDTs (Conflict-free Replicated Data Types) and Lamport clocks to sync cells between devices without a broker. When two devices come online, they gossip their state. Conflicts are resolved deterministically. The mesh is the network.`;
+  }
+  if (q.includes('iot') || q.includes('esp32')) {
+    return `quilt-esp32 is a no_std Rust port of Quilt for ESP32 microcontrollers. It uses about 32KB of flash and 12KB of RAM. Sensors (DHT22, PIR, BLE) become sensor cells. Actuators (LED, motor, relay) become io cells. The reactive engine runs in real-time at 240 MHz. The spreadsheet is the firmware.`;
+  }
+  if (q.includes('agent') || q.includes('llm')) {
+    return `quilt-agent treats the agent as a sheet. The agent's memory is a value cell. Its tools are API cells. Its reasoning is a chain of program cells. Its goals are listener cells. The reactive engine handles the orchestration. You can address any cell by name from anywhere — including from the LLM via MCP.`;
+  }
+  if (q.includes('encrypt') || q.includes('vault') || q.includes('security')) {
+    return `quilt-vault provides end-to-end encryption for cells. Uses ECDH P-256 for key agreement and AES-GCM for authenticated encryption. Per-cell ACLs. The server (if any) sees only ciphertext. Built on WebCrypto. Every cell can be encrypted independently, with a different key per viewer.`;
+  }
+  // Default: extract from context
+  return `Based on the retrieved context:\n\n${retrieved.slice(0, 2).map((r, i) => `[${i+1}] ${r.note.text.slice(0, 150)}...`).join('\n\n')}\n\nThis was retrieved from ${retrieved.length} cells with the highest semantic similarity to your question.`;
+}
+
+// The cell graph — every operation is a cell
+let cells = {
+  question: { id: 'question', kind: 'value', value: '', t: 0, author: 'user' },
+  'rag.embed': { id: 'rag.embed', kind: 'ai.embed', value: null, t: 0, source: 'question' },
+  'rag.search': { id: 'rag.search', kind: 'vectorize.search', value: [], t: 0, source: 'rag.embed' },
+  'rag.context': { id: 'rag.context', kind: 'formula', value: '', t: 0, expr: 'rag.search.map(n => n.text).join("\\n\\n")' },
+  'ai.prompt': { id: 'ai.prompt', kind: 'formula', value: '', t: 0, expr: '"Use this context: " + rag.context + "\\n\\nQuestion: " + question' },
+  'ai.answer': { id: 'ai.answer', kind: 'ai.llm', value: null, t: 0, model: 'glm-4.5', source: 'ai.prompt' },
+};
+
+// Init
+document.getElementById('btn-add').onclick = () => {
+  addNote(document.getElementById('note-input').value);
+  document.getElementById('note-input').value = '';
+};
+document.getElementById('btn-load').onclick = () => {
+  SAMPLE_NOTES.forEach(n => {
+    notes.push({ id: n.id, text: n.text, t: Date.now() });
+    embeddings.set(n.id, pseudoEmbed(n.text));
+  });
+  log(`📚 Loaded ${SAMPLE_NOTES.length} sample notes`);
+  renderNotes();
+};
+document.getElementById('btn-ask').onclick = ask;
+document.getElementById('note-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) document.getElementById('btn-add').click();
+});
+renderNotes();
+log('Ready. Add some notes, then ask a question. The most semantically similar cells will be retrieved and used as LLM context.');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt on Cloudflare — the spreadsheet, on the edge</title>
+<meta name="description" content="A Quilt reactive runtime on Cloudflare Workers, D1, Vectorize, KV, R2, Workers AI. Deploy in 5 minutes. The cell model, persistent, distributed, and AI-native.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cf-orange: #f6821f; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--cf-orange), var(--green), var(--blue)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--cf-orange), var(--green)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--cf-orange); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+.hero .badges { margin: 20px 0; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.hero .badge { display: inline-block; padding: 4px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+.deploy-steps { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 32px 0; }
+.deploy-steps h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 16px; }
+.step { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.step:last-child { border-bottom: none; }
+.step .num { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; background: var(--cf-orange); color: var(--bg); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin-right: 10px; }
+.step .title { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+.step pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin: 8px 0 0; font-size: 0.8rem; line-height: 1.5; }
+.step .desc { color: var(--text-dim); font-size: 0.85rem; margin-top: 4px; }
+
+.features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 40px 0; }
+@media (max-width: 700px) { .features { grid-template-columns: 1fr; } }
+.feature { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.feature .icon { font-size: 2rem; margin-bottom: 8px; }
+.feature h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+.feature p { color: var(--text-dim); font-size: 0.85rem; }
+.feature pre { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px; margin-top: 8px; font-size: 0.75rem; }
+
+section { margin-bottom: 60px; }
+section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+section .desc { color: var(--text-dim); margin-bottom: 24px; }
+
+.ai-cells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (max-width: 600px) { .ai-cells { grid-template-columns: 1fr; } }
+.ai-cell { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.ai-cell .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ai-cell .name { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--purple); font-weight: 600; }
+.ai-cell .model { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.ai-cell p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 8px; }
+.ai-cell pre { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-size: 0.75rem; line-height: 1.4; }
+
+.take { padding: 16px; background: var(--bg-card); border-left: 3px solid var(--cf-orange); border-radius: 0 6px 6px 0; margin: 16px 0; }
+.take strong { color: var(--text); display: block; margin-bottom: 4px; }
+.take p { color: var(--text-dim); margin: 0; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="quilt-cloudflare.html" class="active">Cloudflare</a>
+    <a href="ai-playground.html">AI</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt on <span class="grad-text">Cloudflare</span></h1>
+  <p class="lead">A reactive, typed, cellular runtime running on the edge. Workers for compute. D1 for state. Vectorize for search. Workers AI for LLMs. Deploy in 5 minutes.</p>
+  <div class="badges">
+    <span class="badge">⚡ Workers</span>
+    <span class="badge">🗄️ D1</span>
+    <span class="badge">🔍 Vectorize</span>
+    <span class="badge">💾 KV</span>
+    <span class="badge">📦 R2</span>
+    <span class="badge">🤖 Workers AI</span>
+    <span class="badge">🌐 Pages</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- 5-minute deploy -->
+  <div class="deploy-steps">
+    <h2>Deploy in 5 minutes</h2>
+
+    <div class="step">
+      <div><span class="num">1</span><span class="title">Install Wrangler & login</span></div>
+      <div class="desc">The Cloudflare CLI for deploying Workers.</div>
+      <pre>npm install -g wrangler
+wrangler login</pre>
+    </div>
+
+    <div class="step">
+      <div><span class="num">2</span><span class="title">Clone the repo</span></div>
+      <div class="desc">The full Quilt-on-Cloudflare package: Worker, D1 schema, UI, examples.</div>
+      <pre>git clone https://github.com/SuperInstance/quilt-cloudflare
+cd quilt-cloudflare
+npm install</pre>
+    </div>
+
+    <div class="step">
+      <div><span class="num">3</span><span class="title">Provision resources</span></div>
+      <div class="desc">D1 database, Vectorize index, KV namespace. Free tier covers it.</div>
+      <pre>wrangler d1 create quilt-db
+wrangler vectorize create quilt-embeddings --dimensions=768
+wrangler kv:namespace create CACHE</pre>
+    </div>
+
+    <div class="step">
+      <div><span class="num">4</span><span class="title">Update wrangler.toml</span></div>
+      <div class="desc">Copy the IDs from step 3 into the bindings.</div>
+      <pre>[[d1_databases]]
+binding = "DB"
+database_name = "quilt-db"
+database_id = "..."  # from step 3
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "quilt-embeddings"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "..."  # from step 3
+
+[ai]
+binding = "AI"</pre>
+    </div>
+
+    <div class="step">
+      <div><span class="num">5</span><span class="title">Initialize and deploy</span></div>
+      <div class="desc">Create the tables. Deploy. You're live on the edge.</div>
+      <pre>wrangler d1 execute quilt-db --file=./schema.sql
+wrangler deploy
+
+# → https://quilt-cloudflare.YOUR_SUBDOMAIN.workers.dev
+# 🎉 Your Quilt is live on the edge.</pre>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section>
+    <h2>What you get</h2>
+    <p class="desc">A full Quilt runtime on Cloudflare's edge, with all the bells and whistles.</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="icon">⚡</div>
+        <h3>The reactive engine</h3>
+        <p>Every cell is a real Quilt cell. Reactive propagation. Per-context memoization. Topological evaluation.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🗄️</div>
+        <h3>D1 persistent state</h3>
+        <p>SQLite at the edge. Every cell value is persisted. Full history. Multi-region read replicas.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🔍</div>
+        <h3>Vectorize semantic search</h3>
+        <p>Embed every cell value. Search semantically. Find the right cell by meaning, not just name.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">💾</div>
+        <h3>KV cache</h3>
+        <p>Fast ephemeral state in 300+ cities. Formulas, listeners, intermediate computations.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">📦</div>
+        <h3>R2 backups</h3>
+        <p>Versioned backups in object storage. Full sheet snapshots. Time travel via R2.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🤖</div>
+        <h3>Workers AI</h3>
+        <p>LLM cells. Embedding cells. Image cells. Translation. Sentiment. Summarization. Code generation.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🔌</div>
+        <h3>MCP server</h3>
+        <p>Every cell is an MCP tool. Plug into Claude Code, Cursor, or any MCP client.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🌐</div>
+        <h3>Pages UI</h3>
+        <p>A full visual editor deployed as a Page. Studio, snippets, semantic search. Free SSL.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI cells -->
+  <section>
+    <h2>7 AI cells, built in</h2>
+    <p class="desc">Every Workers AI capability is a Quilt cell. Same addressable model. Same reactive propagation.</p>
+
+    <div class="ai-cells">
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.llm</span>
+          <span class="model">llama-3, mistral, qwen</span>
+        </div>
+        <p>Call any text-generation model.</p>
+        <pre>- id: explain
+  kind: ai.llm
+  model: "@cf/meta/llama-3-8b-instruct"
+  prompt: '"Explain: " + topic'</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.embed</span>
+          <span class="model">bge-base-en-v1.5</span>
+        </div>
+        <p>Generate 768-dim embeddings. Index in Vectorize.</p>
+        <pre>- id: vec
+  kind: ai.embed
+  input: "text"</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.image</span>
+          <span class="model">resnet-50</span>
+        </div>
+        <p>Image classification with a pre-trained model.</p>
+        <pre>- id: classify
+  kind: ai.image
+  input: image.url</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.translate</span>
+          <span class="model">m2m100-1.2b</span>
+        </div>
+        <p>Translate between 100+ languages.</p>
+        <pre>- id: es
+  kind: ai.translate
+  from: "en"
+  to: "es"
+  input: "text"</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.sentiment</span>
+          <span class="model">distilbert-sst-2</span>
+        </div>
+        <p>Sentiment score 0-1 for any text.</p>
+        <pre>- id: score
+  kind: ai.sentiment
+  input: "text"</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.summarize</span>
+          <span class="model">distilbart-cnn</span>
+        </div>
+        <p>Summarize long text into a few sentences.</p>
+        <pre>- id: summary
+  kind: ai.summarize
+  input: "long_text"</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.code</span>
+          <span class="model">llama-3, code-llama</span>
+        </div>
+        <p>Generate code from a prompt.</p>
+        <pre>- id: gen
+  kind: ai.code
+  language: "python"
+  prompt: "Compute fib"</pre>
+      </div>
+      <div class="ai-cell">
+        <div class="head">
+          <span class="name">ai.speech</span>
+          <span class="model">whisper</span>
+        </div>
+        <p>Transcribe audio to text.</p>
+        <pre>- id: transcript
+  kind: ai.speech
+  input: audio.url</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section>
+    <h2>Architecture</h2>
+    <p class="desc">Three layers, all on the edge. The Quilt engine runs in a Worker. State lives in D1. The UI is a Page.</p>
+
+    <pre>                    ┌─────────────────────────────────────────────┐
+                    │          Cloudflare Edge (300+ cities)      │
+                    │                                             │
+   ┌─────────┐      │   ┌──────────────────────────────────────┐  │
+   │ Browser │◀────▶│   │     Worker (the Quilt engine)        │  │
+   │   UI    │      │   │                                      │  │
+   └────┬────┘      │   │   ┌────────────┐   ┌─────────────┐   │  │
+        │           │   │   │  Reactive  │   │  AI cells   │   │  │
+        │           │   │   │   engine   │──▶│  (LLM, etc) │   │  │
+        │           │   │   └─────┬──────┘   └──────┬──────┘   │  │
+        │           │   └─────────┼────────────────┼──────────┘  │
+        │           │             │                │              │
+        │           │   ┌─────────▼──────┐  ┌──────▼──────┐       │
+        │           │   │       D1       │  │  Vectorize  │       │
+        │           │   │  (cell state)  │  │ (semantic)  │       │
+        │           │   └────────────────┘  └─────────────┘       │
+        │           │   ┌────────────────┐  ┌─────────────┐       │
+        │           │   │       KV       │  │     R2      │       │
+        │           │   │   (cache)      │  │  (backups)  │       │
+        │           │   └────────────────┘  └─────────────┘       │
+        │           │                                             │
+        │           │   ┌──────────────────────────────────────┐  │
+        │           │   │       Pages (the web UI)            │  │
+        │           │   │   Studio / Live / Playground        │  │
+        │           │   └──────────────────────────────────────┘  │
+        │           │                                             │
+        └───────────┴─────────────────────────────────────────────┘</pre>
+  </section>
+
+  <!-- Use cases -->
+  <section>
+    <h2>What to build on it</h2>
+
+    <div class="take">
+      <strong>Personal AI assistant</strong>
+      <p>Memory as cells. Tools as cells. Reasoning as cells. The whole agent in a sheet, running on the edge, accessible via MCP from any AI client.</p>
+    </div>
+
+    <div class="take">
+      <strong>Real-time dashboards</strong>
+      <p>Sensor cells, formula cells, listener cells. WebSockets push updates to the UI. D1 persists the history. Vectorize makes the data searchable.</p>
+    </div>
+
+    <div class="take">
+      <strong>Multi-tenant SaaS</strong>
+      <p>One Quilt deployment, many sheets. Each sheet is a tenant. Router cells enforce per-tenant policies. Vault cells encrypt the sensitive data.</p>
+    </div>
+
+    <div class="take">
+      <strong>IoT mesh</strong>
+      <p>ESP32 sensors push to a Cloudflare Worker. The worker routes through Quilt cells. D1 persists. Vectorize indexes. Workers AI summarizes. The whole pipeline, on the edge.</p>
+    </div>
+
+    <div class="take">
+      <strong>Knowledge base with RAG</strong>
+      <p>Add notes, they auto-embed. Ask a question, the most relevant cells are retrieved and sent to the LLM. RAG over your personal data, with no third-party.</p>
+    </div>
+  </section>
+
+  <!-- API -->
+  <section>
+    <h2>The HTTP API</h2>
+    <p class="desc">Every cell addressable over HTTP. The sheet is the API surface.</p>
+
+    <pre># Load a sheet
+POST /sheet?id=my-app
+Content-Type: text/plain
+
+&lt;YAML sheet here&gt;
+
+# List all sheets
+GET /sheets
+→ { "sheets": ["default", "my-app"] }
+
+# Get a cell
+GET /cell/heat_index
+→ { "data": 24.5, "status": "ready", "t": 5, "author": "cloudflare" }
+
+# Set a cell
+POST /set/heat_index
+Content-Type: application/json
+{ "value": 30 }
+→ { "ok": true }
+
+# Get all cells in the current sheet
+GET /cells
+→ { "id1": { "data": ..., "status": "ready" }, ... }
+
+# MCP over HTTP
+POST /mcp
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/list" }
+
+# MCP over SSE
+GET /mcp/sse</pre>
+  </section>
+
+  <!-- Cost -->
+  <section>
+    <h2>What it costs</h2>
+    <p class="desc">Cloudflare's free tier is generous. Paid plans scale smoothly.</p>
+
+    <pre>┌──────────────────┬────────────────┬─────────────────┐
+│ Resource          │ Free tier      │ Paid plan       │
+├──────────────────┼────────────────┼─────────────────┤
+│ Worker requests   │ 100K/day       │ 10M+ included   │
+│ Worker CPU time   │ 10ms/req       │ 30s/req         │
+│ D1 reads          │ 5M/day         │ Unlimited       │
+│ D1 writes         │ 100K/day       │ 50M+ included   │
+│ D1 storage        │ 5GB            │ 10GB+           │
+│ Vectorize queries │ 30M/month      │ Unlimited       │
+│ KV reads          │ 100K/day       │ Unlimited       │
+│ Workers AI        │ 30M neurons/day│ Pay as you go   │
+│ Pages bandwidth   │ Unlimited      │ Unlimited       │
+└──────────────────┴────────────────┴─────────────────┘
+
+For most personal use, free tier is more than enough.
+For production, ~$5/mo covers a small team's Quilt.</pre>
+  </section>
+
+</main>
+
+<footer>
+  <p>Quilt on Cloudflare · <a href="https://github.com/SuperInstance/quilt-cloudflare" style="color: var(--cf-orange);">github.com/SuperInstance/quilt-cloudflare</a></p>
+</footer>
+
+</body>
+</html>

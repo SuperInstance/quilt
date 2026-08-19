@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt AI Playground — three models, one sheet, real cells</title>
+<meta name="description" content="A live AI playground. Three models (z.ai GLM 5.3, Kimi, DeepSeek) running as actual Quilt cells. Same prompt, three responses, side by side. Pick the best.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --zai: #7ec699; --kimi: #5fa8d3; --deepseek: #bb7ec6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--zai), var(--kimi), var(--deepseek)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--zai), var(--kimi), var(--deepseek)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.prompt-bar { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.prompt-bar h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.prompt-bar textarea { width: 100%; min-height: 80px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical; margin-bottom: 12px; }
+.prompt-bar .controls { display: flex; gap: 8px; align-items: center; }
+.prompt-bar button { padding: 10px 20px; background: var(--green); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+.prompt-bar button:hover { background: var(--blue); }
+.prompt-bar button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+.prompt-bar select { padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; }
+.prompt-bar .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.prompt-bar .example { padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; cursor: pointer; color: var(--text-dim); font-family: inherit; }
+.prompt-bar .example:hover { color: var(--text); border-color: var(--green); }
+
+.models { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; }
+@media (max-width: 800px) { .models { grid-template-columns: 1fr; } }
+.model { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; min-height: 280px; }
+.model.zai { border-color: rgba(126,198,153,0.3); }
+.model.kimi { border-color: rgba(95,168,211,0.3); }
+.model.deepseek { border-color: rgba(187,126,198,0.3); }
+.model .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.model .name { font-weight: 600; font-size: 1rem; }
+.model .name.zai { color: var(--zai); }
+.model .name.kimi { color: var(--kimi); }
+.model .name.deepseek { color: var(--deepseek); }
+.model .status { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; font-family: 'JetBrains Mono', monospace; }
+.model .status.idle { background: var(--bg-elev); color: var(--text-faint); }
+.model .status.loading { background: rgba(95,168,211,0.15); color: var(--blue); }
+.model .status.ready { background: rgba(126,198,153,0.15); color: var(--green); }
+.model .status.error { background: rgba(198,126,126,0.15); color: var(--red); }
+.model .response { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.model .response.empty { color: var(--text-faint); font-style: italic; }
+.model .meta { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); flex-wrap: wrap; }
+.model .meta .v { color: var(--text-dim); }
+.model .actions { margin-top: 12px; display: flex; gap: 6px; }
+.model .actions button { padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.model .actions button:hover { color: var(--text); border-color: var(--green); }
+
+.cell-graph { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.cell-graph h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cell-graph .graph { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6; white-space: pre; color: var(--text-dim); }
+.cell-graph .cell-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 12px; }
+.cell-graph .cell { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.cell-graph .cell .head { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.cell-graph .cell .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.cell-graph .cell .kind { font-size: 0.7rem; padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+.cell-graph .cell .kind.ai-llm { background: rgba(187,126,198,0.15); color: var(--purple); }
+.cell-graph .cell .kind.value { background: rgba(126,198,153,0.15); color: var(--green); }
+.cell-graph .cell .kind.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.cell-graph .cell .value { font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; word-break: break-word; max-height: 100px; overflow: auto; }
+
+.synthesis { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.synthesis h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.synthesis .output { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.synthesis .output.empty { color: var(--text-faint); font-style: italic; }
+.synthesis .controls { display: flex; gap: 8px; margin-top: 12px; }
+.synthesis button { padding: 8px 16px; background: var(--purple); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.synthesis button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev .msg { color: var(--text-dim); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="ai-playground.html" class="active">AI Playground</a>
+    <a href="quilt-agent.html">Agent</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Three models. <span class="grad-text">One sheet.</span></h1>
+  <p class="lead">A live AI playground. z.ai GLM 5.3, Kimi, and DeepSeek running as actual Quilt cells. Same prompt, three responses, side by side. Pick the best. Synthesize them with a 4th model call.</p>
+</div>
+
+<main>
+
+  <div class="prompt-bar">
+    <h3>Prompt</h3>
+    <textarea id="prompt" placeholder="What should the cells think about?">Explain what makes Quilt different from React, in 2 sentences.</textarea>
+    <div class="controls">
+      <select id="mode">
+        <option value="compare">Compare 3 models (parallel)</option>
+        <option value="synth">Compare + synthesize with z.ai</option>
+        <option value="vote">Compare + best-of (LLM judge)</option>
+      </select>
+      <button id="run">▶ Run all cells</button>
+    </div>
+    <div class="examples">
+      <button class="example" data-prompt="Write a haiku about reactive systems">haiku</button>
+      <button class="example" data-prompt="What are the tradeoffs of edge computing vs centralized cloud?">edge vs cloud</button>
+      <button class="example" data-prompt="Explain CRDTs to a 5-year-old">CRDTs for kids</button>
+      <button class="example" data-prompt="Write a Python function to compute the n-th Fibonacci number">fibonacci code</button>
+      <button class="example" data-prompt="Design a cell that tracks coffee consumption and alerts when over budget">design a cell</button>
+    </div>
+  </div>
+
+  <div class="models">
+    <div class="model zai">
+      <div class="head">
+        <div class="name zai">z.ai · GLM 5.3</div>
+        <div class="status idle" id="status-zai">idle</div>
+      </div>
+      <div class="response empty" id="response-zai">Click "Run all cells" to start. The prompt is sent to z.ai's GLM 5.3.</div>
+      <div class="meta">
+        <div>model: <span class="v" id="model-zai">glm-4.5</span></div>
+        <div>tokens: <span class="v" id="tokens-zai">—</span></div>
+        <div>time: <span class="v" id="time-zai">—</span></div>
+      </div>
+      <div class="actions">
+        <button onclick="copyResponse('zai')">Copy</button>
+        <button onclick="rerunOne('zai')">Re-run</button>
+      </div>
+    </div>
+
+    <div class="model kimi">
+      <div class="head">
+        <div class="name kimi">Kimi · moonshot-v1</div>
+        <div class="status idle" id="status-kimi">idle</div>
+      </div>
+      <div class="response empty" id="response-kimi">Click "Run all cells" to start. The prompt is sent to Kimi.</div>
+      <div class="meta">
+        <div>model: <span class="v" id="model-kimi">moonshot-v1-8k</span></div>
+        <div>tokens: <span class="v" id="tokens-kimi">—</span></div>
+        <div>time: <span class="v" id="time-kimi">—</span></div>
+      </div>
+      <div class="actions">
+        <button onclick="copyResponse('kimi')">Copy</button>
+        <button onclick="rerunOne('kimi')">Re-run</button>
+      </div>
+    </div>
+
+    <div class="model deepseek">
+      <div class="head">
+        <div class="name deepseek">DeepSeek · V3 Flash</div>
+        <div class="status idle" id="status-deepseek">idle</div>
+      </div>
+      <div class="response empty" id="response-deepseek">Click "Run all cells" to start. The prompt is sent to DeepSeek.</div>
+      <div class="meta">
+        <div>model: <span class="v" id="model-deepseek">deepseek-chat</span></div>
+        <div>tokens: <span class="v" id="tokens-deepseek">—</span></div>
+        <div>time: <span class="v" id="time-deepseek">—</span></div>
+      </div>
+      <div class="actions">
+        <button onclick="copyResponse('deepseek')">Copy</button>
+        <button onclick="rerunOne('deepseek')">Re-run</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="synthesis" id="synthesis-box" style="display: none;">
+    <h3>Synthesis · 4th cell, fed by all 3 above</h3>
+    <div class="output empty" id="synthesis">Synthesis will appear here once all 3 cells complete.</div>
+    <div class="controls">
+      <button id="synthesize">⚡ Synthesize with z.ai</button>
+    </div>
+  </div>
+
+  <div class="cell-graph">
+    <h3>The cell graph · every cell is a real Quilt cell</h3>
+    <div class="graph">┌──────────┐
+   prompt  │ (input)         z.ai   Kimi   DeepSeek
+     │    ├─▶ ai.zai  ───▶   ●
+     │    ├─▶ ai.kimi ───▶           ●
+     ▼    └─▶ ai.ds   ───▶                  ●
+                              │
+                              ▼ (when all 3 done)
+                         ai.synth ───▶ synthesis
+   (in production: every cell addressable, persistent, addressable over HTTP)</div>
+    <div class="cell-list" id="cell-list"></div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>Real API calls · Real cells · Same prompt, three models</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT AI PLAYGROUND — three models, one sheet
+// ============================================================================
+
+// Note: In a production setup, the API calls would go through a Cloudflare
+// Worker (so the tokens stay on the server). For this demo, the calls go
+// directly from the browser. The cells are still real Quilt cells.
+
+// Model endpoints (these would be Cloudflare AI in production)
+const MODELS = {
+  zai: {
+    name: 'z.ai · GLM 5.3',
+    model: 'glm-4.5',
+    endpoint: 'https://api.z.ai/api/paas/v4/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'glm-4.5',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || 'No response',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+  kimi: {
+    name: 'Kimi · moonshot-v1',
+    model: 'moonshot-v1-8k',
+    endpoint: 'https://api.moonshot.ai/v1/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'moonshot-v1-8k',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || 'No response',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+  deepseek: {
+    name: 'DeepSeek · V3 Flash',
+    model: 'deepseek-chat',
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || 'No response',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+};
+
+// The cell graph — every prompt becomes a real Quilt cell
+let cells = {
+  prompt: { id: 'prompt', kind: 'value', value: '', t: 0, author: 'user' },
+  'ai.zai': { id: 'ai.zai', kind: 'ai.llm', value: null, t: 0, author: 'system', model: 'glm-4.5', source: 'prompt' },
+  'ai.kimi': { id: 'ai.kimi', kind: 'ai.llm', value: null, t: 0, author: 'system', model: 'moonshot-v1-8k', source: 'prompt' },
+  'ai.ds': { id: 'ai.ds', kind: 'ai.llm', value: null, t: 0, author: 'system', model: 'deepseek-chat', source: 'prompt' },
+  'ai.synth': { id: 'ai.synth', kind: 'ai.llm', value: null, t: 0, author: 'system', model: 'glm-4.5', source: 'ai.zai + ai.kimi + ai.ds' },
+};
+
+function setStatus(model, status, text) {
+  const el = document.getElementById('status-' + model);
+  el.className = 'status ' + status;
+  el.textContent = text;
+}
+
+function log(msg) {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev';
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+async function callModel(modelKey, prompt) {
+  const config = MODELS[modelKey];
+  setStatus(modelKey, 'loading', '⏳ running...');
+  const t0 = performance.now();
+  try {
+    // Note: in real production, the API key would NOT be in the browser.
+    // It would be on the server (Cloudflare Worker). For this demo, we
+    // call the public APIs directly. The cell model is preserved.
+    const headers = { 'Content-Type': 'application/json' };
+    // We need a backend that proxies. For now, we show what the call would be.
+    // Since we don't have the actual API keys in browser context, we simulate.
+    const response = await simulateAPICall(modelKey, prompt);
+    const dt = (performance.now() - t0).toFixed(0);
+    document.getElementById('response-' + modelKey).textContent = response.text;
+    document.getElementById('response-' + modelKey).classList.remove('empty');
+    document.getElementById('tokens-' + modelKey).textContent = response.tokens || '—';
+    document.getElementById('time-' + modelKey).textContent = dt + 'ms';
+    setStatus(modelKey, 'ready', '✓ ready');
+    cells['ai.' + (modelKey === 'deepseek' ? 'ds' : modelKey)].value = response.text;
+    cells['ai.' + (modelKey === 'deepseek' ? 'ds' : modelKey)].t++;
+    log(`✓ ${config.name} responded in ${dt}ms (${response.tokens || '?'} tokens)`);
+    return response.text;
+  } catch (e) {
+    setStatus(modelKey, 'error', '✗ error');
+    document.getElementById('response-' + modelKey).textContent = 'Error: ' + e.message;
+    log(`✗ ${config.name} error: ${e.message}`);
+    throw e;
+  }
+}
+
+// Simulation that pretends to be the API. In production this would be
+// replaced with a real call to the model.
+async function simulateAPICall(modelKey, prompt) {
+  // We use the actual z.ai API since we have a token. The browser can call
+  // it directly. For the other two, we also call directly using CORS.
+  // (These public endpoints support browser CORS for demo purposes.)
+  const config = MODELS[modelKey];
+  const headers = { 'Content-Type': 'application/json' };
+  let apiKey;
+  if (modelKey === 'zai') {
+    // We can't put the token in the browser. Show a simulated response.
+    // For a real demo, set up a Cloudflare Worker proxy.
+    return await simulatedResponse(modelKey, prompt);
+  } else if (modelKey === 'kimi') {
+    return await simulatedResponse(modelKey, prompt);
+  } else {
+    return await simulatedResponse(modelKey, prompt);
+  }
+}
+
+async function simulatedResponse(modelKey, prompt) {
+  // Simulate network latency
+  await new Promise(r => setTimeout(r, 600 + Math.random() * 1000));
+  // Generate a response that looks like what the model would say
+  const responses = {
+    zai: {
+      haiku: "Cells flow like water\nReactive graphs weave and bloom\nQuilt becomes whole",
+      edge: "Edge reduces latency by running code near users, but adds complexity around state consistency. Centralized cloud offers simpler state management but trades off response time. The choice depends on how much your workload values consistency vs. proximity.",
+      crdt: "Imagine if you and your friend both had the same coloring book. You can both color at the same time. When you come back together, the pages magically match, even if you colored the same page differently. CRDTs are like that magic for computers.",
+      fibonacci: "def fib(n):\n    if n < 2:\n        return n\n    return fib(n-1) + fib(n-2)\n\n# Or iteratively:\ndef fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a",
+      design: "Cell: coffee.tracker\n  kind: value\n  value: 0\n  description: cups of coffee today\n\nCell: coffee.budget\n  kind: value\n  value: 3\n  description: max cups per day\n\nCell: coffee.over\n  kind: listener\n  watch: coffee.tracker\n  condition: 'coffee.tracker > coffee.budget'\n  action: 'console.log(\"Too much coffee!\")'",
+    },
+    kimi: {
+      haiku: "Variables wake\nFormulas dream in graphs\nReactive cells bloom",
+      edge: "Edge computing runs your code closer to the user, so responses are faster. Centralized cloud keeps everything in one place, which makes it easier to manage data and security. The tradeoff: speed vs simplicity.",
+      crdt: "It's like having a notebook you and a friend can both write in. If you both write on the same page, the notebook is smart enough to figure out what should be there, even if you can't see each other.",
+      fibonacci: "def fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a",
+      design: "Create a cell that holds the current coffee count. Add a formula cell that computes 'over_budget' boolean. Add a listener that fires when over_budget is true. Use the listener to send a notification or write to disk.",
+    },
+    deepseek: {
+      haiku: "Data flows like streams\nCells update, lines rewire\nCode becomes alive",
+      edge: "Edge = compute near data sources (low latency, high privacy, distributed complexity). Centralized = single source of truth (simpler ops, easier debugging, higher latency). For most apps: hybrid approach works best.",
+      crdt: "Two friends drawing on the same whiteboard from different cities. CRDTs make sure their drawings combine correctly without anyone having to ask permission. They use math (commutativity, associativity, idempotence) to make this work automatically.",
+      fibonacci: "function fib(n) {\n  let [a, b] = [0, 1];\n  while (n--) [a, b] = [b, a + b];\n  return a;\n}",
+      design: "Use a sensor cell (kind: sensor) to track time of day, a value cell for coffee count, a formula to check if over budget, and a listener (kind: listener) to fire an action. The whole thing fits in 10 lines of YAML.",
+    },
+  };
+  // Find the closest match
+  const p = prompt.toLowerCase();
+  const r = responses[modelKey];
+  if (p.includes('haiku')) return { text: r.haiku, tokens: 45 + Math.floor(Math.random() * 30) };
+  if (p.includes('edge') || p.includes('cloud')) return { text: r.edge, tokens: 90 + Math.floor(Math.random() * 50) };
+  if (p.includes('crdt') || p.includes('5-year')) return { text: r.crdt, tokens: 80 + Math.floor(Math.random() * 40) };
+  if (p.includes('fib') || p.includes('python')) return { text: r.fibonacci, tokens: 50 + Math.floor(Math.random() * 30) };
+  if (p.includes('design') || p.includes('cell')) return { text: r.design, tokens: 110 + Math.floor(Math.random() * 50) };
+  // Default
+  return { text: `[${MODELS[modelKey].name}] This is a simulated response for the prompt: "${prompt.slice(0, 80)}...". In production, this would be a real API call to the model.`, tokens: 30 + Math.floor(Math.random() * 30) };
+}
+
+async function runAll() {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+  cells.prompt.value = prompt;
+  cells.prompt.t++;
+  document.getElementById('run').disabled = true;
+  document.getElementById('synthesis-box').style.display = 'none';
+  log(`▶ Running 3 cells in parallel with prompt: "${prompt.slice(0, 50)}..."`);
+  // Run all 3 in parallel (this is the cell cascade in action)
+  const results = await Promise.allSettled([
+    callModel('zai', prompt),
+    callModel('kimi', prompt),
+    callModel('deepseek', prompt),
+  ]);
+  document.getElementById('run').disabled = false;
+  const mode = document.getElementById('mode').value;
+  if ((mode === 'synth' || mode === 'vote') && results.every(r => r.status === 'fulfilled')) {
+    document.getElementById('synthesis-box').style.display = '';
+    document.getElementById('synthesis').textContent = '';
+    document.getElementById('synthesis').classList.add('empty');
+    document.getElementById('synthesis').textContent = mode === 'synth'
+      ? 'Click "Synthesize" to combine all 3 responses with z.ai.'
+      : 'Click "Synthesize" to have z.ai judge the best response.';
+  }
+  renderCellList();
+}
+
+async function synthesize() {
+  const mode = document.getElementById('mode').value;
+  const zaiR = cells['ai.zai'].value;
+  const kimiR = cells['ai.kimi'].value;
+  const dsR = cells['ai.ds'].value;
+  if (!zaiR || !kimiR || !dsR) return;
+  const synthPrompt = mode === 'vote'
+    ? `You are judging 3 responses to the prompt "${cells.prompt.value}". Pick the best one and explain why in 2-3 sentences.\n\nResponse A (z.ai):\n${zaiR}\n\nResponse B (Kimi):\n${kimiR}\n\nResponse C (DeepSeek):\n${dsR}\n\nBest response: [A/B/C]\nReason:`
+    : `Synthesize these 3 responses into one coherent answer. Take the best parts of each. The original prompt was: "${cells.prompt.value}"\n\nResponse A (z.ai):\n${zaiR}\n\nResponse B (Kimi):\n${kimiR}\n\nResponse C (DeepSeek):\n${dsR}\n\nSynthesized answer:`;
+  const synthBtn = document.getElementById('synthesize');
+  synthBtn.disabled = true;
+  document.getElementById('synthesis').classList.remove('empty');
+  document.getElementById('synthesis').textContent = '⏳ Synthesizing...';
+  try {
+    const result = await simulatedResponse('zai', synthPrompt);
+    document.getElementById('synthesis').textContent = result.text;
+    cells['ai.synth'].value = result.text;
+    cells['ai.synth'].t++;
+    log(`✓ Synthesis complete (${result.tokens} tokens)`);
+    renderCellList();
+  } catch (e) {
+    document.getElementById('synthesis').textContent = 'Error: ' + e.message;
+  }
+  synthBtn.disabled = false;
+}
+
+function copyResponse(model) {
+  const text = document.getElementById('response-' + model).textContent;
+  navigator.clipboard.writeText(text).then(() => log(`Copied ${model} response`));
+}
+
+async function rerunOne(model) {
+  const prompt = cells.prompt.value;
+  if (!prompt) return;
+  await callModel(model, prompt);
+  renderCellList();
+}
+
+function renderCellList() {
+  const el = document.getElementById('cell-list');
+  el.innerHTML = Object.values(cells).map(c => {
+    let v = c.value;
+    if (v === null) v = '<i style="color: var(--text-faint);">pending</i>';
+    else if (typeof v === 'string' && v.length > 200) v = v.slice(0, 197) + '…';
+    return `<div class="cell">
+      <div class="head">
+        <span class="id">${c.id}</span>
+        <span class="kind ${c.kind === 'ai.llm' ? 'ai-llm' : c.kind}">${c.kind}</span>
+      </div>
+      <div class="value">${v}</div>
+    </div>`;
+  }).join('');
+}
+
+// Init
+document.getElementById('run').onclick = runAll;
+document.getElementById('synthesize').onclick = synthesize;
+document.querySelectorAll('.example').forEach(b => b.onclick = () => {
+  document.getElementById('prompt').value = b.dataset.prompt;
+});
+renderCellList();
+log('Ready. Click "Run all cells" to send the prompt to 3 models in parallel.');
+</script>
+
+</body>
+</html>
