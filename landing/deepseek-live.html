@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt × DeepSeek — V3 Flash + R1 Reasoner, side by side</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --ds: #c6a87e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--ds); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--ds), var(--tan), var(--red)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--ds), var(--tan), var(--red)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+@media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+
+.panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.panel.flash { border-color: rgba(198, 168, 126, 0.4); }
+.panel.pro { border-color: rgba(95, 168, 211, 0.4); }
+.panel h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.panel.flash h3 { color: var(--ds); }
+.panel.pro h3 { color: var(--blue); }
+.panel textarea { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; min-height: 100px; margin-bottom: 12px; }
+.panel button { padding: 10px 20px; color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+.panel.flash button { background: var(--ds); }
+.panel.pro button { background: var(--blue); }
+.panel .response { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; min-height: 120px; max-height: 500px; overflow-y: auto; white-space: pre-wrap; margin-top: 12px; }
+.panel .response.empty { color: var(--text-faint); font-style: italic; }
+.panel .response.error { color: var(--red); }
+.panel .response.has-reasoning { background: rgba(95, 168, 211, 0.05); }
+.panel .meta { margin-top: 12px; display: flex; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); flex-wrap: wrap; }
+.panel .meta .v { color: var(--text-dim); }
+
+.config { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 700px) { .config { grid-template-columns: 1fr; } }
+.config .field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.config .field select, .config .field input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+.race { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.race h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.race .bar { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.race .bar .label { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-width: 80px; }
+.race .bar .track { flex: 1; height: 24px; background: var(--bg); border-radius: 4px; position: relative; overflow: hidden; }
+.race .bar .fill { height: 100%; background: var(--ds); border-radius: 4px; transition: width 0.5s; }
+.race .bar.pro .fill { background: var(--blue); }
+.race .bar .v { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); min-width: 80px; text-align: right; }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="zai-live.html">z.ai</a>
+    <a href="kimi-live.html">Kimi</a>
+    <a href="deepseek-live.html" style="color: var(--ds);">DeepSeek</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt × <span class="grad-text">DeepSeek</span></h1>
+  <p class="lead">V3 Flash for parallel workers. R1 Reasoner for expert reasoning. Cheap, fast, deep. As actual Quilt cells.</p>
+</div>
+
+<main>
+
+  <div class="config">
+    <div class="field">
+      <label>Flash model</label>
+      <select id="flash-model">
+        <option value="deepseek-chat">deepseek-chat (V3 Flash)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Pro model</label>
+      <select id="pro-model">
+        <option value="deepseek-reasoner">deepseek-reasoner (R1)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <div class="status" id="status">
+        <span class="dot" id="status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); margin-right: 6px;"></span>
+        <span id="status-text">Idle</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="panel flash">
+      <h3>⚡ Flash (V3)</h3>
+      <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Fast, cheap, general purpose. $0.0001/1k. Best for parallel workers.</p>
+      <textarea id="flash-prompt" placeholder="Prompt for Flash">Write a tagline for a personal data mesh that runs on every device.</textarea>
+      <button onclick="runFlash()">▶ Run Flash</button>
+      <div class="response empty" id="flash-res">Fire Flash to see the response.</div>
+      <div class="meta">
+        <div>tokens: <span class="v" id="flash-tokens">—</span></div>
+        <div>time: <span class="v" id="flash-time">—</span></div>
+        <div>cost: <span class="v" id="flash-cost">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel pro">
+      <h3>🧠 Pro (R1)</h3>
+      <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Dedicated reasoning model. Exposes chain-of-thought. $0.0005/1k in, $0.002/1k out.</p>
+      <textarea id="pro-prompt" placeholder="A reasoning question for R1">A farmer has 17 sheep. All but 9 run away. How many are left? Think step by step.</textarea>
+      <button onclick="runPro()">▶ Run R1</button>
+      <div class="response empty" id="pro-res">Fire R1 to see the reasoning + answer.</div>
+      <div class="meta">
+        <div>tokens: <span class="v" id="pro-tokens">—</span></div>
+        <div>time: <span class="v" id="pro-time">—</span></div>
+        <div>cost: <span class="v" id="pro-cost">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin: 20px 0;">
+    <button onclick="runBoth()" style="padding: 12px 32px; background: var(--purple); color: var(--bg); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem;">▶ Run both in parallel (race)</button>
+  </div>
+
+  <div class="race" id="race" style="display: none;">
+    <h3>Race result</h3>
+    <div class="bar" id="race-flash">
+      <div class="label">Flash</div>
+      <div class="track"><div class="fill" id="race-flash-fill" style="width: 0%"></div></div>
+      <div class="v" id="race-flash-v">—</div>
+    </div>
+    <div class="bar pro" id="race-pro">
+      <div class="label">R1</div>
+      <div class="track"><div class="fill" id="race-pro-fill" style="width: 0%"></div></div>
+      <div class="v" id="race-pro-v">—</div>
+    </div>
+    <div style="margin-top: 12px; color: var(--text-faint); font-size: 0.85rem;" id="race-summary">—</div>
+  </div>
+
+</main>
+
+<footer>
+  <p>Quilt × DeepSeek · V3 Flash + R1 Reasoner · As actual Quilt cells</p>
+</footer>
+
+<script>
+const DS_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions';
+
+function setStatus(text, kind) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  if (kind === 'loading') { dot.style.background = 'var(--blue)'; dot.style.animation = 'pulse 1s ease-in-out infinite'; }
+  else if (kind === 'ok') { dot.style.background = 'var(--green)'; dot.style.animation = 'none'; }
+  else if (kind === 'err') { dot.style.background = 'var(--red)'; dot.style.animation = 'none'; }
+  else { dot.style.background = 'var(--text-faint)'; dot.style.animation = 'none'; }
+}
+
+async function callDS(messages, model, opts = {}) {
+  setStatus('Calling ' + model + '...', 'loading');
+  const t0 = performance.now();
+  try {
+    const res = await fetch(DS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages, ...opts }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`deepseek ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const dt = (performance.now() - t0).toFixed(0);
+    setStatus('Ready', 'ok');
+    return {
+      text: data.choices?.[0]?.message?.content || '',
+      reasoning: data.choices?.[0]?.message?.reasoning_content || '',
+      tokens: data.usage?.total_tokens,
+      promptTokens: data.usage?.prompt_tokens,
+      completionTokens: data.usage?.completion_tokens,
+      time: dt,
+      model: data.model,
+    };
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'err');
+    throw e;
+  }
+}
+
+function costOf(r, isPro) {
+  // Flash: $0.0001/1k in, $0.0002/1k out
+  // Pro: $0.0005/1k in, $0.002/1k out
+  const rates = isPro ? { in: 0.0005, out: 0.002 } : { in: 0.0001, out: 0.0002 };
+  if (!r.promptTokens) return 0;
+  return ((r.promptTokens / 1000) * rates.in) + (((r.completionTokens || 0) / 1000) * rates.out);
+}
+
+async function runFlash() {
+  const prompt = document.getElementById('flash-prompt').value;
+  if (!prompt) return;
+  const res = document.getElementById('flash-res');
+  res.textContent = '⏳ Calling DeepSeek V3 Flash...';
+  res.classList.remove('empty', 'error');
+  try {
+    const r = await callDS([{ role: 'user', content: prompt }], document.getElementById('flash-model').value, { max_tokens: 500 });
+    res.textContent = r.text;
+    document.getElementById('flash-tokens').textContent = r.tokens || '—';
+    document.getElementById('flash-time').textContent = r.time + 'ms';
+    document.getElementById('flash-cost').textContent = '$' + costOf(r, false).toFixed(5);
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+  }
+}
+
+async function runPro() {
+  const prompt = document.getElementById('pro-prompt').value;
+  if (!prompt) return;
+  const res = document.getElementById('pro-res');
+  res.textContent = '⏳ Calling DeepSeek R1 Reasoner...';
+  res.classList.remove('empty', 'error');
+  res.classList.add('has-reasoning');
+  try {
+    const r = await callDS([{ role: 'user', content: prompt }], document.getElementById('pro-model').value, { max_tokens: 2000 });
+    let text = '';
+    if (r.reasoning) text += '🧠 Reasoning:\n' + r.reasoning + '\n\n';
+    text += '💬 Answer:\n' + r.text;
+    res.textContent = text;
+    document.getElementById('pro-tokens').textContent = r.tokens || '—';
+    document.getElementById('pro-time').textContent = r.time + 'ms';
+    document.getElementById('pro-cost').textContent = '$' + costOf(r, true).toFixed(5);
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+  }
+}
+
+async function runBoth() {
+  const flashPrompt = document.getElementById('flash-prompt').value;
+  const proPrompt = document.getElementById('pro-prompt').value;
+  if (!flashPrompt || !proPrompt) {
+    alert('Fill both prompts first');
+    return;
+  }
+  document.getElementById('race').style.display = '';
+  document.getElementById('race-flash-fill').style.width = '0%';
+  document.getElementById('race-pro-fill').style.width = '0%';
+  document.getElementById('race-flash-v').textContent = 'running...';
+  document.getElementById('race-pro-v').textContent = 'running...';
+  document.getElementById('race-summary').textContent = 'Racing...';
+
+  // Run both in parallel
+  const t0 = performance.now();
+  const [flashResult, proResult] = await Promise.allSettled([
+    callDS([{ role: 'user', content: flashPrompt }], 'deepseek-chat', { max_tokens: 500 }),
+    callDS([{ role: 'user', content: proPrompt }], 'deepseek-reasoner', { max_tokens: 2000 }),
+  ]);
+
+  const total = performance.now() - t0;
+  const flashTime = flashResult.status === 'fulfilled' ? +flashResult.value.time : total;
+  const proTime = proResult.status === 'fulfilled' ? +proResult.value.time : total;
+  const maxTime = Math.max(flashTime, proTime, 1);
+  document.getElementById('race-flash-fill').style.width = ((flashTime / maxTime) * 100) + '%';
+  document.getElementById('race-pro-fill').style.width = ((proTime / maxTime) * 100) + '%';
+  document.getElementById('race-flash-v').textContent = flashTime + 'ms';
+  document.getElementById('race-pro-v').textContent = proTime + 'ms';
+
+  // Render responses
+  if (flashResult.status === 'fulfilled') {
+    const r = flashResult.value;
+    document.getElementById('flash-res').textContent = r.text;
+    document.getElementById('flash-tokens').textContent = r.tokens || '—';
+    document.getElementById('flash-time').textContent = r.time + 'ms';
+    document.getElementById('flash-cost').textContent = '$' + costOf(r, false).toFixed(5);
+  } else {
+    document.getElementById('flash-res').textContent = 'Error: ' + flashResult.reason.message;
+  }
+  if (proResult.status === 'fulfilled') {
+    const r = proResult.value;
+    let text = '';
+    if (r.reasoning) text += '🧠 Reasoning:\n' + r.reasoning + '\n\n';
+    text += '💬 Answer:\n' + r.text;
+    document.getElementById('pro-res').textContent = text;
+    document.getElementById('pro-res').classList.add('has-reasoning');
+    document.getElementById('pro-tokens').textContent = r.tokens || '—';
+    document.getElementById('pro-time').textContent = r.time + 'ms';
+    document.getElementById('pro-cost').textContent = '$' + costOf(r, true).toFixed(5);
+  } else {
+    document.getElementById('pro-res').textContent = 'Error: ' + proResult.reason.message;
+  }
+
+  // Summary
+  const winner = flashTime < proTime ? 'Flash' : 'R1';
+  const ratio = (Math.max(flashTime, proTime) / Math.min(flashTime, proTime)).toFixed(1);
+  document.getElementById('race-summary').textContent = `${winner} was ${ratio}x faster. Total wall time: ${total.toFixed(0)}ms (parallel).`;
+  setStatus('Done', 'ok');
+}
+
+setStatus('Ready. Click any button to call DeepSeek.', '');
+</script>
+
+</body>
+</html>

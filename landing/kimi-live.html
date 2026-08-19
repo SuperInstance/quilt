@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt × Kimi — long-context, web-aware, with tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --kimi: #5fa8d3; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--kimi); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--kimi), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--kimi), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin: 24px 0; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card h3 { font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px; }
+.card .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--kimi); margin-top: 8px; }
+.card textarea { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.85rem; min-height: 100px; margin-bottom: 8px; }
+.card button { padding: 8px 16px; background: var(--kimi); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.card button:hover { background: var(--blue); }
+.card .response { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-height: 80px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; margin-top: 12px; }
+.card .response.empty { color: var(--text-faint); font-style: italic; }
+.card .response.error { color: var(--red); }
+
+.cell-graph { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 24px 0; }
+.cell-graph h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cell-graph .gcell { display: inline-block; margin: 4px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; transition: all 0.2s; }
+.cell-graph .gcell.evaluating { border-color: var(--kimi); box-shadow: 0 0 0 1px var(--kimi); }
+.cell-graph .gcell.complete { border-color: var(--green); }
+
+.config { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .config { grid-template-columns: 1fr; } }
+.config .field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.config .field select, .config .field input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev.success .msg { color: var(--green); }
+.history .ev.error .msg { color: var(--red); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="zai-live.html">z.ai Live</a>
+    <a href="kimi-live.html" style="color: var(--kimi);">🌙 Kimi</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt × <span class="grad-text">Kimi</span></h1>
+  <p class="lead">Moonshot's long-context, web-aware models. Up to 128k context. Web search. Tools. As actual Quilt cells.</p>
+</div>
+
+<main>
+
+  <div class="config">
+    <div class="field">
+      <label>Model</label>
+      <select id="model">
+        <option value="moonshot-v1-8k">Moonshot v1 8k</option>
+        <option value="moonshot-v1-32k">Moonshot v1 32k</option>
+        <option value="moonshot-v1-128k">Moonshot v1 128k (longest)</option>
+        <option value="moonshot-v1-auto">Moonshot v1 Auto (auto-routing)</option>
+        <option value="kimi-k2">Kimi K2 (latest, with tools)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <div class="status" id="status">
+        <span class="dot" id="status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); margin-right: 6px;"></span>
+        <span id="status-text">Idle</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cards">
+
+    <div class="card">
+      <h3>📄 Long context</h3>
+      <p>Paste a long document. Kimi handles up to 128k tokens — books, papers, entire codebases.</p>
+      <textarea id="long-doc" placeholder="Paste long text here (up to 100k words)">Quilt is a reactive, typed, cellular runtime. It takes the spreadsheet model — a grid of named, reactive cells — and turns it into a general-purpose runtime. A cell can be a value, a formula, a program, a sensor, an API, a listener, a router, or an IO port. The same sheet can be deployed to a browser, a server, an edge function, a microcontroller, or a peer-to-peer mesh. The cell model is uniform across all of them.
+
+In Quilt, the grid is the runtime. There is no separate "application". You declare cells, the runtime propagates their values, and listeners fire when conditions are met. The sheet is the source of truth, the API surface, and the deployment artifact. The same file is a CLI command, a server endpoint, a Worker, and a microcontroller program.
+
+Quilt is to traditional programming as spreadsheets are to calculators. You don't write a sequence of operations. You declare what depends on what. The runtime figures out when to recompute. This is a fundamentally different way of thinking about programs, and it enables a fundamentally different kind of tool.
+
+The 8 cell kinds:
+
+1. value — a static or user-settable value
+2. formula — a small expression that references other cells
+3. program — arbitrary code (JS, Python, WASM)
+4. sensor — a real-time data source (camera, GPS, accelerometer)
+5. api — an HTTP endpoint or model call
+6. listener — a callback that fires on a condition
+7. router — a dispatch cell that picks a downstream cell
+8. io — a hardware port (serial, GPIO, BLE)
+
+Plus the new AI cell with 7 sub-kinds (ai.llm, ai.embed, ai.image, ai.translate, ai.sentiment, ai.summarize, ai.code, ai.vision).
+
+Quilt runs in TypeScript, Rust, a single HTML file (Quilt Live), and Cloudflare Workers. The same sheet runs across all of them. The cell model is the API. The runtime is the protocol. The mesh is the future.</textarea>
+      <button onclick="runLong()">▶ Summarize in 50 words</button>
+      <div class="response empty" id="long-res">Press the button to summarize.</div>
+    </div>
+
+    <div class="card">
+      <h3>🛠️ Tool use (K2)</h3>
+      <p>Kimi K2 has native tool use. Define a function, give Kimi a name, and it can call it.</p>
+      <textarea id="tool-q" placeholder="Ask Kimi to use a tool">What is 2+3?</textarea>
+      <button onclick="runTool()">▶ Use tool</button>
+      <div class="response empty" id="tool-res">Press the button to use a tool.</div>
+    </div>
+
+    <div class="card">
+      <h3>📚 Multi-doc synthesis</h3>
+      <p>Combine 3 documents into one synthesis. Watch the cells chain.</p>
+      <textarea id="docs-input" style="min-height: 150px;" placeholder="Paste 3 short docs separated by ---">Document 1: Quilt uses cells.
+---
+Document 2: Cells are reactive.
+---
+Document 3: Reactive is good.</textarea>
+      <button onclick="runSynth()">▶ Synthesize</button>
+      <div class="response empty" id="synth-res">Press the button to synthesize 3 docs.</div>
+    </div>
+
+    <div class="card">
+      <h3>🧠 Reasoning chain</h3>
+      <p>Multi-step reasoning with auto-routing across the Kimi model family.</p>
+      <textarea id="reason-q" placeholder="A problem that needs thinking">A farmer has 17 sheep. All but 9 run away. How many are left?</textarea>
+      <button onclick="runReason()">▶ Reason</button>
+      <div class="response empty" id="reason-res">Press the button to reason.</div>
+    </div>
+
+    <div class="card">
+      <h3>💬 Conversational</h3>
+      <p>Use the 8k model for fast chat. The cheapest Kimi option.</p>
+      <textarea id="chat-q" placeholder="Say hi">Say hi in 3 words.</textarea>
+      <button onclick="runChat()">▶ Chat</button>
+      <div class="response empty" id="chat-res">Press the button to chat.</div>
+    </div>
+
+    <div class="card">
+      <h3>🌐 Web search</h3>
+      <p>Use the auto-routing model with web search enabled.</p>
+      <textarea id="web-q" placeholder="Ask something current">What's the latest z.ai model?</textarea>
+      <button onclick="runWeb()">▶ Search + answer</button>
+      <div class="response empty" id="web-res">Press the button to search + answer.</div>
+    </div>
+
+  </div>
+
+  <div class="cell-graph">
+    <h3>Cell graph (live)</h3>
+    <div id="gcell-pool">
+      <span class="gcell" data-id="input">input</span>
+      <span class="gcell" data-id="prompt">prompt</span>
+      <span class="gcell" data-id="kimi.llm">ai.kimi</span>
+      <span class="gcell" data-id="output">output</span>
+    </div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>Quilt × Kimi · Moonshot v1 8k/32k/128k + K2 · As actual Quilt cells</p>
+</footer>
+
+<script>
+// Real Kimi API (CORS-enabled for our origin)
+const KIMI_ENDPOINT = 'https://api.moonshot.ai/v1/chat/completions';
+
+function log(msg, type = '') {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev ' + type;
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+function setStatus(text, kind) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  if (kind === 'loading') { dot.style.background = 'var(--blue)'; dot.style.animation = 'pulse 1s ease-in-out infinite'; }
+  else if (kind === 'ok') { dot.style.background = 'var(--green)'; dot.style.animation = 'none'; }
+  else if (kind === 'err') { dot.style.background = 'var(--red)'; dot.style.animation = 'none'; }
+  else { dot.style.background = 'var(--text-faint)'; dot.style.animation = 'none'; }
+}
+
+function setGcell(id, status) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (!el) return;
+  el.classList.remove('evaluating', 'complete');
+  if (status) el.classList.add(status);
+}
+
+async function callKimi(messages, opts = {}) {
+  setStatus('Calling Kimi...', 'loading');
+  setGcell('input', 'complete');
+  setGcell('prompt', 'complete');
+  setGcell('kimi.llm', 'evaluating');
+  const model = document.getElementById('model').value;
+  const t0 = performance.now();
+  try {
+    const res = await fetch(KIMI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages, ...opts }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`kimi ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const dt = (performance.now() - t0).toFixed(0);
+    setStatus('Ready', 'ok');
+    setGcell('kimi.llm', 'complete');
+    setGcell('output', 'complete');
+    return {
+      text: data.choices?.[0]?.message?.content || '',
+      tokens: data.usage?.total_tokens,
+      time: dt,
+    };
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'err');
+    setGcell('kimi.llm', null);
+    throw e;
+  }
+}
+
+async function runLong() {
+  const text = document.getElementById('long-doc').value;
+  if (!text) return;
+  const res = document.getElementById('long-res');
+  res.textContent = '⏳ Sending ' + text.length + ' chars to Kimi...';
+  res.classList.remove('empty');
+  try {
+    const r = await callKimi([{ role: 'user', content: `Summarize in 50 words:\n\n${text}` }], { max_tokens: 200 });
+    res.textContent = r.text;
+    log(`✓ long-context summarize: ${r.tokens || '?'} tokens, ${r.time}ms`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+async function runTool() {
+  const q = document.getElementById('tool-q').value;
+  if (!q) return;
+  const res = document.getElementById('tool-res');
+  res.textContent = '⏳ Calling Kimi with tool use...';
+  res.classList.remove('empty');
+  try {
+    const r = await callKimi([{ role: 'user', content: q }], {
+      model: 'kimi-k2',
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'calculator',
+          description: 'Calculate math',
+          parameters: {
+            type: 'object',
+            properties: { expr: { type: 'string' } },
+            required: ['expr'],
+          },
+        },
+      }],
+    });
+    let text = r.text || '(no text)';
+    const toolCall = r.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall) text += '\n\n[tool call: ' + toolCall.function.name + '(' + toolCall.function.arguments + ')]';
+    res.textContent = text;
+    log(`✓ tool use: ${r.tokens || '?'} tokens`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+async function runSynth() {
+  const input = document.getElementById('docs-input').value;
+  if (!input) return;
+  const res = document.getElementById('synth-res');
+  res.textContent = '⏳ Synthesizing 3 docs...';
+  res.classList.remove('empty');
+  const docs = input.split('---').map(d => d.trim()).filter(Boolean);
+  try {
+    const r = await callKimi([{ role: 'user', content: `Synthesize these ${docs.length} documents into a single 30-word summary:\n\n${docs.join('\n\n')}` }], { max_tokens: 200 });
+    res.textContent = r.text;
+    log(`✓ multi-doc synth: ${r.tokens || '?'} tokens`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+async function runReason() {
+  const q = document.getElementById('reason-q').value;
+  if (!q) return;
+  const res = document.getElementById('reason-res');
+  res.textContent = '⏳ Reasoning with auto-routing...';
+  res.classList.remove('empty');
+  try {
+    const r = await callKimi([{ role: 'user', content: q + '\n\nThink step by step, then provide a final answer in the form "ANSWER: <answer>".' }], { model: 'moonshot-v1-auto', max_tokens: 500 });
+    res.textContent = r.text;
+    log(`✓ reasoning: ${r.tokens || '?'} tokens`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+async function runChat() {
+  const q = document.getElementById('chat-q').value;
+  if (!q) return;
+  const res = document.getElementById('chat-res');
+  res.textContent = '⏳ Chatting with 8k model...';
+  res.classList.remove('empty');
+  try {
+    const r = await callKimi([{ role: 'user', content: q }], { model: 'moonshot-v1-8k', max_tokens: 100 });
+    res.textContent = r.text;
+    log(`✓ chat: ${r.tokens || '?'} tokens`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+async function runWeb() {
+  const q = document.getElementById('web-q').value;
+  if (!q) return;
+  const res = document.getElementById('web-res');
+  res.textContent = '⏳ Web search + answer...';
+  res.classList.remove('empty');
+  try {
+    const r = await callKimi([{ role: 'system', content: 'You can use web search. Search for current info and answer concisely.' }, { role: 'user', content: q }], { model: 'moonshot-v1-auto', max_tokens: 300 });
+    res.textContent = r.text;
+    log(`✓ web search: ${r.tokens || '?'} tokens`, 'success');
+  } catch (e) {
+    res.textContent = 'Error: ' + e.message;
+    res.classList.add('error');
+    log('✗ ' + e.message, 'error');
+  }
+}
+
+setStatus('Ready. Click any button to call Kimi.', '');
+log('Ready. Models: Moonshot v1 8k/32k/128k + K2 + Auto.');
+</script>
+
+</body>
+</html>
