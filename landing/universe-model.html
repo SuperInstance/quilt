@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universe Model — Quilt as a SuperInstance</title>
+<meta name="description" content="A Quilt sheet is a self-contained universe. Each cell can wrap any engine: NVIDIA Isaac, Cosmos, Minecraft, Unreal, Jupyter, paper trading, backtests. The cell model is the universal API to any simulator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cosmic: #5fa8d3; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--cosmic); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+pre { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; color: var(--text-dim); }
+p { color: var(--text-dim); margin-bottom: 12px; }
+.grad-text { background: linear-gradient(135deg, var(--cosmic), var(--purple), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--cosmic), var(--purple), var(--green)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+main { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+
+section { margin: 60px 0; }
+section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.02em; }
+section h2 .num { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-right: 12px; font-size: 0.9rem; vertical-align: middle; }
+section h3 { font-size: 1.2rem; font-weight: 600; margin: 24px 0 10px; color: var(--text); }
+
+.equation { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--cosmic); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+
+.engines { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 20px 0; }
+.engine { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; transition: all 0.2s; }
+.engine:hover { border-color: var(--cosmic); transform: translateY(-2px); }
+.engine .icon { font-size: 1.6rem; margin-bottom: 8px; }
+.engine h4 { font-size: 0.95rem; margin-bottom: 4px; color: var(--text); }
+.engine .name { font-size: 0.7rem; color: var(--cosmic); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+.engine p { font-size: 0.8rem; color: var(--text-dim); margin: 0; }
+
+.callout { background: linear-gradient(135deg, rgba(95, 168, 211, 0.05), rgba(187, 126, 198, 0.05)); border: 1px solid var(--cosmic); border-radius: 12px; padding: 20px; margin: 24px 0; }
+.callout h4 { color: var(--cosmic); margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.callout p { margin: 0; }
+
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-dim); white-space: pre; overflow-x: auto; }
+
+.arch-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+.arch-table th, .arch-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.arch-table th { color: var(--text-faint); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; }
+.arch-table tr:last-child td { border-bottom: none; }
+.arch-table td:first-child { color: var(--cosmic); font-weight: 600; }
+.arch-table td .what { color: var(--text-dim); font-size: 0.85rem; }
+
+.next { display: flex; gap: 12px; margin: 32px 0; flex-wrap: wrap; }
+.next a { padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); text-decoration: none; flex: 1; min-width: 220px; transition: all 0.2s; }
+.next a:hover { border-color: var(--cosmic); }
+.next a .l { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+.next a .t { display: block; font-size: 1rem; font-weight: 600; color: var(--text); margin: 4px 0; }
+.next a .d { font-size: 0.85rem; color: var(--text-dim); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 60px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="neural-cells.html">Neural Cells</a>
+    <a href="tavern.html">Tavern</a>
+    <a href="universe-model.html" style="color: var(--cosmic);">🌌 Universe</a>
+    <a href="engines.html">Engines</a>
+    <a href="vibe.html">Vibe</a>
+    <a href="evolve.html">Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt as a <span class="grad-text">Universe Model</span></h1>
+  <p class="lead">A SuperInstance. Each Quilt sheet is a self-contained universe. Each cell can wrap <em>any</em> engine — a robotics simulator, a game engine, a notebook kernel, a paper trading app, a backtester. The cell model is the universal API to <em>any</em> simulator.</p>
+</div>
+
+<main>
+
+  <section>
+    <h2><span class="num">00</span>The SuperInstance</h2>
+    <p>The name fits. A Quilt sheet is a <b>SuperInstance</b> — a self-contained universe that:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>Has state (the cell values)</li>
+      <li>Has laws (the formulas, programs, listeners)</li>
+      <li>Has inhabitants (the cells — anything from a number to a robot)</li>
+      <li>Has physics (the propagation rules — when a cell updates, who else updates)</li>
+      <li>Has time (tick-by-tick simulation, or event-driven reactivity)</li>
+      <li>Can be observed (the values, the graph, the trajectory)</li>
+      <li>Can be forked (clone the sheet, change one thing, compare)</li>
+      <li>Can be evolved (<a href="evolve.html">@quilt/evolve</a> — RLAIF as a first-class operation)</li>
+    </ul>
+    <p>Each sheet is one universe. You can run thousands in parallel. You can compose them. You can have universes that contain universes. The cell model is the substrate; everything is a cell.</p>
+
+    <div class="callout">
+      <h4>The name, in one line</h4>
+      <p>A Quilt sheet is a <em>SuperInstance</em> — a single, self-contained, addressable, inspectable, forkable instance of a universe. And because every cell is addressable, the whole universe is addressable.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">01</span>Cells as engine wrappers</h2>
+    <p>The key architectural move: a cell can wrap <em>any</em> external system that has state. The cell exposes the engine's state as Quilt cells, and translates between Quilt reactivity and the engine's API.</p>
+
+    <div class="diagram">   ┌─────────────────────────────────────────────────────────────┐
+   │  THE SUPERINSTANCE — a Quilt sheet                            │
+   │                                                              │
+   │   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+   │   │  isaac.robot │  │ minecraft.   │  │ jupyter.     │        │
+   │   │  (NVIDIA     │  │ player.tile  │  │ notebook     │        │
+   │   │   Isaac Sim) │  │ (Minecraft)  │  │ (Jupyter)    │        │
+   │   └──────────────┘  └──────────────┘  └──────────────┘        │
+   │         ▲                    ▲                  ▲            │
+   │         │  state as cells   │                  │            │
+   │         └────────┬───────────┴──────────────────┘            │
+   │                  ▼                                             │
+   │   ┌──────────────────────────────────────────────────────┐    │
+   │   │              THE QUILT RUNTIME                       │    │
+   │   │   reactive propagation, formula eval, AI cells,    │    │
+   │   │   listeners, routers, time-stepped simulation       │    │
+   │   └──────────────────────────────────────────────────────┘    │
+   │                  ▼                                             │
+   │   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+   │   │ policy.cell  │  │ trading.     │  │ backtest.    │        │
+   │   │ (LLM-driven  │  │ portfolio    │  │ equity_curve │        │
+   │   │  decision)   │  │ (paper trade)│  │ (alt univ.)  │        │
+   │   └──────────────┘  └──────────────┘  └──────────────┘        │
+   │                                                              │
+   └─────────────────────────────────────────────────────────────┘</div>
+
+    <h3>The engine cell pattern</h3>
+    <p>For each engine, a Quilt adapter exposes the engine's state as cells. The adapter is a thin shim that translates between Quilt reactivity and the engine's API.</p>
+
+<pre><span style="color: var(--text-faint);"># A paper trading cell</span>
+- <span style="color: var(--purple);">id: trading.btc_price</span>
+  <span style="color: var(--purple);">kind: engine</span>
+  <span style="color: var(--purple);">engine: coingecko</span>
+  <span style="color: var(--purple);">symbol: BTC</span>
+  <span style="color: var(--text-faint);"># Wraps the CoinGecko API; the cell's value is the current price</span>
+
+<span style="color: var(--text-faint);"># A backtest cell</span>
+- <span style="color: var(--purple);">id: backtest.equity</span>
+  <span style="color: var(--purple);">kind: engine</span>
+  <span style="color: var(--purple);">engine: backtest</span>
+  <span style="color: var(--purple);">strategy: moving_average_crossover</span>
+  <span style="color: var(--purple);">data: trading.btc_price</span>
+  <span style="color: var(--text-faint);"># Wraps a backtester; the cell's value is the equity curve</span>
+
+<span style="color: var(--text-faint);"># A Minecraft cell</span>
+- <span style="color: var(--purple);">id: minecraft.player_pos</span>
+  <span style="color: var(--purple);">kind: engine</span>
+  <span style="color: var(--purple);">engine: minecraft</span>
+  <span style="color: var(--purple);">player: Steve</span>
+  <span style="color: var(--text-faint);"># Wraps a Minecraft server; the cell's value is the player's coords</span>
+
+<span style="color: var(--text-faint);"># A Jupyter cell</span>
+- <span style="color: var(--purple);">id: jupyter.last_output</span>
+  <span style="color: var(--purple);">kind: engine</span>
+  <span style="color: var(--purple);">engine: jupyter</span>
+  <span style="color: var(--purple);">kernel: python3</span>
+  <span style="color: var(--text-faint);"># Wraps a Jupyter kernel; the cell's value is the last execution result</span></pre>
+
+    <p>Each engine cell is reactive. When the wrapped engine's state changes, the cell updates. When a Quilt cell changes that the engine cares about, the engine is notified.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>The engines</h2>
+    <p>These are the engines that can be wrapped as Quilt cells. Each is a real system with state and an API. The cell model makes them all addressable from one substrate.</p>
+
+    <div class="engines">
+
+      <div class="engine">
+        <div class="icon">🤖</div>
+        <div class="name">NVIDIA ISAAC</div>
+        <h4>Robotics simulator</h4>
+        <p>Real-time physics, photorealistic rendering, used to train robots (sim-to-real). Wrap as a cell: joint positions, camera feed, action commands.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">🌌</div>
+        <div class="name">NVIDIA COSMOS</div>
+        <h4>World foundation model</h4>
+        <p>Generates physically-grounded video for training embodied AI. Wrap as a cell: predicted next frame, world state, physics constraints.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">⛏️</div>
+        <div class="name">MINECRAFT</div>
+        <h4>Sandbox game</h4>
+        <p>The most-deployed simulation in history. Wrap as cells: per-player state, per-tile state, events. A whole multiplayer game as a Quilt sheet.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">🎮</div>
+        <div class="name">UNREAL / UNITY</div>
+        <h4>Game engines</h4>
+        <p>Photorealistic 3D, physics, AI. Wrap as cells: actors, transforms, events. An entire 3D world as a Quilt sheet — every actor is a cell.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">📓</div>
+        <div class="name">JUPYTER</div>
+        <h4>Notebook kernel</h4>
+        <p>Live code, live output, live state. Wrap as cells: kernel state, last output, execution count. A notebook is just a Quilt sheet with a code cell.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">📚</div>
+        <div class="name">NOTEBOOKLM</div>
+        <h4>Source-grounded LLM</h4>
+        <p>Notes as a knowledge base. Wrap as cells: per-note embeddings, retrieval scores, generated answers. The whole knowledge base is a Quilt sheet.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">💻</div>
+        <div class="name">PYCHARM</div>
+        <h4>IDE</h4>
+        <p>Files, diagnostics, run configs. Wrap as cells: open files, lint warnings, test results. An IDE is a Quilt sheet with editor + cells.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">📈</div>
+        <div class="name">PAPER TRADING</div>
+        <h4>Trading simulator</h4>
+        <p>Simulated fills, real prices. Wrap as cells: positions, P&amp;L, equity curve. A trading app is a Quilt sheet with price cells.</p>
+      </div>
+
+      <div class="engine">
+        <div class="icon">🔁</div>
+        <div class="name">BACKTEST</div>
+        <h4>Alternative universes</h4>
+        <p>Run the same strategy under different assumptions. Each universe is a Quilt sheet. The multiverse is a Quilt of Quilt sheets.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Architecture: the engine adapter</h2>
+    <p>An engine adapter is a small module that exposes an external system as a Quilt cell. The adapter handles:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>Connection</b> — establish a link to the engine (TCP, HTTP, WebSocket, etc.)</li>
+      <li><b>Subscription</b> — listen for state changes in the engine</li>
+      <li><b>Translation</b> — convert engine events into Quilt cell updates</li>
+      <li><b>Command</b> — convert Quilt cell changes into engine commands</li>
+      <li><b>Schema</b> — declare which cells the engine exposes</li>
+    </ul>
+
+<pre><span style="color: var(--text-faint);">// An engine adapter in TypeScript</span>
+<span style="color: var(--purple);">abstract class</span> <span style="color: var(--text);">EngineAdapter</span> {
+  <span style="color: var(--purple);">abstract</span> name: <span style="color: var(--text);">string</span>;
+  <span style="color: var(--purple);">abstract</span> schema: <span style="color: var(--text);">CellSchema</span>[];  <span style="color: var(--text-faint);">// which cells this engine exposes</span>
+
+  <span style="color: var(--purple);">abstract</span> <span style="color: var(--purple);">async</span> connect(): <span style="color: var(--text);">Promise</span>&lt;<span style="color: var(--purple);">void</span>&gt;;
+  <span style="color: var(--purple);">abstract</span> <span style="color: var(--purple);">async</span> disconnect(): <span style="color: var(--purple);">void</span>;
+
+  <span style="color: var(--text-faint);">// Engine → Quilt: when engine state changes, update the cell</span>
+  <span style="color: var(--purple);">abstract</span> <span style="color: var(--purple);">on</span>(cellId: <span style="color: var(--text);">string</span>, handler: (value: <span style="color: var(--text);">any</span>) =&gt; <span style="color: var(--purple);">void</span>): <span style="color: var(--purple);">void</span>;
+
+  <span style="color: var(--text-faint);">// Quilt → Engine: when a Quilt cell changes, send to engine</span>
+  <span style="color: var(--purple);">abstract</span> <span style="color: var(--purple);">async</span> send(cellId: <span style="color: var(--text);">string</span>, value: <span style="color: var(--text);">any</span>): <span style="color: var(--purple);">Promise</span>&lt;<span style="color: var(--purple);">void</span>&gt;;
+}
+
+<span style="color: var(--text-faint);">// A concrete adapter for paper trading</span>
+<span style="color: var(--purple);">class</span> <span style="color: var(--text);">CoinGeckoAdapter</span> <span style="color: var(--purple);">extends</span> <span style="color: var(--text);">EngineAdapter</span> {
+  name = <span style="color: var(--green);">"coingecko"</span>;
+  schema = [
+    { id: <span style="color: var(--green);">"trading.btc_price"</span>, type: <span style="color: var(--green);">"number"</span>, source: <span style="color: var(--green);">"https://api.coingecko.com/..."</span> },
+  ];
+
+  <span style="color: var(--purple);">async</span> connect() {
+    <span style="color: var(--text-faint);">// poll CoinGecko every 30s</span>
+    setInterval(<span style="color: var(--purple);">async</span> () =&gt; {
+      <span style="color: var(--purple);">const</span> price = <span style="color: var(--purple);">await</span> <span style="color: var(--text);">fetch</span>(<span style="color: var(--green);">"..."</span>).then(r =&gt; r.json());
+      <span style="color: var(--purple);">this</span>.<span style="color: var(--text);">emit</span>(<span style="color: var(--green);">"trading.btc_price"</span>, price);
+    }, 30000);
+  }
+
+  <span style="color: var(--purple);">async</span> send(cellId: <span style="color: var(--text);">string</span>, value: <span style="color: var(--text);">any</span>) {
+    <span style="color: var(--text-faint);">// write to our local paper trading ledger</span>
+  }
+}</pre>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Backtesting alternative universes</h2>
+    <p>The killer app: <b>fork the universe</b>. You have a strategy. You want to know how it would have done with different decisions. In Quilt, this is trivial:</p>
+
+<pre><span style="color: var(--text-faint);"># The base universe — the strategy you ran</span>
+- id: <span style="color: var(--purple);">universe.base.strategy</span>
+  kind: <span style="color: var(--purple);">engine</span>
+  engine: <span style="color: var(--green);">"backtest"</span>
+  rules: <span style="color: var(--green);">"buy when MA(20) > MA(50), sell otherwise"</span>
+
+<span style="color: var(--text-faint);"># An alternative universe — the same strategy, different timing</span>
+- id: <span style="color: var(--purple);">universe.alt1.strategy</span>
+  kind: <span style="color: var(--purple);">engine</span>
+  engine: <span style="color: var(--green);">"backtest"</span>
+  rules: <span style="color: var(--green);">"buy when MA(20) > MA(50) + RSI &lt; 70, sell otherwise"</span>
+
+<span style="color: var(--text-faint);"># Another alternative — different exit</span>
+- id: <span style="color: var(--purple);">universe.alt2.strategy</span>
+  kind: <span style="color: var(--purple);">engine</span>
+  engine: <span style="color: var(--green);">"backtest"</span>
+  rules: <span style="color: var(--green);">"buy when MA(20) > MA(50), sell on +5% or -2%"</span>
+
+<span style="color: var(--text-faint);"># Compare the three equity curves</span>
+- id: <span style="color: var(--purple);">multiverse.equity_chart</span>
+  kind: <span style="color: var(--purple);">formula</span>
+  value: <span style="color: var(--green);">"[universe.base.equity, universe.alt1.equity, universe.alt2.equity]"</span></pre>
+
+    <p>Each "universe" is a Quilt cell that wraps a backtest engine. The "multiverse" is a Quilt cell that aggregates them. The user sees three equity curves, side-by-side, on one sheet. The substrate is the same — every universe is just cells.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Engines as cells: the full table</h2>
+    <table class="arch-table">
+      <thead>
+        <tr><th>Engine</th><th>Cells exposed</th><th>Use case</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Isaac (robotics)</td><td class="what">joint positions, camera, contact forces, action commands</td><td>Sim-to-real robot training, policy eval</td></tr>
+        <tr><td>Cosmos (world model)</td><td class="what">predicted next frame, world state, physics constraints</td><td>Embodied AI training, counterfactual</td></tr>
+        <tr><td>Minecraft</td><td class="what">per-player pos, per-tile state, chat, events</td><td>Multi-agent sim, AI agents in a world</td></tr>
+        <tr><td>Unreal / Unity</td><td class="what">actor transforms, events, blueprints</td><td>Photorealistic 3D, game AI</td></tr>
+        <tr><td>Jupyter</td><td class="what">kernel state, last output, execution count, vars</td><td>Live notebook as reactive cells</td></tr>
+        <tr><td>NotebookLM</td><td class="what">per-note embeddings, retrieval, answers</td><td>RAG over your notes</td></tr>
+        <tr><td>PyCharm</td><td class="what">open files, diagnostics, run configs, test results</td><td>IDE as a Quilt sheet</td></tr>
+        <tr><td>Paper trading</td><td class="what">positions, P&amp;L, equity, prices</td><td>Strategy testing with real prices</td></tr>
+        <tr><td>Backtest</td><td class="what">equity curve, trades, metrics, params</td><td>Alternative-universe sim</td></tr>
+        <tr><td>Web search</td><td class="what">search results, snippets, sources</td><td>Live RAG, real-time info</td></tr>
+        <tr><td>Database</td><td class="what">rows, columns, joins, queries</td><td>Live data as cells</td></tr>
+        <tr><td>Spreadsheet</td><td class="what">cells, ranges, formulas</td><td>The spreadsheet IS a Quilt sheet</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>The implications</h2>
+
+    <h3>1. Any simulator becomes a Quilt cell</h3>
+    <p>If it has state and an API, it's a cell. The Quilt cell model is the universal interface to <em>any</em> simulator. You don't have to choose between Minecraft and Isaac and Jupyter — they coexist in the same sheet.</p>
+
+    <h3>2. Simulators compose</h3>
+    <p>An Isaac cell (robot) and a Minecraft cell (world) and a Jupyter cell (code) can be in the same sheet. The robot acts in the world, the world reacts, the code runs the analysis. One sheet, three engines, one reactive system.</p>
+
+    <h3>3. The multiverse is a graph</h3>
+    <p>Forking a universe is just cloning a sub-graph. Comparing universes is just having two sub-graphs side-by-side. The "multiverse" is a Quilt sheet of Quilt sheets.</p>
+
+    <h3>4. AI is just another engine</h3>
+    <p>An LLM cell is an engine wrapper — it wraps the OpenAI / z.ai / Kimi API. The same pattern as Isaac or Minecraft: external state exposed as cells, reactive updates, cell changes trigger commands. AI is a simulator too — one that simulates language.</p>
+
+    <h3>5. The world model is a cell</h3>
+    <p>Cosmos is a world foundation model — a neural network that generates physically-grounded video. Wrap it as a cell: <code>cosmos.predicted_next_frame</code>. The cell's value is the next frame. The cell updates when prompted. Other cells can observe it. This is the world model as a first-class Quilt citizen.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>From spreadsheet to multiverse</h2>
+    <p>The cell model started as a spreadsheet. It became reactive. It became cellular. It became a runtime. It absorbed LLMs. It became self-improving. And now: it absorbs <em>any</em> simulator.</p>
+    <p>The trajectory is:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>v0.1 — spreadsheet with named, reactive cells</li>
+      <li>v0.2 — production runtime, 8 cell kinds, 9 repos</li>
+      <li>v0.3 — AI cells, self-improvement loops, Cloudflare, mesh, ESP32</li>
+      <li>v1.0 — universe model: any engine wrapped as a cell, multiverse sim, embodied AI in spreadsheets</li>
+    </ul>
+    <p>The cell model is the substrate. The SuperInstance is the artifact. The multiverse is the goal.</p>
+  </section>
+
+  <section>
+    <h2>Try it</h2>
+    <div class="next">
+      <a href="engines.html">
+        <div class="l">Live demo</div>
+        <div class="t">Engines</div>
+        <div class="d">3 working engine cells: paper trading (real BTC price), backtest, grid-world (Minecraft in miniature). Watch them run.</div>
+      </a>
+      <a href="neural-cells.html">
+        <div class="l">Foundation</div>
+        <div class="t">Neural Cells</div>
+        <div class="d">Why Quilt is a generalized message-passing architecture. 10+ NN architectures mapped to cells.</div>
+      </a>
+      <a href="tavern.html">
+        <div class="l">Worked example</div>
+        <div class="t">The Tavern</div>
+        <div class="d">3 characters in a Quilt sheet, real LLM cells, time-stepped simulation. The plinko.</div>
+      </a>
+      <a href="vibe.html">
+        <div class="l">Build your own</div>
+        <div class="t">Vibe-Code</div>
+        <div class="d">Describe a scene. Get a Quilt sheet. Play it. The cell model is the API; natural language is the UI.</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Quilt · Universe Model · the SuperInstance · a self-contained universe you can poke, watch, fork, compare</p>
+  <p style="margin-top: 8px;">
+    <a href="engines.html">Engines</a> ·
+    <a href="neural-cells.html">Neural Cells</a> ·
+    <a href="tavern.html">Tavern</a> ·
+    <a href="index.html">Home</a>
+  </p>
+</footer>
+
+</body>
+</html>

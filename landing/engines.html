@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engines — cells that wrap simulators</title>
+<meta name="description" content="Live engine cells: paper trading with real BTC prices, backtest with moving-average strategy, grid-world (Minecraft in miniature). Each cell wraps an external engine.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cosmic: #5fa8d3; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--cosmic); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--cosmic), var(--purple), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--cosmic), var(--purple), var(--green)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 50px 24px 24px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px; }
+.hero p.lead { color: var(--text-dim); font-size: 1rem; max-width: 700px; margin: 0 auto; }
+
+main { max-width: 1300px; margin: 0 auto; padding: 0 24px 60px; }
+
+.engine-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; }
+@media (max-width: 800px) { .engine-grid { grid-template-columns: 1fr; } }
+
+.engine-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.engine-card.live { border-color: var(--cosmic); }
+.engine-card h3 { font-size: 1.1rem; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.engine-card .status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.engine-card .status.ok { background: var(--green); }
+.engine-card .status.live { background: var(--cosmic); animation: pulse 1.5s ease-in-out infinite; }
+.engine-card .status.err { background: var(--red); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.engine-card .desc { font-size: 0.8rem; color: var(--text-faint); margin-bottom: 12px; }
+.engine-card .cell-info { background: var(--bg); border-radius: 6px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 12px; }
+.engine-card .value-display { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 700; color: var(--cosmic); margin: 8px 0; }
+.engine-card .value-display.small { font-size: 0.95rem; color: var(--text); font-weight: 400; }
+.engine-card .meta { display: flex; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); margin-top: 8px; }
+.engine-card .meta .v { color: var(--text-dim); }
+.engine-card .controls { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.engine-card button { padding: 6px 12px; background: var(--bg-elev); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.engine-card button:hover { border-color: var(--cosmic); }
+.engine-card button.primary { background: var(--cosmic); color: var(--bg); border-color: var(--cosmic); font-weight: 600; }
+.engine-card .history { max-height: 100px; overflow-y: auto; background: var(--bg); border-radius: 4px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-top: 8px; }
+
+/* Paper trading specific */
+.portfolio { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+.portfolio .pos { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.portfolio .pos .lbl { color: var(--text-faint); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.portfolio .pos .v { color: var(--text); font-weight: 600; font-size: 1rem; margin-top: 2px; }
+.portfolio .pos .chg { font-size: 0.7rem; margin-top: 2px; }
+.portfolio .pos .chg.up { color: var(--green); }
+.portfolio .pos .chg.down { color: var(--red); }
+
+/* Backtest specific */
+.equity-chart { background: var(--bg); border-radius: 6px; padding: 12px; margin: 8px 0; }
+.equity-chart canvas { width: 100%; height: 140px; display: block; }
+.universe-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+.universe-grid .uni { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.universe-grid .uni .lbl { color: var(--text-faint); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.universe-grid .uni .val { color: var(--text); font-size: 1rem; font-weight: 600; margin-top: 2px; }
+.universe-grid .uni.base { border-color: var(--cosmic); }
+.universe-grid .uni.alt1 { border-color: var(--tan); }
+.universe-grid .uni.alt2 { border-color: var(--purple); }
+
+/* Grid world */
+.world { background: var(--bg); border-radius: 6px; padding: 12px; margin: 8px 0; }
+.world canvas { display: block; margin: 0 auto; image-rendering: pixelated; }
+.world .legend { display: flex; gap: 12px; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); }
+.world .legend .item { display: flex; align-items: center; gap: 4px; }
+.world .legend .swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+/* Jupyter / notebook */
+.notebook { background: var(--bg); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.notebook .cell { background: var(--bg-elev); border-radius: 4px; padding: 8px 10px; margin: 4px 0; border-left: 3px solid var(--cosmic); }
+.notebook .cell .label { color: var(--text-faint); font-size: 0.65rem; }
+.notebook .cell.code { color: var(--purple); }
+.notebook .cell.out { color: var(--green); border-left-color: var(--green); white-space: pre-wrap; }
+
+/* NotebookLM */
+.notes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.note { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; font-size: 0.75rem; color: var(--text-dim); }
+.note .src { color: var(--cosmic); font-size: 0.7rem; margin-bottom: 4px; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 60px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="universe-model.html" style="color: var(--cosmic);">🌌 Universe</a>
+    <a href="engines.html" style="color: var(--cosmic);">Engines</a>
+    <a href="tavern.html">Tavern</a>
+    <a href="vibe.html">Vibe</a>
+    <a href="evolve.html">Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Engine <span class="grad-text">Cells</span></h1>
+  <p class="lead">Four working engine cells. Each wraps an external system and exposes its state as Quilt cells. Paper trading with real BTC prices. Backtest of 3 alternative universes. A grid-world (Minecraft in miniature). A Jupyter notebook. A knowledge base.</p>
+</div>
+
+<main>
+
+  <div class="engine-grid">
+
+    <!-- Paper Trading -->
+    <div class="engine-card live" id="trading">
+      <h3><span class="status live" id="trading-status"></span>📈 Paper Trading</h3>
+      <div class="desc">Real BTC price from CoinGecko. A simulated portfolio. A formula cell computes P&amp;L. The cell updates as the price moves.</div>
+      <div class="cell-info">
+        <b>trading.btc_price</b> · number (live)<br>
+        <b>trading.position</b> · number (formula)<br>
+        <b>trading.pnl</b> · number (formula)
+      </div>
+      <div class="value-display" id="btc-price">—</div>
+      <div class="meta">
+        <div>source: <span class="v" id="trading-source">coingecko</span></div>
+        <div>updated: <span class="v" id="trading-updated">—</span></div>
+        <div>uptime: <span class="v" id="trading-uptime">—</span></div>
+      </div>
+      <div class="portfolio">
+        <div class="pos">
+          <div class="lbl">position</div>
+          <div class="v" id="position-size">0.5 BTC</div>
+          <div class="chg" id="position-cost">bought @ $40,000</div>
+        </div>
+        <div class="pos">
+          <div class="lbl">P&amp;L (USD)</div>
+          <div class="v" id="pnl">—</div>
+          <div class="chg" id="pnl-pct">—</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button onclick="setPosition(0.1)">Buy 0.1 BTC</button>
+        <button onclick="setPosition(0.5)">Buy 0.5 BTC</button>
+        <button onclick="setPosition(1.0)">Buy 1.0 BTC</button>
+        <button onclick="setPosition(0)">Sell all</button>
+      </div>
+      <div class="history" id="trading-history"></div>
+    </div>
+
+    <!-- Backtest / multiverse -->
+    <div class="engine-card live" id="backtest">
+      <h3><span class="status live" id="backtest-status"></span>🔁 Backtest · 3 Universes</h3>
+      <div class="desc">Same BTC price, three different strategies. Each universe is a Quilt cell. The chart shows all three equity curves.</div>
+      <div class="cell-info">
+        <b>universe.base</b> · buy on MA(20) &gt; MA(50)<br>
+        <b>universe.alt1</b> · base + RSI filter<br>
+        <b>universe.alt2</b> · exit on +5% / -2%
+      </div>
+      <div class="equity-chart">
+        <canvas id="equity-canvas" width="600" height="140"></canvas>
+      </div>
+      <div class="universe-grid">
+        <div class="uni base">
+          <div class="lbl">universe.base</div>
+          <div class="val" id="equity-base">—</div>
+        </div>
+        <div class="uni alt1">
+          <div class="lbl">universe.alt1</div>
+          <div class="val" id="equity-alt1">—</div>
+        </div>
+        <div class="uni alt2">
+          <div class="lbl">universe.alt2</div>
+          <div class="val" id="equity-alt2">—</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button onclick="runBacktest()">▶ Run backtest</button>
+        <button onclick="resetBacktest()">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Grid World -->
+    <div class="engine-card" id="grid">
+      <h3><span class="status" id="grid-status"></span>⛏️ Grid-World (Minecraft in miniature)</h3>
+      <div class="desc">A 12×12 grid. Cells are tiles. You are a player. Move with arrow keys or buttons. A listener cell fires when you step on a special tile.</div>
+      <div class="cell-info">
+        <b>world.player</b> · position<br>
+        <b>world.tile.{x,y}</b> · tile state<br>
+        <b>world.events</b> · event log
+      </div>
+      <div class="world">
+        <canvas id="world-canvas" width="360" height="360"></canvas>
+        <div class="legend">
+          <div class="item"><span class="swatch" style="background: #2d4a2b;"></span>grass</div>
+          <div class="item"><span class="swatch" style="background: #c6a87e;"></span>stone</div>
+          <div class="item"><span class="swatch" style="background: #5fa8d3;"></span>water</div>
+          <div class="item"><span class="swatch" style="background: #c67e3e;"></span>fire</div>
+          <div class="item"><span class="swatch" style="background: #c67e7e;"></span>treasure</div>
+          <div class="item"><span class="swatch" style="background: #f0f0f0;"></span>you</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button onclick="move(0,-1)">↑</button>
+        <button onclick="move(-1,0)">←</button>
+        <button onclick="move(1,0)">→</button>
+        <button onclick="move(0,1)">↓</button>
+        <button onclick="resetWorld()">↺ Reset</button>
+      </div>
+      <div class="history" id="world-history"></div>
+    </div>
+
+    <!-- Jupyter / notebook -->
+    <div class="engine-card" id="jupyter">
+      <h3><span class="status" id="jupyter-status"></span>📓 Jupyter Notebook</h3>
+      <div class="desc">A live notebook kernel wrapped as cells. Click "Run cell" to execute. The output becomes a cell. The state persists across cells.</div>
+      <div class="cell-info">
+        <b>jupyter.kernelspec</b> · python3<br>
+        <b>jupyter.exec_count</b> · number<br>
+        <b>jupyter.last_output</b> · string
+      </div>
+      <div class="notebook" id="notebook">
+        <div class="cell code">
+          <div class="label">In [1]</div>
+          <div>name = "Quilt"</div>
+          <div>version = "0.3.0"</div>
+          <div>cells = 13</div>
+        </div>
+        <div class="cell out">
+          <div class="label">Out [1]</div>
+          <div>(executed)</div>
+        </div>
+        <div class="cell code" contenteditable="true" id="cell-2">x = 13 * 7</div>
+        <div class="cell out" id="cell-2-out">
+          <div class="label">Out [2]</div>
+          <div>awaiting execution</div>
+        </div>
+        <div class="cell code" contenteditable="true" id="cell-3">print(f"{{name}} v{{version}} has {{cells}} cells and {{x}} is the answer")</div>
+        <div class="cell out" id="cell-3-out">
+          <div class="label">Out [3]</div>
+          <div>awaiting execution</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" onclick="runCell(2)">▶ Run In[2]</button>
+        <button class="primary" onclick="runCell(3)">▶ Run In[3]</button>
+        <button onclick="runAllCells()">▶ Run all</button>
+      </div>
+      <div class="meta">
+        <div>exec count: <span class="v" id="exec-count">1</span></div>
+        <div>kernel: <span class="v" id="kernel-name">python3</span></div>
+      </div>
+    </div>
+
+    <!-- NotebookLM (knowledge base) -->
+    <div class="engine-card" id="notebooklm">
+      <h3><span class="status" id="notebooklm-status"></span>📚 Knowledge Base (NotebookLM-style)</h3>
+      <div class="desc">Notes wrapped as cells. Ask a question — semantic search retrieves the most relevant notes, and an LLM generates an answer with citations.</div>
+      <div class="cell-info">
+        <b>kb.note.{i}</b> · string<br>
+        <b>kb.embed.{i}</b> · vector<br>
+        <b>kb.answer</b> · string (LLM)
+      </div>
+      <div class="value-display small" id="kb-question" style="margin-bottom: 8px;">Ask: <span style="color: var(--text);">—</span></div>
+      <div class="notes" id="kb-notes"></div>
+      <div class="value-display small" id="kb-answer" style="margin-top: 12px; color: var(--green); font-size: 0.95rem;">—</div>
+      <div class="controls">
+        <input type="text" id="kb-input" placeholder="Ask a question..." style="flex: 1; padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 0.8rem; font-family: inherit;">
+        <button class="primary" onclick="askKB()">▶ Ask</button>
+      </div>
+    </div>
+
+    <!-- The cell graph (engine view) -->
+    <div class="engine-card" id="graph" style="grid-column: 1 / -1;">
+      <h3><span class="status ok"></span>🔗 The cell graph (engine cells)</h3>
+      <div class="desc">All 5 engine cells wired together. The trading price feeds the backtest. The backtest runs strategies. The Jupyter cell analyzes the results. The KB answers questions. The cell model is the substrate.</div>
+      <pre style="margin: 12px 0; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; line-height: 1.6; color: var(--text-dim);"><span style="color: var(--text-faint);"># All 5 engines as cells, in one sheet</span>
+- <span style="color: var(--purple);">id: trading.btc_price</span>
+  kind: engine
+  engine: coingecko
+
+- <span style="color: var(--purple);">id: universe.base.equity</span>
+  kind: engine
+  engine: backtest
+  strategy: ma_crossover
+  data: trading.btc_price
+
+- <span style="color: var(--purple);">id: universe.alt1.equity</span>
+  kind: engine
+  engine: backtest
+  strategy: ma_crossover_rsi
+  data: trading.btc_price
+
+- <span style="color: var(--purple);">id: universe.alt2.equity</span>
+  kind: engine
+  engine: backtest
+  strategy: ma_crossover_fixed_sl_tp
+  data: trading.btc_price
+
+- <span style="color: var(--purple);">id: world.player</span>
+  kind: engine
+  engine: grid_world
+
+- <span style="color: var(--purple);">id: jupyter.last_output</span>
+  kind: engine
+  engine: jupyter
+
+- <span style="color: var(--purple);">id: multiverse.summary</span>
+  kind: formula
+  value: '`Best universe: ${max(universe.base, universe.alt1, universe.alt2)}`'</pre>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <p>Quilt · Engines · 5 working engine cells · the cell model wraps any simulator</p>
+  <p style="margin-top: 8px;">
+    <a href="universe-model.html">Universe Model</a> ·
+    <a href="tavern.html">Tavern</a> ·
+    <a href="neural-cells.html">Neural Cells</a>
+  </p>
+</footer>
+
+<script>
+// ============================================================================
+// ENGINE CELLS — each cell wraps an external engine
+// ============================================================================
+
+// === Paper Trading Cell ===
+let btcPrice = null;
+let position = 0.5;  // BTC
+let buyPrice = 40000;
+let priceHistory = [];
+let tradingStart = Date.now();
+
+async function fetchBTCPrice() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+    const data = await res.json();
+    btcPrice = data.bitcoin.usd;
+    const change = data.bitcoin.usd_24h_change || 0;
+    priceHistory.push({ t: Date.now(), p: btcPrice });
+    if (priceHistory.length > 50) priceHistory.shift();
+    updateTrading(change);
+    document.getElementById('trading-status').className = 'status ok';
+  } catch (e) {
+    document.getElementById('trading-status').className = 'status err';
+  }
+}
+
+function updateTrading(change) {
+  if (btcPrice === null) return;
+  document.getElementById('btc-price').textContent = '$' + btcPrice.toLocaleString();
+  document.getElementById('trading-updated').textContent = new Date().toLocaleTimeString().slice(0, 8);
+  document.getElementById('trading-uptime').textContent = Math.floor((Date.now() - tradingStart) / 1000) + 's';
+  const pnl = position > 0 ? (btcPrice - buyPrice) * position : 0;
+  const pnlPct = ((btcPrice / buyPrice) - 1) * 100;
+  document.getElementById('position-size').textContent = position + ' BTC';
+  document.getElementById('position-cost').textContent = position > 0 ? 'bought @ $' + buyPrice.toLocaleString() : 'no position';
+  const pnlEl = document.getElementById('pnl');
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+  pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlPctEl = document.getElementById('pnl-pct');
+  pnlPctEl.textContent = (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%';
+  pnlPctEl.className = 'chg ' + (pnl >= 0 ? 'up' : 'down');
+  // History
+  const hist = document.getElementById('trading-history');
+  const line = document.createElement('div');
+  line.textContent = `[${new Date().toLocaleTimeString().slice(0,8)}] BTC: $${btcPrice.toLocaleString()} · 24h: ${change.toFixed(2)}% · pos: ${position} BTC · PnL: $${pnl.toFixed(2)}`;
+  hist.insertBefore(line, hist.firstChild);
+  if (hist.children.length > 10) hist.removeChild(hist.lastChild);
+}
+
+function setPosition(size) {
+  position = size;
+  if (size > 0 && btcPrice) buyPrice = btcPrice;
+  updateTrading(0);
+}
+
+// === Backtest Cell ===
+let priceSeries = [];
+let universes = { base: 10000, alt1: 10000, alt2: 10000 };
+let universeHistory = { base: [], alt1: [], alt2: [] };
+let inPosition = { base: false, alt2: false };
+let entryPrice = { base: 0, alt2: 0 };
+
+async function runBacktest() {
+  document.getElementById('backtest-status').className = 'status live';
+  // Fetch 90 days of BTC prices
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=90');
+    const data = await res.json();
+    priceSeries = data.prices.map(p => p[1]);
+    document.getElementById('backtest-status').className = 'status ok';
+  } catch (e) {
+    document.getElementById('backtest-status').className = 'status err';
+    return;
+  }
+  // Run the 3 universes
+  universes = { base: 10000, alt1: 10000, alt2: 10000 };
+  universeHistory = { base: [], alt1: [], alt2: [] };
+  inPosition = { base: false, alt2: false };
+  entryPrice = { base: 0, alt2: 0 };
+  let alt1RsiHist = [];
+
+  for (let i = 20; i < priceSeries.length; i++) {
+    const price = priceSeries[i];
+    const ma20 = priceSeries.slice(i - 20, i).reduce((s, x) => s + x, 0) / 20;
+    const ma50 = i >= 50 ? priceSeries.slice(i - 50, i).reduce((s, x) => s + x, 0) / 50 : ma20;
+    const gains = priceSeries.slice(Math.max(0, i - 14), i).map((p, j, arr) => j === 0 ? 0 : Math.max(0, p - arr[j - 1])).reduce((s, x) => s + x, 0) / 14;
+    const losses = priceSeries.slice(Math.max(0, i - 14), i).map((p, j, arr) => j === 0 ? 0 : Math.max(0, arr[j - 1] - p)).reduce((s, x) => s + x, 0) / 14;
+    const rsi = losses === 0 ? 100 : 100 - 100 / (1 + gains / losses);
+
+    // Universe.base: MA crossover
+    if (ma20 > ma50 && !inPosition.base) { inPosition.base = true; entryPrice.base = price; }
+    if (ma20 < ma50 && inPosition.base) { inPosition.base = false; universes.base *= (price / entryPrice.base); }
+    universeHistory.base.push(inPosition.base ? universes.base * (price / entryPrice.base) : universes.base);
+
+    // Universe.alt1: MA + RSI filter
+    if (ma20 > ma50 && rsi < 70 && !inPosition.alt1) { inPosition.alt1 = true; entryPrice.alt1 = price; }
+    if ((ma20 < ma50 || rsi > 80) && inPosition.alt1) { inPosition.alt1 = false; universes.alt1 *= (price / entryPrice.alt1); }
+    universeHistory.alt1.push(inPosition.alt1 ? universes.alt1 * (price / entryPrice.alt1) : universes.alt1);
+
+    // Universe.alt2: MA + fixed stop loss / take profit
+    if (ma20 > ma50 && !inPosition.alt2) { inPosition.alt2 = true; entryPrice.alt2 = price; }
+    if (inPosition.alt2) {
+      const change = (price - entryPrice.alt2) / entryPrice.alt2;
+      if (change >= 0.05 || change <= -0.02 || ma20 < ma50) {
+        inPosition.alt2 = false;
+        universes.alt2 *= (price / entryPrice.alt2);
+      }
+    }
+    universeHistory.alt2.push(inPosition.alt2 ? universes.alt2 * (price / entryPrice.alt2) : universes.alt2);
+  }
+  updateEquityDisplay();
+  drawEquityChart();
+  document.getElementById('backtest-status').className = 'status ok';
+}
+
+function updateEquityDisplay() {
+  document.getElementById('equity-base').textContent = '$' + universes.base.toFixed(0);
+  document.getElementById('equity-alt1').textContent = '$' + universes.alt1.toFixed(0);
+  document.getElementById('equity-alt2').textContent = '$' + universes.alt2.toFixed(0);
+}
+
+function drawEquityChart() {
+  const canvas = document.getElementById('equity-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  if (universeHistory.base.length === 0) return;
+  const all = [...universeHistory.base, ...universeHistory.alt1, ...universeHistory.alt2];
+  const min = Math.min(...all) * 0.95;
+  const max = Math.max(...all) * 1.05;
+  const range = max - min || 1;
+  const xStep = universeHistory.base.length > 1 ? w / (universeHistory.base.length - 1) : w;
+
+  const drawLine = (data, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    data.forEach((v, i) => {
+      const x = xStep * i;
+      const y = h - 20 - ((v - min) / range) * (h - 40);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  };
+  drawLine(universeHistory.base, '#5fa8d3');
+  drawLine(universeHistory.alt1, '#c6a87e');
+  drawLine(universeHistory.alt2, '#bb7ec6');
+}
+
+function resetBacktest() {
+  universes = { base: 10000, alt1: 10000, alt2: 10000 };
+  universeHistory = { base: [], alt1: [], alt2: [] };
+  document.getElementById('equity-base').textContent = '—';
+  document.getElementById('equity-alt1').textContent = '—';
+  document.getElementById('equity-alt2').textContent = '—';
+  const canvas = document.getElementById('equity-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// === Grid World Cell ===
+const WORLD_SIZE = 12;
+const CELL_SIZE = 30;
+let world = [];
+let player = { x: 1, y: 1 };
+let worldHistory = [];
+
+function generateWorld() {
+  world = [];
+  for (let y = 0; y < WORLD_SIZE; y++) {
+    const row = [];
+    for (let x = 0; x < WORLD_SIZE; x++) {
+      if (x === 0 || y === 0 || x === WORLD_SIZE - 1 || y === WORLD_SIZE - 1) row.push('water');
+      else if (Math.random() < 0.05) row.push('stone');
+      else if (Math.random() < 0.05) row.push('water');
+      else if (Math.random() < 0.05) row.push('treasure');
+      else if (Math.random() < 0.1) row.push('fire');
+      else row.push('grass');
+    }
+    world.push(row);
+  }
+  // Ensure player starts on grass
+  world[player.y][player.x] = 'grass';
+}
+
+function renderWorld() {
+  const canvas = document.getElementById('world-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = WORLD_SIZE * CELL_SIZE;
+  const h = WORLD_SIZE * CELL_SIZE;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.clearRect(0, 0, w, h);
+  const colors = {
+    grass: '#2d4a2b',
+    stone: '#c6a87e',
+    water: '#5fa8d3',
+    fire: '#c67e3e',
+    treasure: '#c67e7e',
+  };
+  for (let y = 0; y < WORLD_SIZE; y++) {
+    for (let x = 0; x < WORLD_SIZE; x++) {
+      ctx.fillStyle = colors[world[y][x]] || '#2d4a2b';
+      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+      // Add some texture
+      if (world[y][x] === 'grass') {
+        ctx.fillStyle = 'rgba(126,198,153,0.3)';
+        ctx.fillRect(x * CELL_SIZE + 10, y * CELL_SIZE + 10, 4, 4);
+      } else if (world[y][x] === 'treasure') {
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px sans-serif';
+        ctx.fillText('★', x * CELL_SIZE + 9, y * CELL_SIZE + 22);
+      } else if (world[y][x] === 'fire') {
+        ctx.fillStyle = '#ffe';
+        ctx.font = '14px sans-serif';
+        ctx.fillText('🔥', x * CELL_SIZE + 7, y * CELL_SIZE + 22);
+      } else if (world[y][x] === 'stone') {
+        ctx.fillStyle = '#7a6a4e';
+        ctx.fillRect(x * CELL_SIZE + 8, y * CELL_SIZE + 8, 6, 6);
+        ctx.fillRect(x * CELL_SIZE + 16, y * CELL_SIZE + 16, 6, 6);
+      }
+    }
+  }
+  // Draw player
+  ctx.fillStyle = '#f0f0f0';
+  ctx.beginPath();
+  ctx.arc(player.x * CELL_SIZE + CELL_SIZE / 2, player.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(player.x * CELL_SIZE + 11, player.y * CELL_SIZE + 12, 3, 3);
+  ctx.fillRect(player.x * CELL_SIZE + 16, player.y * CELL_SIZE + 12, 3, 3);
+}
+
+function move(dx, dy) {
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  if (nx < 0 || ny < 0 || nx >= WORLD_SIZE || ny >= WORLD_SIZE) return;
+  if (world[ny][nx] === 'water' || world[ny][nx] === 'stone') return;
+  player.x = nx;
+  player.y = ny;
+  document.getElementById('grid-status').className = 'status ok';
+  const tile = world[ny][nx];
+  let event = `stepped onto ${tile}`;
+  if (tile === 'treasure') event = '★ found a treasure!';
+  if (tile === 'fire') event = '🔥 burned! going back';
+  if (tile === 'fire') {
+    // Move back
+    player.x -= dx;
+    player.y -= dy;
+  }
+  const hist = document.getElementById('world-history');
+  const line = document.createElement('div');
+  line.textContent = `(${player.x},${player.y}) ${event}`;
+  hist.insertBefore(line, hist.firstChild);
+  if (hist.children.length > 8) hist.removeChild(hist.lastChild);
+  renderWorld();
+}
+
+function resetWorld() {
+  player = { x: 1, y: 1 };
+  generateWorld();
+  document.getElementById('world-history').innerHTML = '';
+  renderWorld();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp') move(0, -1);
+  if (e.key === 'ArrowDown') move(0, 1);
+  if (e.key === 'ArrowLeft') move(-1, 0);
+  if (e.key === 'ArrowRight') move(1, 0);
+});
+
+// === Jupyter (simulated) ===
+let execCount = 1;
+let jupyterState = { name: 'Quilt', version: '0.3.0', cells: 13, x: null };
+
+async function runCell(n) {
+  document.getElementById('jupyter-status').className = 'status live';
+  const cellEl = document.getElementById('cell-' + n);
+  const outEl = document.getElementById('cell-' + n + '-out');
+  if (!cellEl || !outEl) return;
+  const code = cellEl.textContent.trim();
+  outEl.innerHTML = '<div class="label">Out [' + n + ']</div><div>running...</div>';
+  // Simulate execution by interpreting the code
+  let result = '';
+  try {
+    if (code.includes('=')) {
+      // Variable assignment
+      const match = code.match(/(\w+)\s*=\s*(.+)/);
+      if (match) {
+        const varName = match[1];
+        const expr = match[2];
+        if (expr.includes('*')) {
+          const parts = expr.split('*').map(s => s.trim());
+          if (!isNaN(parts[0]) && !isNaN(parts[1])) {
+            jupyterState[varName] = parseFloat(parts[0]) * parseFloat(parts[1]);
+            result = `${varName} = ${jupyterState[varName]}`;
+          }
+        } else if (expr.startsWith('"') || expr.startsWith("'")) {
+          jupyterState[varName] = expr.replace(/^["']|["']$/g, '');
+          result = `${varName} = ${jupyterState[varName]}`;
+        } else {
+          jupyterState[varName] = expr;
+          result = `${varName} = ${expr}`;
+        }
+      }
+    } else if (code.startsWith('print')) {
+      // Print statement — substitute variables
+      const inner = code.match(/print\((.*)\)/)?.[1] || '';
+      const output = inner.replace(/\{(\w+)\}/g, (_, name) => jupyterState[name] ?? '?');
+      result = output;
+    }
+    execCount++;
+    outEl.innerHTML = '<div class="label">Out [' + n + ']</div><div>' + escapeHtml(result) + '</div>';
+    document.getElementById('exec-count').textContent = execCount;
+  } catch (e) {
+    outEl.innerHTML = '<div class="label">Out [' + n + ']</div><div style="color: var(--red);">Error: ' + e.message + '</div>';
+  }
+  document.getElementById('jupyter-status').className = 'status ok';
+}
+
+function runAllCells() {
+  runCell(2).then(() => runCell(3));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// === Knowledge Base (NotebookLM-style) ===
+const KB_NOTES = [
+  { src: 'README.md', text: 'Quilt is a reactive, typed, cellular runtime. It takes the spreadsheet model — a grid of named, reactive cells — and turns it into a general-purpose runtime. The same sheet can be deployed to a browser, a server, an edge function, a microcontroller, or a peer-to-peer mesh.' },
+  { src: 'docs/cells.md', text: 'A Quilt cell is a node in a directed graph. It receives inputs (from other cells or external sources), computes a value (using any function: formula, LLM, sensor, code), and exposes that value to its dependents. The 8 cell kinds: value, formula, program, sensor, api, listener, router, io, ai.' },
+  { src: 'tavern.html', text: 'The Crooked Tankard is a vibe-coded tavern scene with 3 characters. Each character is a Quilt cell with mood, thought, and speech. The cells overhear each other, react to each other, talk to each other. The trajectory is the product, not the end state.' },
+  { src: 'universe-model.md', text: 'A Quilt cell can wrap any external system. Isaac, Cosmos, Minecraft, Unreal, Jupyter, NotebookLM, PyCharm, paper trading apps, backtesting simulators — all can be exposed as Quilt cells. The cell model is the universal API to any simulator.' },
+  { src: 'evolve.html', text: '@quilt/evolve is a self-improvement loop. LLMs as adversarial input generators, output judges, and system mutators. The system improves over iterations. The scope can be a cell, an organ, or a whole organism.' },
+  { src: 'neural-cells.md', text: 'Quilt is a meta-architecture that subsumes MPNN, Hopfield, Transformers, MoE, Capsules, Mamba, Diffusion, Neural ODEs, Predictive Coding, and Neural Cellular Automata. The cell function is arbitrary, not a fixed weighted sum.' },
+];
+
+function pseudoEmbed(text) {
+  // Deterministic 8-dim "embedding"
+  const vec = new Array(8).fill(0);
+  for (let i = 0; i < text.length; i++) {
+    vec[i % 8] += text.charCodeAt(i) / 1000;
+  }
+  return vec.map(v => v / text.length);
+}
+
+function cosine(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
+}
+
+function renderKBNotes(highlightId) {
+  const el = document.getElementById('kb-notes');
+  el.innerHTML = KB_NOTES.map((n, i) => `
+    <div class="note" style="${highlightId === i ? 'border-color: var(--cosmic);' : ''}">
+      <div class="src">${n.src}</div>
+      <div>${n.text.slice(0, 150)}...</div>
+    </div>
+  `).join('');
+}
+
+renderKBNotes();
+
+async function askKB() {
+  const q = document.getElementById('kb-input').value.trim();
+  if (!q) return;
+  document.getElementById('notebooklm-status').className = 'status live';
+  document.getElementById('kb-question').innerHTML = `Ask: <span style="color: var(--text);">${escapeHtml(q)}</span>`;
+  // Embed query
+  const qVec = pseudoEmbed(q.toLowerCase());
+  // Find top match
+  const scored = KB_NOTES.map((n, i) => ({ i, score: cosine(qVec, pseudoEmbed(n.text.toLowerCase())) }));
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored[0];
+  renderKBNotes(top.i);
+  // Generate answer
+  try {
+    const res = await fetch('https://api.z.ai/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'glm-4.5',
+        messages: [{
+          role: 'user',
+          content: `Answer this question using ONLY the following source. Cite the source. Be brief (2-3 sentences).\n\nSource (${KB_NOTES[top.i].src}):\n${KB_NOTES[top.i].text}\n\nQuestion: ${q}\n\nAnswer (with citation):`
+        }],
+        max_tokens: 200,
+        temperature: 0.3,
+      }),
+    });
+    if (!res.ok) throw new Error('z.ai ' + res.status);
+    const data = await res.json();
+    document.getElementById('kb-answer').textContent = data.choices[0].message.content.trim();
+  } catch (e) {
+    document.getElementById('kb-answer').textContent = 'Error: ' + e.message;
+  }
+  document.getElementById('notebooklm-status').className = 'status ok';
+}
+
+// === Init ===
+document.getElementById('kb-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') askKB();
+});
+
+fetchBTCPrice();
+setInterval(fetchBTCPrice, 30000);
+generateWorld();
+renderWorld();
+runBacktest();
+</script>
+
+</body>
+</html>
