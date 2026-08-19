@@ -197,10 +197,10 @@ export interface ArtifactStore {
  *
  * @example
  *   resolveTemplate("quilt://ml/models/classifier:{{run_id}}", { runId: "run-01" })
- *   // → "quilt://ml/models/classifier:run-01"
+ *   // -> "quilt://ml/models/classifier:run-01"
  *
  *   resolveTemplate("quilt://data/{{dataset}}", { dataset: "imagenet" })
- *   // → "quilt://data/imagenet"
+ *   // -> "quilt://data/imagenet"
  */
 export function resolveTemplate(input: string, context: RunContext = {}): string {
   // Build a normalized lookup: lowercase, no underscores
@@ -243,10 +243,10 @@ export class TemplateError extends Error {
  *
  * @example
  *   await resolveArtifact("quilt://ml/datasets/staged:latest", {}, store)
- *   // → { uri: "quilt://ml/datasets/staged:latest", version: "v42", resolvedUri: "quilt://ml/datasets/staged:v42", ... }
+ *   // -> { uri: "quilt://ml/datasets/staged:latest", version: "v42", resolvedUri: "quilt://ml/datasets/staged:v42", ... }
  *
  *   await resolveArtifact("quilt://ml/models/classifier:{{run_id}}", { runId: "r-01" }, store)
- *   // → { resolvedUri: "quilt://ml/models/classifier:r-01", version: "r-01", ... }
+ *   // -> { resolvedUri: "quilt://ml/models/classifier:r-01", version: "r-01", ... }
  */
 export async function resolveArtifact(
   uri: QuiltURI,
@@ -274,8 +274,8 @@ export async function resolveArtifact(
 
   // 3. Parse logicalUri + version. Forms:
   //    quilt://bucket/name:version
-  //    quilt://bucket/name      → :latest
-  //    cell://sheet/cell.path   → no version (always live)
+  //    quilt://bucket/name      -> :latest
+  //    cell://sheet/cell.path   -> no version (always live)
   const lastColon = templated.lastIndexOf(':');
   let logicalUri: string;
   let version: string;
@@ -317,7 +317,7 @@ export async function resolveArtifact(
         manifestId: typeof manifestIdValue === 'string' ? manifestIdValue : undefined,
       };
     } catch (err) {
-      // For latest→pinned, the resolved version may not be materialized
+      // For latest->pinned, the resolved version may not be materialized
       // yet. That's OK — we return the resolved URI and let the caller
       // decide whether to fail.
       metadata = { _resolveWarning: `Could not fetch metadata: ${(err as Error).message}` };
@@ -440,7 +440,7 @@ export async function validateManifest(
  *     runId: "run-20260819-01",
  *     tags: ["model", "production"],
  *   }, store);
- *   // → uri: "quilt://artifacts/trained_model:abc123...", version: "abc123..."
+ *   // -> uri: "quilt://artifacts/trained_model:abc123...", version: "abc123..."
  */
 export async function publishArtifact(
   source: Uint8Array | string | { path: string },
@@ -598,3 +598,700 @@ export class InMemoryArtifactStore implements ArtifactStore {
     return Array.from(this.store.entries()).map(([uri, e]) => [uri, e.metadata]);
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Federation: cells and quilts that link to other cells and quilts
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * A federated cell reference. The format is:
+ *
+ *   quilt://[instance-id]/[sheet-id]#[cell-path]
+ *
+ * Examples:
+ *   quilt://local/boat-autopilot#rudder.angle
+ *   quilt://jetson-lab/perception#vision.scene
+ *   quilt://codespace-7c3/prod#anomaly.detector
+ *   quilt://*#/anywhere           — wildcard routing
+ *   quilt://esp32-fleet/+/rudder.angle — fleet-wide cell
+ *
+ * The instance-id can be a name, IP, hostname, or `local` for the
+ * current process. The sheet-id identifies a loaded sheet. The
+ * cell-path uses dots, like a Quilt cell id.
+ */
+export interface FederatedCellRef {
+  /** The original URI. */
+  uri: string;
+  /** Instance id (e.g. "local", "jetson-lab", "codespace-7c3"). */
+  instance: string;
+  /** Sheet id (e.g. "boat-autopilot", "prod"). */
+  sheet: string;
+  /** Cell path within the sheet (e.g. "rudder.angle"). */
+  cellPath: string;
+  /** Whether this is a wildcard reference (`*` or `+`). */
+  isWildcard: boolean;
+}
+
+/**
+ * Parse a federated cell URI into its parts. Throws on malformed URIs.
+ *
+ * @example
+ *   parseCellRef("quilt://local/boat-autopilot#rudder.angle")
+ *   // -> { instance: "local", sheet: "boat-autopilot", cellPath: "rudder.angle", ... }
+ */
+export function parseCellRef(uri: string): FederatedCellRef {
+  if (!uri.startsWith('quilt://')) {
+    throw new CellRefError(`Cell ref must start with "quilt://": ${uri}`);
+  }
+  const afterScheme = uri.slice('quilt://'.length);
+  const hashIdx = afterScheme.indexOf('#');
+  if (hashIdx < 0) {
+    throw new CellRefError(`Cell ref must contain "#" separator: ${uri}`);
+  }
+  const pathPart = afterScheme.slice(0, hashIdx);
+  const cellPath = afterScheme.slice(hashIdx + 1);
+  if (!cellPath) {
+    throw new CellRefError(`Cell ref has empty cell path: ${uri}`);
+  }
+
+  const pathSegments = pathPart.split('/').filter((s) => s.length > 0);
+  if (pathSegments.length < 2) {
+    throw new CellRefError(
+      `Cell ref needs both instance and sheet: ${uri}. ` +
+      `Expected: quilt://[instance]/[sheet]#[cell-path]`
+    );
+  }
+  const [instance, sheet] = pathSegments;
+  const isWildcard = instance === '*' || sheet === '+' || cellPath === '*';
+
+  return {
+    uri,
+    instance: instance!,
+    sheet: sheet!,
+    cellPath,
+    isWildcard,
+  };
+}
+
+export class CellRefError extends Error {
+  readonly uri: string;
+  constructor(message: string, uri: string = '') {
+    super(message);
+    this.name = 'CellRefError';
+    this.uri = uri;
+  }
+}
+
+/**
+ * A live handle to a cell, locally or on a remote Quilt. Wraps a
+ * subscription so callers can `await handle.get()`, `await
+ * handle.set(v)`, and `await handle.unsubscribe()`.
+ *
+ * The handle is the federated equivalent of a cell id: addressable,
+ * subscribable, and inspectable. It hides the difference between
+ * "value is in this process" and "value is on another Quilt 4 hops
+ * away" — the caller doesn't care.
+ */
+export interface CellHandle {
+  /** The original URI. */
+  readonly uri: string;
+  /** Get the current value. */
+  get(): Promise<unknown>;
+  /** Set the value (if the cell is settable; throws on read-only). */
+  set(value: unknown): Promise<void>;
+  /** Subscribe to changes. Returns an unsubscribe function. */
+  subscribe(callback: (value: unknown) => void): () => void;
+  /** Unsubscribe all listeners. */
+  unsubscribe(): void;
+}
+
+/**
+ * A transport for fetching cells from a remote Quilt instance. The
+ * default in-process implementation reads from a local engine; the
+ * HTTP/MCP/WebSocket implementation talks to a remote Quilt.
+ */
+export interface CellTransport {
+  /** Get a cell value. */
+  get(instance: string, sheet: string, cellPath: string): Promise<unknown>;
+  /** Set a cell value. */
+  set(instance: string, sheet: string, cellPath: string, value: unknown): Promise<void>;
+  /** Subscribe to cell changes. Returns an unsubscribe function. */
+  subscribe(
+    instance: string,
+    sheet: string,
+    cellPath: string,
+    callback: (value: unknown) => void
+  ): () => void;
+}
+
+/**
+ * A local in-process transport backed by a QuiltEngine-like object.
+ * The minimal contract needed is `getCell`, `setCell`, and `subscribe`.
+ * This works with `@quilt/core`'s `QuiltEngine` directly.
+ */
+export interface LocalEngine {
+  getCell(sheetId: string, cellPath: string): Promise<unknown>;
+  setCell(sheetId: string, cellPath: string, value: unknown): Promise<void>;
+  subscribe(sheetId: string, cellPath: string, callback: (value: unknown) => void): () => void;
+}
+
+/**
+ * The most common transport: the local process. If `instance` is
+ * "local" or matches the configured `localInstanceId`, read from the
+ * local engine. Otherwise, raise — the caller should provide a
+ * RemoteCellTransport for non-local instances.
+ */
+export class LocalCellTransport implements CellTransport {
+  private listeners = new Map<string, Set<(value: unknown) => void>>();
+
+  constructor(
+    private readonly engines: Map<string, LocalEngine>,
+    private readonly localInstanceId: string = 'local'
+  ) {}
+
+  async get(instance: string, sheet: string, cellPath: string): Promise<unknown> {
+    const engine = this.engineFor(instance);
+    return engine.getCell(sheet, cellPath);
+  }
+
+  async set(instance: string, sheet: string, cellPath: string, value: unknown): Promise<void> {
+    const engine = this.engineFor(instance);
+    await engine.setCell(sheet, cellPath, value);
+  }
+
+  subscribe(
+    instance: string,
+    sheet: string,
+    cellPath: string,
+    callback: (value: unknown) => void
+  ): () => void {
+    const engine = this.engineFor(instance);
+    const unsub = engine.subscribe(sheet, cellPath, callback);
+    return unsub;
+  }
+
+  private engineFor(instance: string): LocalEngine {
+    if (instance === 'local' || instance === this.localInstanceId) {
+      // For "local", use the first registered engine (the convention is
+      // one local engine per process)
+      const first = this.engines.values().next().value;
+      if (!first) {
+        throw new CellRefError('No local engine registered');
+      }
+      return first;
+    }
+    const engine = this.engines.get(instance);
+    if (!engine) {
+      throw new CellRefError(
+        `No engine registered for instance "${instance}". ` +
+        `Registered: ${Array.from(this.engines.keys()).join(', ') || '(none)'}`
+      );
+    }
+    return engine;
+  }
+}
+
+/**
+ * An HTTP-based transport for talking to a remote Quilt instance.
+ * The remote must expose a compatible HTTP API. See `quilt-codespace`
+ * for the reference implementation.
+ *
+ * @example
+ *   const remote = new HttpCellTransport('https://my-codespace-7681.githubpreview.dev', 'my-token');
+ *   const value = await remote.get('codespace-7c3', 'prod', 'anomaly.score');
+ */
+export class HttpCellTransport implements CellTransport {
+  private listeners = new Map<string, Set<(value: unknown) => void>>();
+  private eventSources = new Map<string, EventSource>();
+
+  constructor(
+    private readonly baseUrl: string,
+    private readonly token: string
+  ) {}
+
+  private headers(): Record<string, string> {
+    return {
+      'Authorization': `Bearer ${this.token}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private cellPath(instance: string, sheet: string, cellPath: string): string {
+    return `/cells/${encodeURIComponent(instance)}/${encodeURIComponent(sheet)}/${cellPath
+      .split('.')
+      .map(encodeURIComponent)
+      .join('/')}`;
+  }
+
+  async get(instance: string, sheet: string, cellPath: string): Promise<unknown> {
+    const url = `${this.baseUrl}${this.cellPath(instance, sheet, cellPath)}`;
+    const res = await fetch(url, { headers: this.headers() });
+    if (!res.ok) {
+      throw new CellRefError(`HTTP ${res.status} getting ${url}: ${await res.text()}`, url);
+    }
+    const body = await res.json() as { value: unknown };
+    return body.value;
+  }
+
+  async set(instance: string, sheet: string, cellPath: string, value: unknown): Promise<void> {
+    const url = `${this.baseUrl}${this.cellPath(instance, sheet, cellPath)}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: this.headers(),
+      body: JSON.stringify({ value }),
+    });
+    if (!res.ok) {
+      throw new CellRefError(`HTTP ${res.status} setting ${url}: ${await res.text()}`, url);
+    }
+  }
+
+  subscribe(
+    instance: string,
+    sheet: string,
+    cellPath: string,
+    callback: (value: unknown) => void
+  ): () => void {
+    const key = `${instance}/${sheet}/${cellPath}`;
+    let set = this.listeners.get(key);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(key, set);
+    }
+    set.add(callback);
+
+    // Open SSE connection if this is the first listener
+    if (set.size === 1) {
+      const url = `${this.baseUrl}${this.cellPath(instance, sheet, cellPath)}/events`;
+      const es = new EventSource(url, { withCredentials: false });
+      // Note: EventSource doesn't support custom headers, so the token
+      // must be passed via query string in the actual URL. The
+      // reference Quilt Codespace exposes a token-validated SSE
+      // endpoint at /events?token=...
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data) as { value: unknown };
+          for (const cb of this.listeners.get(key) ?? []) {
+            cb(data.value);
+          }
+        } catch {
+          // ignore malformed events
+        }
+      };
+      this.eventSources.set(key, es);
+    }
+
+    return () => {
+      const s = this.listeners.get(key);
+      if (!s) return;
+      s.delete(callback);
+      if (s.size === 0) {
+        this.listeners.delete(key);
+        const es = this.eventSources.get(key);
+        if (es) {
+          es.close();
+          this.eventSources.delete(key);
+        }
+      }
+    };
+  }
+}
+
+/**
+ * Resolve a federated cell URI to a live, subscribable handle.
+ *
+ * This is the federation equivalent of `resolveArtifact`:
+ * - `resolveArtifact` pins an artifact to a version
+ * - `resolveCell` pins a cell to a live handle
+ *
+ * @example
+ *   const handle = await resolveCell('quilt://local/boat-autopilot#rudder.angle', transport);
+ *   const value = await handle.get();
+ *   const unsub = handle.subscribe((v) => console.log('rudder changed:', v));
+ */
+export async function resolveCell(uri: string, transport: CellTransport): Promise<CellHandle> {
+  const ref = parseCellRef(uri);
+  if (ref.isWildcard) {
+    throw new CellRefError(
+      `Wildcard cell refs cannot be resolved to a single handle: ${uri}. ` +
+      `Use a routing table or fleet-discovery to expand wildcards first.`
+    );
+  }
+
+  // Validate the cell exists by attempting a get
+  await transport.get(ref.instance, ref.sheet, ref.cellPath);
+
+  let unsubscribed = false;
+  const localListeners = new Set<(value: unknown) => void>();
+
+  return {
+    uri,
+    async get() {
+      return transport.get(ref.instance, ref.sheet, ref.cellPath);
+    },
+    async set(value: unknown) {
+      await transport.set(ref.instance, ref.sheet, ref.cellPath, value);
+    },
+    subscribe(callback) {
+      if (unsubscribed) throw new CellRefError('Cannot subscribe to an unsubscribed handle');
+      localListeners.add(callback);
+      const unsub = transport.subscribe(ref.instance, ref.sheet, ref.cellPath, (v) => {
+        if (!unsubscribed) callback(v);
+      });
+      return () => {
+        localListeners.delete(callback);
+        unsub();
+      };
+    },
+    unsubscribe() {
+      unsubscribed = true;
+      localListeners.clear();
+    },
+  };
+}
+
+/**
+ * Subscribe to a federated cell. Convenience wrapper around
+ * `resolveCell` + `handle.subscribe`. The callback fires for every
+ * value change until the returned unsubscribe is called.
+ *
+ * @example
+ *   const unsub = subscribeCell(
+ *     'quilt://jetson-lab/perception#vision.scene',
+ *     transport,
+ *     (scene) => console.log('new scene:', scene)
+ *   );
+ *   // ...later
+ *   unsub();
+ */
+export function subscribeCell(
+  uri: string,
+  transport: CellTransport,
+  callback: (value: unknown) => void
+): () => void {
+  let unsub: (() => void) | null = null;
+  let cancelled = false;
+
+  resolveCell(uri, transport)
+    .then((handle) => {
+      if (cancelled) {
+        handle.unsubscribe();
+        return;
+      }
+      unsub = handle.subscribe(callback);
+    })
+    .catch((err) => {
+      // Fire callback with the error so the caller can log it
+      callback({ __subscribeError: (err as Error).message });
+    });
+
+  return () => {
+    cancelled = true;
+    if (unsub) unsub();
+  };
+}
+
+/**
+ * A routing table for federated cells. Maps wildcard patterns to
+ * specific instance ids. Like DNS for cells:
+ *   quilt://[*]/prod#x  ->  quilt://codespace-7c3/prod#x
+ * (the wildcards are written as [*] and + to avoid ending the comment)
+ *
+ * The simplest routing is instance-prefix matching:
+ *   "*"              -> "local" (default)
+ *   "jetson-*"       -> "jetson-lab"
+ *   "esp32-*"        -> first esp32 in fleet
+ *
+ * @example
+ *   const router = new CellRouter();
+ *   router.add('local', localTransport);
+ *   router.add('jetson-lab', httpTransport1);
+ *   router.add('codespace-7c3', httpTransport2);
+ *
+ *   const handle = await router.resolve('quilt://jetson-lab/perception#vision.scene');
+ *   // -> uses httpTransport1
+ */
+export class CellRouter {
+  private transports = new Map<string, CellTransport>();
+
+  /** Register a transport for a specific instance id. */
+  add(instance: string, transport: CellTransport): this {
+    this.transports.set(instance, transport);
+    return this;
+  }
+
+  /** Remove a transport. */
+  remove(instance: string): boolean {
+    return this.transports.delete(instance);
+  }
+
+  /** Resolve a cell URI to a live handle, routing through the right transport. */
+  async resolve(uri: string): Promise<CellHandle> {
+    const ref = parseCellRef(uri);
+    const transport = this.transports.get(ref.instance);
+    if (!transport) {
+      throw new CellRefError(
+        `No transport registered for instance "${ref.instance}". ` +
+        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`
+      );
+    }
+    return resolveCell(uri, transport);
+  }
+
+  /** Subscribe to a cell, routing through the right transport. */
+  subscribe(uri: string, callback: (value: unknown) => void): () => void {
+    const ref = parseCellRef(uri);
+    const transport = this.transports.get(ref.instance);
+    if (!transport) {
+      throw new CellRefError(
+        `No transport registered for instance "${ref.instance}". ` +
+        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`
+      );
+    }
+    return subscribeCell(uri, transport, callback);
+  }
+
+  /** List all registered instance ids. */
+  instances(): string[] {
+    return Array.from(this.transports.keys());
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+//  Deployment-tier detection
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * The deployment tier this Quilt is running in. Each tier has different
+ * capabilities (memory, async support, network) and connects to
+ * different siblings in a federation.
+ *
+ * Mirrors cocapn-runtime's "room" abstraction:
+ *   ESP32 bare metal  -> quilt-esp32 (no_std, sensors+actuators)
+ *   Jetson/Pi edge    -> quilt-jetson (sync + alloc, vision)
+ *   Codespace         -> quilt-codespace (async, ttyd + MCP)
+ *   Docker container  -> quilt-cloudflare (Workers, edge)
+ *   Lighthouse cloud  -> quilt-codespace persistent (fleet coord)
+ */
+export type QuiltTier =
+  | 'esp32'         // bare metal, no_std, sensors + actuators
+  | 'jetson'        // edge, sync + alloc, vision
+  | 'codespace'     // GitHub Codespace, async, ttyd + MCP
+  | 'cloudflare'    // Cloudflare Worker, V8 isolates
+  | 'server'        // generic Node.js server
+  | 'browser'       // browser, Web APIs
+  | 'unknown';
+
+/**
+ * Information about the detected deployment tier. Use this to decide
+ * which siblings to federate with and which capabilities to advertise.
+ */
+export interface TierInfo {
+  tier: QuiltTier;
+  /** Auto-generated instance id (e.g. "esp32-abc123", "codespace-7c3f1"). */
+  instanceId: string;
+  /** Human-readable platform name (e.g. "GitHub Codespace", "ESP32-WROOM-32"). */
+  platform: string;
+  /** Capabilities the tier supports. */
+  capabilities: {
+    async: boolean;
+    network: boolean;
+    filesystem: boolean;
+    persistent: boolean;
+    gpu: boolean;
+    llmApi: boolean;
+  };
+  /** Connection hints for sibling tiers. */
+  siblings: string[];
+}
+
+/**
+ * Detect the deployment tier this Quilt is running in. Looks at env
+ * vars, runtime markers, and platform-specific signals.
+ *
+ * Override with the `QUILT_TIER` env var (one of: esp32, jetson,
+ * codespace, cloudflare, server, browser).
+ *
+ * @example
+ *   const tier = detectTier();
+ *   // -> { tier: 'codespace', instanceId: 'codespace-a1b2', platform: 'GitHub Codespace', ... }
+ */
+export function detectTier(): TierInfo {
+  // Manual override
+  const override = (typeof process !== 'undefined' ? process.env?.QUILT_TIER : undefined) as QuiltTier | undefined;
+  if (override) {
+    return tierInfoFor(override);
+  }
+
+  // Cloudflare Worker
+  if (typeof globalThis !== 'undefined' && (globalThis as { caches?: unknown }).caches !== undefined && typeof (globalThis as { WebSocketPair?: unknown }).WebSocketPair !== 'undefined') {
+    return tierInfoFor('cloudflare');
+  }
+
+  // GitHub Codespace
+  if (typeof process !== 'undefined' && process.env?.CODESPACES === 'true') {
+    return tierInfoFor('codespace');
+  }
+
+  // ESP32 / embedded (very rough — real detection needs no_std Rust)
+  if (typeof process !== 'undefined' && (process.env?.QUILT_TARGET === 'esp32' || process.env?.PLATFORM === 'esp32')) {
+    return tierInfoFor('esp32');
+  }
+
+  // Jetson / edge (CUDA available, ARM64, etc.)
+  if (typeof process !== 'undefined' && process.env?.QUILT_TARGET === 'jetson') {
+    return tierInfoFor('jetson');
+  }
+
+  // Browser
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    return tierInfoFor('browser');
+  }
+
+  // Generic server
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    return tierInfoFor('server');
+  }
+
+  return tierInfoFor('unknown');
+}
+
+/**
+ * Build a TierInfo for a given tier, including auto-generated instance
+ * id and platform name.
+ */
+export function tierInfoFor(tier: QuiltTier): TierInfo {
+  const instanceId = generateInstanceId(tier);
+  switch (tier) {
+    case 'esp32':
+      return {
+        tier,
+        instanceId,
+        platform: 'ESP32 (no_std)',
+        capabilities: {
+          async: false,
+          network: true,           // WiFi
+          filesystem: true,        // NVS / flash
+          persistent: true,
+          gpu: false,
+          llmApi: false,           // too small
+        },
+        siblings: ['jetson', 'codespace'],
+      };
+    case 'jetson':
+      return {
+        tier,
+        instanceId,
+        platform: 'Jetson / Edge (Linux + CUDA)',
+        capabilities: {
+          async: true,
+          network: true,
+          filesystem: true,
+          persistent: true,
+          gpu: true,
+          llmApi: true,            // can run small models locally
+        },
+        siblings: ['esp32', 'codespace', 'cloudflare'],
+      };
+    case 'codespace':
+      return {
+        tier,
+        instanceId,
+        platform: 'GitHub Codespace (Linux container)',
+        capabilities: {
+          async: true,
+          network: true,
+          filesystem: true,
+          persistent: false,        // ephemeral by default
+          gpu: false,               // no GPU in codespace
+          llmApi: true,
+        },
+        siblings: ['jetson', 'cloudflare', 'server'],
+      };
+    case 'cloudflare':
+      return {
+        tier,
+        instanceId,
+        platform: 'Cloudflare Worker (V8 isolate)',
+        capabilities: {
+          async: true,
+          network: true,
+          filesystem: false,        // no local FS
+          persistent: true,         // D1, KV, R2
+          gpu: false,
+          llmApi: true,             // Workers AI
+        },
+        siblings: ['codespace', 'jetson'],
+      };
+    case 'server':
+      return {
+        tier,
+        instanceId,
+        platform: 'Generic server (Node.js / Bun / Deno)',
+        capabilities: {
+          async: true,
+          network: true,
+          filesystem: true,
+          persistent: true,
+          gpu: true,                // if hardware available
+          llmApi: true,
+        },
+        siblings: ['codespace', 'jetson', 'cloudflare'],
+      };
+    case 'browser':
+      return {
+        tier,
+        instanceId,
+        platform: 'Browser (Web)',
+        capabilities: {
+          async: true,
+          network: true,
+          filesystem: false,        // no FS
+          persistent: true,         // IndexedDB / localStorage
+          gpu: true,                // WebGL
+          llmApi: true,             // browser LLM
+        },
+        siblings: ['codespace', 'cloudflare', 'server'],
+      };
+    case 'unknown':
+    default:
+      return {
+        tier: 'unknown',
+        instanceId,
+        platform: 'Unknown',
+        capabilities: {
+          async: false,
+          network: false,
+          filesystem: false,
+          persistent: false,
+          gpu: false,
+          llmApi: false,
+        },
+        siblings: [],
+      };
+  }
+}
+
+function generateInstanceId(tier: QuiltTier): string {
+  const env = typeof process !== 'undefined' ? process.env : {};
+  // Honor explicit instance id
+  if (env.QUILT_INSTANCE_ID) return env.QUILT_INSTANCE_ID;
+
+  // Honor Codespace name
+  if (env.CODESPACE_NAME) return `codespace-${env.CODESPACE_NAME.split('-').pop()}`;
+
+  // Honor hostname
+  let hostname = 'local';
+  try {
+    if (typeof process !== 'undefined' && process.env?.HOSTNAME) {
+      hostname = process.env.HOSTNAME;
+    }
+  } catch {
+    // no-op
+  }
+
+  // Tier-specific id format
+  const suffix = (hostname || 'local').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) || Math.random().toString(36).slice(2, 8);
+  return `${tier}-${suffix}`;
+}
+
+

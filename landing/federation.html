@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Federation — quilts that link to other quilts</title>
+<meta name="description" content="Federation: every Quilt is both a publisher and a subscriber. Resolve a cell by URI. Subscribe across the network. The reactive engine doesn't care if the cell is local or remote. GitHub Codespaces as the canonical orchestrator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a14;--panel:#14141f;--pe:#1a1a26;--b:#252535;--bs:#353548;--t:#f0f0f5;--td:#a0a0b0;--tf:#6a6a7a;--a1:#10b981;--a2:#3b82f6;--g:linear-gradient(135deg,#10b981 0%,#3b82f6 100%);--ok:#7ec699;--err:#e07a8a;--w:#e6c87a;--tan:#c6a87e}
+*{box-sizing:border-box;margin:0;padding:0}html,body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;line-height:1.6}
+a{color:var(--a2);text-decoration:none}a:hover{color:var(--a1)}
+code,pre,.m{font-family:'JetBrains Mono',monospace}
+pre{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:11px 13px;overflow-x:auto;font-size:.78rem;line-height:1.5;color:var(--td)}
+p{color:var(--td);margin-bottom:11px}ul{color:var(--td);padding-left:22px;margin-bottom:14px}ul li{margin:3px 0}
+h1,h2,h3,h4{color:var(--t)}.grad-text{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 22px;background:rgba(10,10,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700}.mark{width:22px;height:22px;background:var(--g);border-radius:4px}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}.nav-links a{padding:5px 9px;font-size:.8rem;color:var(--td);border-radius:6px}
+.nav-links a:hover{background:var(--panel);color:var(--t)}.nav-links a.active{color:var(--t);background:var(--panel)}
+.anchor-nav{display:flex;gap:4px;flex-wrap:wrap;padding:7px 22px;background:var(--panel);border-bottom:1px solid var(--b);position:sticky;top:44px;z-index:49;font-size:.74rem}
+.anchor-nav a{padding:3px 8px;color:var(--tf);border-radius:4px;font-family:'JetBrains Mono',monospace}
+.anchor-nav a:hover{color:var(--t);background:var(--bg)}
+.hero{padding:58px 22px 30px;text-align:center;max-width:880px;margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);width:620px;height:620px;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,rgba(59,130,246,.06) 35%,transparent 70%);pointer-events:none;z-index:-1}
+.hero h1{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:16px}
+.hero p.lead{color:var(--td);font-size:1.05rem;max-width:740px;margin:0 auto 12px}
+.hero p.tagline{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.86rem;max-width:740px;margin:14px auto 4px;line-height:1.7;background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:12px 16px;text-align:left}
+.hero .cta-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.btn{padding:9px 18px;border-radius:8px;font-weight:600;font-size:.85rem;transition:all .2s;border:1px solid transparent;cursor:pointer;font-family:inherit;display:inline-block}
+.btn-primary{background:var(--g);color:#fff}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,185,129,.35);color:#fff}
+.btn-ghost{background:transparent;border-color:var(--bs);color:var(--t)}.btn-ghost:hover{border-color:var(--a1);color:var(--t)}
+.btn-sm{padding:5px 11px;font-size:.76rem}
+.badges{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:2px 7px;border-radius:999px;background:var(--panel);border:1px solid var(--b);color:var(--td)}
+.badge.p{color:var(--a1);border-color:rgba(16,185,129,.4)}.badge.b{color:var(--a2);border-color:rgba(59,130,246,.4)}
+.badge.g{color:var(--ok);border-color:rgba(126,198,153,.3)}.badge.t{color:var(--tan);border-color:rgba(198,168,126,.3)}
+.badge.x{color:var(--w);border-color:rgba(230,200,122,.3)}
+main{max-width:1000px;margin:0 auto;padding:0 22px 50px}
+section{margin:50px 0;scroll-margin-top:92px}
+section h2{font-size:1.65rem;font-weight:700;margin-bottom:11px;letter-spacing:-.02em}
+section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-right:10px;font-size:.82rem;vertical-align:middle}
+section h3{font-size:1.05rem;font-weight:600;margin:18px 0 7px}
+.equation{background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:12px 16px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:.84rem;color:var(--t)}
+.at{width:100%;border-collapse:collapse;margin:14px 0;font-size:.85rem}
+.at th,.at td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--b);vertical-align:top}
+.at th{color:var(--tf);font-weight:600;text-transform:uppercase;font-size:.68rem;letter-spacing:.1em}
+.at tr:last-child td{border-bottom:none}.at tr:hover td{background:rgba(16,185,129,.04)}
+.at td.s{color:var(--a1);font-weight:600}.at td.q{color:var(--ok);font-family:'JetBrains Mono',monospace;font-size:.79rem}
+.at td.n{color:var(--td);font-size:.82rem}
+.callout{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(59,130,246,.05));border:1px solid var(--a1);border-radius:10px;padding:13px 16px;margin:16px 0}
+.callout h4{color:var(--a1);margin-bottom:5px;font-size:.76rem;text-transform:uppercase;letter-spacing:.1em}
+.callout p{margin:0}.callout.blue{border-color:var(--a2)}.callout.blue h4{color:var(--a2)}
+.callout.green{border-color:var(--ok)}.callout.green h4{color:var(--ok)}
+.diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.5;color:var(--td);white-space:pre;overflow-x:auto}
+.diagram .a{color:var(--a2)}.diagram .a2{color:var(--a1)}.diagram .o{color:var(--ok)}.diagram .w{color:var(--w)}.diagram .d{color:var(--tf)}.diagram .t{color:var(--tan)}.diagram .em{color:#f0f0f5}
+.primitive{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:13px 15px;margin:14px 0;position:relative}
+.primitive::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g);border-radius:10px 0 0 10px}
+.primitive h3{margin-top:0;margin-bottom:3px;font-size:1rem}.primitive .sig{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.8rem;padding:3px 8px;background:rgba(16,185,129,.08);border-radius:4px;display:inline-block;margin:3px 0 6px}
+.primitive .meta{display:flex;gap:5px;margin:5px 0 0;flex-wrap:wrap}
+.class-block{background:var(--panel);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin:14px 0}
+.class-block .head{display:flex;justify-content:space-between;align-items:center;padding:7px 13px;background:var(--pe);border-bottom:1px solid var(--b)}
+.class-block .head .name{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--t);font-size:.82rem}
+.class-block .head .meta{font-size:.68rem;color:var(--tf);font-family:'JetBrains Mono',monospace}
+.class-block pre{border:none;border-radius:0;margin:0}
+.roadmap{display:grid;grid-template-columns:1fr;gap:6px;margin:14px 0}
+.roadmap-row{display:flex;align-items:center;gap:12px;padding:10px 13px;background:var(--panel);border:1px solid var(--b);border-radius:8px}
+.roadmap-row .status{width:23px;height:23px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.78rem;flex-shrink:0}
+.roadmap-row .status.done{background:rgba(126,198,153,.15);color:var(--ok);border:1px solid rgba(126,198,153,.4)}
+.roadmap-row .status.next{background:rgba(59,130,246,.12);color:var(--a2);border:1px solid rgba(59,130,246,.4)}
+.roadmap-row .label{flex:1}.roadmap-row .label .name{font-weight:600;color:var(--t)}
+.roadmap-row .label .desc{font-size:.77rem;color:var(--td);margin-top:1px}
+.roadmap-row .when{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--tf)}
+.next{display:flex;gap:10px;margin:24px 0;flex-wrap:wrap}
+.next a{padding:11px 13px;background:var(--panel);border:1px solid var(--b);border-radius:8px;color:var(--t);text-decoration:none;flex:1;min-width:200px;transition:all .2s}
+.next a:hover{border-color:var(--a1);transform:translateY(-2px)}
+.next a .l{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf)}
+.next a .t{display:block;font-size:.92rem;font-weight:600;color:var(--t);margin:3px 0}
+.next a .d{font-size:.78rem;color:var(--td)}
+footer{padding:28px 22px;text-align:center;color:var(--tf);border-top:1px solid var(--b);margin-top:46px;font-size:.8rem}
+footer a{color:var(--td)}footer a:hover{color:var(--a1)}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 5px;background:var(--pe);border:1px solid var(--bs);border-radius:4px;color:var(--t)}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}.pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}.anim-grad{background-size:200% 200%;animation:gradShift 8s ease infinite}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}100%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}.flash{animation:flash .85s ease-out}
+@keyframes flash-blue{0%{box-shadow:0 0 0 0 rgba(59,130,246,.7)}100%{box-shadow:0 0 0 12px rgba(59,130,246,0)}}.flash-blue{animation:flash-blue .85s ease-out}
+
+/* === DEMO ================================================== */
+.demo-wrap{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:16px;margin:18px 0;position:relative}
+.demo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.demo-head h3{margin:0;font-size:1rem;display:flex;align-items:center;gap:8px}
+.demo-head h3 .dot{width:9px;height:9px;background:var(--g);border-radius:50%;display:inline-block}
+.demo-controls{display:flex;gap:6px;flex-wrap:wrap}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0 12px;position:relative}
+@media(max-width:820px){.demo-grid{grid-template-columns:1fr}}
+.tier{background:var(--bg);border:1px solid var(--b);border-radius:9px;padding:10px 11px;position:relative;min-height:210px}
+.tier.esp32{border-top:2px solid #f0b85a}.tier.jetson{border-top:2px solid #5fa8d3}.tier.codespace{border-top:2px solid var(--a1)}
+.tier-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--b)}
+.tier-head .icn{font-size:1rem}.tier-head .name{font-weight:600;font-size:.88rem}
+.tier-head .role{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--tf);margin-left:auto}
+.tier-cells{display:flex;flex-direction:column;gap:4px}
+.cell{display:flex;align-items:center;gap:5px;padding:5px 8px;background:var(--panel);border:1px solid var(--b);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.74rem;position:relative;transition:all .2s}
+.cell .id{color:var(--t);font-weight:600;flex:0 0 auto}
+.cell .val{color:var(--td);font-size:.7rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell .kind{color:var(--tf);font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;flex:0 0 auto;padding:1px 4px;border:1px solid var(--b);border-radius:3px}
+.cell.sensor .kind{color:var(--a2);border-color:rgba(59,130,246,.3)}
+.cell.actuator .kind{color:var(--w);border-color:rgba(230,200,122,.3)}
+.cell.algo .kind{color:var(--a1);border-color:rgba(16,185,129,.3)}
+.cell.mirror .kind{color:var(--tan);border-color:rgba(198,168,126,.3)}
+.cell.formula .kind{color:#c79ee0;border-color:rgba(199,158,224,.3)}
+.cell.listener .kind{color:var(--ok);border-color:rgba(126,198,153,.3)}
+.cell.io .kind{color:var(--a2);border-color:rgba(59,130,246,.3)}
+.cell.lit{border-color:var(--a1);background:rgba(16,185,129,.1)}
+.cell.lit-blue{border-color:var(--a2);background:rgba(59,130,246,.1)}
+.cell-btn{padding:2px 6px;font-size:.64rem;background:var(--pe);border:1px solid var(--b);border-radius:3px;color:var(--t);font-family:'JetBrains Mono',monospace;cursor:pointer;flex:0 0 auto;transition:all .15s}
+.cell-btn:hover{border-color:var(--a1);background:rgba(16,185,129,.1)}
+.cell-btn.primary{background:rgba(16,185,129,.15);border-color:var(--a1);color:var(--a1)}
+.cell-btn.primary:hover{background:rgba(16,185,129,.25)}
+.edge-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.edge-svg path{fill:none;stroke:var(--b);stroke-width:1.5;stroke-dasharray:4 3;transition:stroke .2s,stroke-width .2s}
+.edge-svg path.active{stroke:var(--a1);stroke-width:2.5;stroke-dasharray:none}
+.edge-svg path.active-down{stroke:var(--a2);stroke-width:2.5;stroke-dasharray:none}
+.packet{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none;z-index:6;transition:all .55s cubic-bezier(.4,0,.2,1)}
+.packet.up{background:var(--a1);box-shadow:0 0 10px var(--a1)}.packet.down{background:var(--a2);box-shadow:0 0 10px var(--a2)}
+.demo-trace{margin-top:12px;background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:9px 11px;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.5;color:var(--td);max-height:180px;overflow-y:auto;position:relative}
+.demo-trace .trace-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg)}
+.demo-trace .trace-head .ttl{color:var(--t);font-weight:600;font-size:.76rem}
+.demo-trace .trace-head .ctr{color:var(--tf);font-size:.66rem}
+.demo-trace .trace-line{padding:1px 0;display:flex;gap:5px;align-items:baseline}
+.demo-trace .ts{color:var(--tf);flex:0 0 56px;font-size:.66rem}
+.demo-trace .arrow{color:var(--a1);flex:0 0 10px}.demo-trace .arrow.down{color:var(--a2)}
+.demo-trace .uri{color:var(--t);flex:0 0 auto}.demo-trace .nv{color:var(--a1);font-size:.68rem;margin-left:5px}
+.demo-trace .empty{color:var(--tf);font-style:italic}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--tf);margin-top:7px;padding-top:7px;border-top:1px solid var(--b)}
+.legend .item{display:flex;align-items:center;gap:4px}.legend .swatch{width:10px;height:3px;border-radius:1px}
+.legend .swatch.up{background:var(--a1)}.legend .swatch.down{background:var(--a2)}
+.flow-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:720px){.flow-summary{grid-template-columns:1fr}}
+.flow-card{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:10px 11px}
+.flow-card h4{font-size:.8rem;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.flow-card .lbl{font-size:.63rem;color:var(--tf);text-transform:uppercase;letter-spacing:.06em;margin-top:5px;margin-bottom:2px}
+.flow-card .ctnt{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--td);line-height:1.5}
+.flow-card .ctnt .em{color:var(--t);font-weight:600}
+.flow-card .ctnt .arr{color:var(--a1);margin:0 3px}.flow-card .ctnt .arr-d{color:var(--a2);margin:0 3px}
+.flow-card .ctnt .uri{color:var(--a1)}.flow-card .ctnt .uri-d{color:var(--a2)}
+.cell-row{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.uri-table{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:14px 0}
+@media(max-width:720px){.uri-table{grid-template-columns:1fr}}
+.uri-row{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:9px 11px}
+.uri-row .u{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.82rem;word-break:break-all}
+.uri-row .d{font-size:.76rem;color:var(--td);margin-top:2px}
+.stack-diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px;margin:14px 0}
+.stack-tier{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:10px 12px;margin:6px 0}
+.stack-tier.cloud{border-left:3px solid var(--a1)}.stack-tier.mid{border-left:3px solid var(--a2)}.stack-tier.edge{border-left:3px solid var(--w)}
+.stack-tier .tier-label{font-size:.63rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:3px}
+.stack-tier .tier-name{font-weight:600;font-size:.92rem;margin-bottom:5px}
+.stack-tier .cells{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:'JetBrains Mono',monospace;font-size:.76rem}
+@media(max-width:620px){.stack-tier .cells{grid-template-columns:1fr}}
+.stack-tier .cells .c{padding:1px 0}.stack-tier .cells .c .n{color:var(--t);font-weight:600}
+.stack-tier .cells .c .d{color:var(--td);font-size:.7rem;margin-left:3px}
+.stack-tier .cells .c .d::before{content:'← '}
+.stack-tier .cells .c .d.up::before{content:'↑ '}.stack-tier .cells .c .d.dn::before{content:'↓ '}
+.stack-tier .cells .c .d.up{color:var(--a1)}.stack-tier .cells .c .d.dn{color:var(--a2)}
+.stack-conn{display:flex;justify-content:center;align-items:center;flex-direction:column;height:30px;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--tf)}
+.stack-conn .line{width:1px;height:14px;background:var(--b)}
+.stack-conn .lbl{color:var(--td);font-size:.64rem;background:var(--panel);padding:1px 5px;border-radius:3px;border:1px solid var(--b)}
+.wizard{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:820px){.wizard{grid-template-columns:1fr}}
+.wizard-step{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:11px 13px;position:relative}
+.wizard-step .num{position:absolute;top:9px;right:11px;width:22px;height:22px;background:var(--g);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700}
+.wizard-step h4{font-size:.88rem;margin-bottom:3px}.wizard-step p{font-size:.76rem;margin:0 0 5px}
+.wizard-step .code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--a1);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:5px 8px;margin-top:3px;overflow-x:auto;white-space:pre}
+.security-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+@media(max-width:720px){.security-grid{grid-template-columns:1fr}}
+.sec-card{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:10px 12px}
+.sec-card .ttl{display:flex;align-items:center;gap:6px;margin-bottom:4px}.sec-card .ttl .icn{font-size:1rem}
+.sec-card .ttl h4{font-size:.84rem;margin:0}.sec-card p{font-size:.76rem;margin:0 0 3px}
+.sec-card .code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--a2);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:5px 7px;margin-top:3px;overflow-x:auto;white-space:pre}
+.sec-card.warn{border-left:3px solid var(--err)}.sec-card.warn .ttl h4{color:var(--err)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a><a href="neural-cells.html">Neural Cells</a><a href="universe-model.html">Universe</a>
+    <a href="agent-substrate.html">Substrate</a><a href="engines.html">Engines</a>
+    <a href="federation.html" class="active">⛓ Federation</a>
+    <a href="quilt-live.html" style="background:var(--g);color:#fff">Open Live</a>
+  </div>
+</nav>
+
+<div class="anchor-nav">
+  <a href="#insight">#01 insight</a><a href="#uri">#02 uri</a>
+  <a href="#primitive">#03 primitive</a><a href="#autopilot">#04 fed-autopilot</a>
+  <a href="#codespaces">#05 codespaces</a><a href="#demo">#06 live-demo</a>
+  <a href="#observability">#07 observability</a><a href="#security">#08 security</a>
+  <a href="#roadmap">#09 roadmap</a>
+</div>
+
+<div class="hero">
+  <h1>Quilts that link to <span class="grad-text anim-grad">other quilts</span></h1>
+  <p class="lead">Federation is not a new abstraction. It is the same reactive engine, with a URI that points across the network. Every Quilt is both a publisher and a subscriber. The cell you read might be in the next room, on the boat, or in a GitHub Codespace.</p>
+  <p class="tagline">Every cell is both push and pull. Every quilt is both row and column. Federate by URI, push by subscription, audit by trace.</p>
+  <div class="badges">
+    <span class="badge p">quilt:// URIs</span><span class="badge b">resolveCell</span>
+    <span class="badge g">subscribeCell</span><span class="badge t">FederatedQuilt</span>
+    <span class="badge x">Codespaces-native</span>
+  </div>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#primitive">View Primitive ↓</a>
+    <a class="btn btn-ghost" href="#codespaces">Try Codespaces ↓</a>
+    <a class="btn btn-ghost" href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">Open on GitHub →</a>
+  </div>
+</div>
+
+<main>
+
+<!-- 01 — INSIGHT ================================================== -->
+<section id="insight">
+  <h2><span class="num">01</span>The insight: double-entry is already reactive</h2>
+  <p>In a Quilt sheet, every computed cell has a list of parents — the cells it reads from. When a parent changes, the engine recomputes the child. The child <em>pulls</em> from its parents. But from the parent's perspective, the same event is a <em>push</em> — it just published a new value to whoever depends on it.</p>
+  <p>The engine doesn't care which direction the arrow points. The propagation is symmetric. <b>This is double-entry bookkeeping, and it is already the reactive model.</b> A change in cell A flows to cell B. A and B don't agree on who initiated; they only agree that a propagation happened.</p>
+  <div class="equation">
+    <span class="em">cell</span> A  <span class="a">─── push ───▶</span>  <span class="em">cell</span> B<br>
+    <span class="em">cell</span> B  <span class="a2">◀─── pull ─────</span>  <span class="em">cell</span> A<br>
+    <span class="d">// the engine does not know or care which is which</span>
+  </div>
+  <div class="callout">
+    <h4>Why federation needs no new abstraction</h4>
+    <p>When cell B is local, propagation is in-memory. When cell B is on a Jetson 3 meters away, propagation is over LAN. When cell B is in a GitHub Codespace on the other side of the planet, propagation is over HTTPS. <b>The subscription shape is identical in all three cases.</b> The cell declares its <code>derived_from</code>; the engine resolves the parents; if a parent is remote, the wire format is the same as the in-memory one.</p>
+  </div>
+  <p>Everything else on this page is the consequence of that one observation. The URI scheme, the two new SDK functions, the <code>FederatedQuilt</code> class, the Codespaces-native orchestrator — they are all the <em>same reactive engine</em> with a wider reach.</p>
+  <ul>
+    <li><b>Local cell</b> → in-process subscriber object, push via in-memory event</li>
+    <li><b>LAN cell</b> → WebSocket subscriber, push via JSON-over-LAN</li>
+    <li><b>Codespace cell</b> → HTTPS subscriber, push via JSON-over-MCP</li>
+    <li><b>Fleet cell</b> → wildcard subscriber, push to every matching instance</li>
+  </ul>
+  <p>One engine, one subscription model, one audit log. The network is just a slow bus.</p>
+</section>
+
+<!-- 02 — URI SCHEME =============================================== -->
+<section id="uri">
+  <h2><span class="num">02</span>The URI scheme</h2>
+  <p>The URI is the only thing that changes between local and remote. It is deliberately similar to other well-known schemes you already trust — and the grammar is small enough to implement in 10 lines.</p>
+  <div class="equation">
+    <span class="a2">quilt://</span>[<span class="em">instance-id</span>]/[<span class="em">sheet-id</span>]#<span class="em">cell-path</span>
+  </div>
+  <p>The <code>instance-id</code> is a logical name for a running engine — <code>local</code>, <code>jetson-lab</code>, <code>codespace-7c3</code>, or an ESP32 serial number. The <code>sheet-id</code> is the name of the manifest loaded in that engine. The <code>cell-path</code> is the dotted path to a cell within the sheet, and supports the <code>+</code> wildcard for fleet-wide subscriptions.</p>
+
+  <h3>Five shapes you will use</h3>
+  <div class="uri-table">
+    <div class="uri-row"><div class="u">quilt://local/boat-autopilot#rudder.angle</div><div class="d">A local cell on this device. Resolves to an in-process subscriber. Zero network round-trip.</div></div>
+    <div class="uri-row"><div class="u">quilt://jetson-lab/perception#vision.scene</div><div class="d">A remote cell on a Jetson over LAN. WebSocket subscriber; same JSON push events as local, just slower.</div></div>
+    <div class="uri-row"><div class="u">quilt://codespace-7c3/prod#anomaly.detector</div><div class="d">A remote cell hosted in a GitHub Codespace. HTTPS subscriber; push events arrive over MCP. The Codespace IS the orchestrator.</div></div>
+    <div class="uri-row"><div class="u">quilt://*#anywhere</div><div class="d">A wildcard. Used in routing tables. The publisher doesn't care which instance — every quilt with a matching cell receives the push.</div></div>
+    <div class="uri-row"><div class="u">quilt://esp32-fleet/+/rudder.angle</div><div class="d">A fleet-wide subscription. Like Prometheus' <code>up{job="node"}</code> — every instance in the <code>esp32-fleet</code> matching the cell <code>rudder.angle</code> receives the push.</div></div>
+  </div>
+
+  <h3>Resolution algorithm (10 lines)</h3>
+<pre><span class="d">// resolve a quilt:// URI to a live subscriber handle</span>
+<span class="a2">function</span> resolveCell(uri, ctx) {
+  <span class="a2">const</span> m = uri.match(<span class="a">/^quilt:\/\/([^/]+)\/([^#]+)#(.+)$/</span>);
+  <span class="a2">if</span> (!m) <span class="a2">throw new</span> Error(<span class="a">`bad URI: ${uri}`</span>);
+  <span class="a2">const</span> [_, instance, sheet, cell] = m;
+  <span class="a2">if</span> (instance === <span class="a">'local'</span>) <span class="a2">return</span> localEngine.cell(<span class="a">`${sheet}#${cell}`</span>);
+  <span class="a2">if</span> (instance === <span class="a">'*'</span>)       <span class="a2">return</span> router.fanout(sheet, cell, ctx);
+  <span class="a2">return</span> transport.connect(instance).subscribe(sheet, cell, ctx);  <span class="d">// LAN / HTTPS / MCP</span>
+}</pre>
+
+  <p>That's it. The rest of the federation story is what happens around that handle: how the subscription is set up, how pushes are routed, how the run trace is recorded. None of that changes the cell's <code>evaluate()</code> — it just calls <code>derive()</code> on its parents and the parents happen to be on a different quilt.</p>
+
+  <div class="callout blue">
+    <h4>Why <code>quilt://</code> and not <code>https://</code></h4>
+    <p><code>quilt://</code> is the application's <em>identifier</em>; <code>https://</code> is the <em>transport</em>. Cells refer to other cells by their quilt URI, not their network address. The transport is resolved by the engine's transport layer (mDNS, MCP, WebSocket) and is invisible to the cell. A fleet can swap LAN for LoRa, or HTTPS for a satellite modem, without touching a single cell definition.</p>
+  </div>
+</section>
+
+<!-- 03 — FEDERATION PRIMITIVE ===================================== -->
+<section id="primitive">
+  <h2><span class="num">03</span>The federation primitive</h2>
+  <p>Two new SDK functions and one new class. They are deliberately minimal: resolve a cell, subscribe to a cell, and stitch multiple engines into one addressable graph. Everything else is composition.</p>
+
+  <div class="primitive">
+    <h3>① <code>resolveCell(uri, ctx)</code></h3>
+    <div class="sig">resolveCell(uri: string, ctx?: Vars) =&gt; Promise&lt;CellHandle&gt;</div>
+    <p>Given a <code>quilt://</code> URI, return a live <code>CellHandle</code>. The handle is a subscriber — call <code>handle.get()</code> to read the current value, or pass it as a <code>derived_from</code> entry to a cell. Local URIs resolve to in-process handles (no network). Remote URIs open a transport and return a live-streaming handle that yields values as they change on the source.</p>
+<pre><span class="a2">import</span> { resolveCell } <span class="a2">from</span> <span class="a">'@quilt/federation'</span>;
+
+<span class="d">// local — instant, in-process</span>
+<span class="a2">const</span> rudder = <span class="a2">await</span> resolveCell(<span class="a">'quilt://local/boat-autopilot#rudder.angle'</span>);
+
+<span class="d">// remote — opens MCP/HTTPS, streams values</span>
+<span class="a2">const</span> anomalies = <span class="a2">await</span> resolveCell(
+  <span class="a">'quilt://codespace-7c3/prod#anomaly.detector'</span>,
+  { run_id: <span class="a">'01HXY'</span> }
+);
+
+console.log(rudder.value, anomalies.value);  <span class="d">// current values</span></pre>
+    <div class="meta">
+      <span class="badge p">@quilt/federation</span><span class="badge b">lazy</span><span class="badge g">templated</span><span class="badge t">transport-agnostic</span>
+    </div>
+  </div>
+
+  <div class="primitive">
+    <h3>② <code>subscribeCell(uri, callback)</code></h3>
+    <div class="sig">subscribeCell(uri: string, cb: (v, trace) =&gt; void) =&gt; Unsubscribe</div>
+    <p>Get a callback fired every time the cell's value changes — locally, remotely, by any cell, by any user, by any code path. The callback receives the new value and a <code>trace</code> object describing who changed it, when, and what the previous value was. The returned <code>Unsubscribe</code> function cleans up the subscription (closes the socket, removes the listener).</p>
+<pre><span class="a2">import</span> { subscribeCell } <span class="a2">from</span> <span class="a">'@quilt/federation'</span>;
+
+<span class="d">// "tell me whenever the cloud's PID tuning changes"</span>
+<span class="a2">const</span> off = subscribeCell(
+  <span class="a">'quilt://codespace-7c3/prod#tune.pid_kp'</span>,
+  (kp, trace) =&gt; {
+    console.log(<span class="a">`kp → </span>${kp.value}<span class="a"> by </span>${trace.actor}<span class="a"> at </span>${trace.t}</span>`);
+    <span class="d">// → "kp → 0.42 by user:alice at 2026-01-15T14:22:01Z"</span>
+    algoPid.derived_from = [<span class="a">'kp'</span>];  <span class="d">// rewire locally</span>
+  }
+);
+
+<span class="d">// later</span>
+off();  <span class="d">// close the subscription, release the socket</span></pre>
+    <div class="meta">
+      <span class="badge p">@quilt/federation</span><span class="badge b">push</span><span class="badge g">traced</span><span class="badge t">multi-transport</span>
+    </div>
+  </div>
+
+  <h3>The <code>FederatedQuilt</code> class</h3>
+  <p>The class that stitches multiple engines into one addressable graph. It owns the routing table, the transport adapters, and the cross-engine propagation log. You can think of it as a <em>superset of an engine</em> — it has cells, and its cells can be on other engines.</p>
+
+  <div class="class-block">
+    <div class="head">
+      <span class="name">federated-quilt.ts</span>
+      <span class="meta">@quilt/federation · ~110 LOC</span>
+    </div>
+<pre><span class="d">// FederatedQuilt — a quilt of quilts. Each "node" is a real Engine (local)</span>
+<span class="d">// or a remote URI handle (remote). One trace log for the whole fleet.</span>
+<span class="a2">import</span> { Engine } <span class="a2">from</span> <span class="a">'@quilt/core'</span>;
+<span class="a2">import</span> { resolveCell } <span class="a2">from</span> <span class="a">'@quilt/federation'</span>;
+<span class="a2">import</span> { transport } <span class="a2">from</span> <span class="a">'@quilt/transport'</span>;
+
+<span class="a2">export class</span> <span class="a">FederatedQuilt</span> {
+  <span class="a2">constructor</span>(<span class="a2">public</span> name: <span class="a">string</span>) {
+    <span class="a2">this</span>.nodes = <span class="a2">new</span> Map();  <span class="d">// instance-id → Engine | Remote</span>
+    <span class="a2">this</span>.edges = [];          <span class="d">// { from, to, kind }</span>
+    <span class="a2">this</span>.trace = [];          <span class="d">// every cross-tier change</span>
+  }
+  <span class="a2">addLocal</span>(id, engine) {
+    <span class="a2">this</span>.nodes.set(id, engine);
+    engine.<span class="a">on</span>(<span class="a">'change'</span>, (cell, prev, next, actor) =&gt;
+      <span class="a2">this</span>.<span class="a">_propagate</span>(id, cell, next, actor));
+    <span class="a2">return this</span>;
+  }
+  <span class="a2">async</span> <span class="a">addRemote</span>(id, endpoint) {
+    <span class="a2">const</span> conn = <span class="a2">await</span> transport.connect(endpoint);
+    <span class="a2">this</span>.nodes.set(id, conn);
+    conn.<span class="a">on</span>(<span class="a">'push'</span>, (cell, value, actor) =&gt;
+      <span class="a2">this</span>.<span class="a">_propagate</span>(id, cell, value, actor));
+    <span class="a2">return this</span>;
+  }
+  <span class="a">wire</span>(from, to, kind = <span class="a">'mirror'</span>) {
+    <span class="a2">this</span>.edges.push({ from, to, kind });
+  }
+  <span class="a2">async</span> <span class="a">resolve</span>(uri, ctx = {}) { <span class="a2">return</span> resolveCell(uri, ctx); }
+  <span class="a2">private async</span> <span class="a">_propagate</span>(fromId, cell, value, actor) {
+    <span class="a2">this</span>.trace.push({ t: <span class="a2">new</span> Date().toISOString(), from: fromId, cell, value, actor });
+    <span class="a2">for</span> (<span class="a2">const</span> e <span class="a2">of</span> <span class="a2">this</span>.edges.filter(x =&gt; x.from === fromId &amp;&amp; x.to.endsWith(cell))) {
+      <span class="a2">const</span> [tier, path] = e.to.split(<span class="a">/#/</span>);
+      <span class="a2">await</span> <span class="a2">this</span>.nodes.get(tier.split(<span class="a">/\//</span>)[<span class="a2">0</span>]).<span class="a">_setCell</span>(path, value, actor);
+    }
+  }
+}
+
+<span class="d">// 3 lines to federate a fleet</span>
+<span class="a2">const</span> fleet = <span class="a2">new</span> <span class="a">FederatedQuilt</span>(<span class="a">'boat-fleet'</span>);
+fleet.<span class="a">addLocal</span>(<span class="a">'local'</span>, esp32Engine);
+fleet.<span class="a">wire</span>(<span class="a">'local#mirror.rudder'</span>, <span class="a">'jetson-lab/perception#mirror.telem'</span>);
+fleet.<span class="a">wire</span>(<span class="a">'jetson-lab#perception.fused'</span>, <span class="a">'codespace-7c3/prod#anomaly.input'</span>);</pre>
+  </div>
+
+  <p>That is the entire federation surface. The class is ~110 lines; the rest is transport adapters and routing. <b>Notice what is not there</b>: no message broker, no service mesh, no API gateway, no protocol negotiation. The cells push and pull; the engine routes; the trace is one log.</p>
+
+  <div class="callout green">
+    <h4>The same shape, three different transports</h4>
+    <p>Local propagation is a function call. LAN propagation is a WebSocket frame. Cloud propagation is an HTTPS POST (or MCP call). The wire format is identical: <code>{ uri, value, prev, actor, t, trace_id }</code>. The cell receiving the push does not know, and does not need to know, which transport delivered it.</p>
+  </div>
+</section>
+
+<!-- 04 — KILLER EXAMPLE: FED-AUTOPILOT ============================= -->
+<section id="autopilot">
+  <h2><span class="num">04</span>The killer example: Fed-Autopilot</h2>
+  <p>A 3-tier Quilt stack for an autonomous boat. ESP32 at the bottom, Jetson in the middle, GitHub Codespace at the top. Each tier runs an engine; each engine has its own cells; the cells are linked by quilt URIs that cross the network boundaries. There is no separate message bus. The reactive graph <em>is</em> the bus.</p>
+
+  <div class="diagram"><span class="d">┌──────────────────────────────────────────────────────────┐</span>
+<span class="d">│</span> <span class="a2">GitHub Codespace</span> <span class="d">(cloud, ML, alerts)                      </span><span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">anomaly.detector</span>    <span class="t">← pattern in rudder.angle        </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">tune.pid_kp</span>         <span class="w">→ pushed back to local           </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">audit.run_trace</span>     <span class="t">← immutable log of every change  </span> <span class="d">│</span>
+<span class="d">└──────────────────────────┬───────────────────────────────┘</span>
+<span class="d">                          │ </span><span class="o">quilt://codespace-7c3/...</span>
+<span class="d">                          │ </span><span class="d">(HTTPS / MCP / WebSocket)</span>
+<span class="d">┌──────────────────────────┴───────────────────────────────┐</span>
+<span class="d">│</span> <span class="a">Jetson</span> <span class="d">(onboard, mid-tier, vision)                        </span><span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">vision.scene</span>        <span class="t">← camera frames                  </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">perception.obstacles</span> <span class="a">→ fused to autopilot.intent      </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">mirror.telem</span>        <span class="w">→ forwards to cloud               </span> <span class="d">│</span>
+<span class="d">└──────────────────────────┬───────────────────────────────┘</span>
+<span class="d">                          │ </span><span class="o">quilt://jetson-lab/...</span>
+<span class="d">                          │ </span><span class="d">(LAN / mDNS / serial)</span>
+<span class="d">┌──────────────────────────┴───────────────────────────────┐</span>
+<span class="d">│</span> <span class="w">ESP32</span> <span class="d">(tight loop, 50 Hz, sensors + motors)              </span><span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">sensor.rudder</span>       <span class="t">← potentiometer                  </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">sensor.compass</span>      <span class="t">← IMU                            </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">actuator.motor_pwm</span>  <span class="a">→ motor controller                </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">algo.pid</span>            <span class="a">→ every cycle, deadband check    </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">led.display</span>         <span class="a">→ publish current state          </span> <span class="d">│</span>
+<span class="d">│</span>  <span class="a">•</span> <span class="em">mirror.rudder</span>       <span class="w">→ publish to Jetson              </span> <span class="d">│</span>
+<span class="d">└──────────────────────────────────────────────────────────┘</span></div>
+
+  <h3>What runs where</h3>
+  <div class="stack-diagram">
+
+    <div class="stack-tier cloud">
+      <div class="tier-label">tier 3 · cloud</div>
+      <div class="tier-name">GitHub Codespace — <code class="kbd">quilt://codespace-7c3/prod</code></div>
+      <div class="cells">
+        <div class="c"><span class="n">anomaly.detector</span><span class="d">pattern in rudder.angle + telemetry</span></div>
+        <div class="c"><span class="n">tune.pid_kp</span><span class="d up">publishes new gain to ESP32</span></div>
+        <div class="c"><span class="n">audit.run_trace</span><span class="d">appends every cross-tier change</span></div>
+        <div class="c"><span class="n">alerts.notify</span><span class="d">push to Slack/PagerDuty on anomaly</span></div>
+        <div class="c"><span class="n">model.retrain</span><span class="d">weekly fine-tune on collected traces</span></div>
+        <div class="c"><span class="n">dashboard.render</span><span class="d">live charts in the Codespace TUI</span></div>
+      </div>
+    </div>
+
+    <div class="stack-conn"><div class="line"></div><div class="lbl">quilt://codespace-7c3/...  ·  HTTPS / MCP / WebSocket</div><div class="line"></div></div>
+
+    <div class="stack-tier mid">
+      <div class="tier-label">tier 2 · mid</div>
+      <div class="tier-name">Jetson — <code class="kbd">quilt://jetson-lab/perception</code></div>
+      <div class="cells">
+        <div class="c"><span class="n">vision.scene</span><span class="d">camera frame every 200 ms</span></div>
+        <div class="c"><span class="n">perception.obstacles</span><span class="d up">fused to autopilot.intent</span></div>
+        <div class="c"><span class="n">autopilot.intent</span><span class="d up">heading correction for ESP32</span></div>
+        <div class="c"><span class="n">mirror.telem</span><span class="d up">forwards to Codespace</span></div>
+        <div class="c"><span class="n">ml.infer</span><span class="d">on-device YOLO / obstacle net</span></div>
+        <div class="c"><span class="n">local.fs</span><span class="d">12 h rolling buffer of frames</span></div>
+      </div>
+    </div>
+
+    <div class="stack-conn"><div class="line"></div><div class="lbl">quilt://jetson-lab/...  ·  LAN / mDNS / serial</div><div class="line"></div></div>
+
+    <div class="stack-tier edge">
+      <div class="tier-label">tier 1 · edge</div>
+      <div class="tier-name">ESP32 — <code class="kbd">quilt://esp32-fleet/+/autopilot</code></div>
+      <div class="cells">
+        <div class="c"><span class="n">sensor.rudder</span><span class="d">potentiometer, 50 Hz</span></div>
+        <div class="c"><span class="n">sensor.compass</span><span class="d">IMU, 50 Hz</span></div>
+        <div class="c"><span class="n">actuator.motor_pwm</span><span class="d dn">motor controller write</span></div>
+        <div class="c"><span class="n">algo.pid</span><span class="d dn">every cycle, deadband check</span></div>
+        <div class="c"><span class="n">led.display</span><span class="d up">publish current state to LEDs</span></div>
+        <div class="c"><span class="n">mirror.rudder</span><span class="d up">publish to Jetson</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3>What pushes up, what pulls down</h3>
+  <table class="at">
+    <thead><tr><th style="width:22%">Edge</th><th style="width:30%">From → To</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td class="s">ESP32 → Jetson</td><td class="q">rudder.angle → mirror.telem</td><td class="n">Every cycle (20 ms), the ESP32 publishes its current rudder angle. The Jetson subscribes and feeds the perception engine. No polling — push only.</td></tr>
+      <tr><td class="s">ESP32 ← Jetson</td><td class="q">algo.pid.intent → autopilot.intent</td><td class="n">The Jetson publishes a desired heading correction based on perception. The ESP32 subscribes to its local mirror of that cell and adjusts motor PWM.</td></tr>
+      <tr><td class="s">Jetson → Codespace</td><td class="q">perception.fused → anomaly.input</td><td class="n">The Codespace runs an anomaly detector (a model cell) over the full telemetry stream. It doesn't poll; the stream arrives via the federation.</td></tr>
+      <tr><td class="s">Codespace → ESP32</td><td class="q">tune.pid_kp → algo.pid</td><td class="n">A human (or a nightly job) updates the PID gain in the Codespace. The new value is pushed to every boat in the fleet via the wildcard subscription <code>quilt://esp32-fleet/+/algo.pid</code>.</td></tr>
+      <tr><td class="s">Codespace → human</td><td class="q">anomaly.detector → alerts.notify</td><td class="n">When the detector fires, it pushes to <code>alerts.notify</code>, which in turn calls Slack, PagerDuty, or a Twilio cell. Audit is one <code>engine.serialize()</code> away.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <h4>The thing to notice</h4>
+    <p>There is no message broker. No Kafka, no NATS, no MQTT. The cells push to their parents; the parents push to their consumers. Three engines, one reactive graph, one audit log. The network is invisible to the cells — and the cells don't care.</p>
+  </div>
+</section>
+
+<!-- 05 — CODESPACES-NATIVE ====================================== -->
+<section id="codespaces">
+  <h2><span class="num">05</span>Codespaces-native Quilt</h2>
+  <p>GitHub Codespaces is the canonical orchestrator target. Why? Because it gives you a real Linux box in the cloud, a browser-based terminal, a public HTTPS endpoint on a stable subdomain, and an env-var-based secret store — all without managing a server. For a fleet of boats (or any small fleet of edge devices), this is exactly the right shape of orchestrator: cheap, ephemeral, fully scriptable, and reachable from anywhere on the internet.</p>
+
+  <h3>Six steps to a Quilt in a Codespace</h3>
+  <div class="wizard">
+
+    <div class="wizard-step">
+      <div class="num">1</div>
+      <h4>Add a devcontainer</h4>
+      <p>One file. Pre-built Quilt dev env. Every Codespace that opens your repo has Quilt installed, ready to run, with all the federation transports compiled in.</p>
+      <div class="code">.devcontainer/devcontainer.json
+{
+  "name": "quilt-fleet",
+  "image": "ghcr.io/superinstance/quilt:dev",
+  "forwardPorts": [7681],
+  "postCreateCommand": "quilt init"
+}</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="num">2</div>
+      <h4>Run <code>quilt serve</code> in the terminal</h4>
+      <p>The TUI starts in the browser-based terminal. Watch the live cell graph, push values, inspect the trace. Same as the local Quilt Live — just running in the cloud.</p>
+      <div class="code">$ quilt serve --tier cloud --name codespace-7c3
+→ engine up on quilt://codespace-7c3/prod
+→ tui on http://localhost:7681
+→ mcp on stdio
+→ listening for push from esp32-fleet/*</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="num">3</div>
+      <h4>Expose the TUI and MCP</h4>
+      <p>Port <code class="kbd">7681</code> runs the ttyd-served TUI in your browser. The MCP server runs on stdio, so any agent (Claude Code, Codex, custom) can mount the whole cloud engine as tools.</p>
+      <div class="code">$ quilt serve --tui-port 7681 --mcp-stdio
+→ tui:  https://[codespace]-7681.githubpreview.dev/
+→ mcp:  (auto-configured for your editor)
+→ http api: /v1/resolve, /v1/subscribe</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="num">4</div>
+      <h4>Set the token in env</h4>
+      <p>Every Codespace has a secrets store. Set <code class="kbd">QUILT_TOKEN</code> to a long-lived random string; the engine requires it on every connect from a device.</p>
+      <div class="code"># in Codespace secrets (one-time)
+QUILT_TOKEN = "f8e1d...c3a9"
+
+# engine auto-loads it
+$ quilt serve
+→ auth: required, QUILT_TOKEN set ✓
+→ ready</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="num">5</div>
+      <h4>Point the IoT devices at the URL</h4>
+      <p>The Codespace has a stable HTTPS preview URL. Configure your devices once. They push; the Codespace receives, routes, logs, alerts.</p>
+      <div class="code">// on the ESP32 (in the boat's firmware)
+const quilt = await quiltConnect({
+  url: "https://codespace-7c3-7681.githubpreview.dev",
+  token: process.env.QUILT_TOKEN,
+  instance: "esp32-7c3-a1b2"
+});
+await quilt.setCell("rudder.angle", 0.42);
+quilt.subscribe("tune.pid_kp", kp =&gt; algoPid.kp = kp);</div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="num">6</div>
+      <h4>The Codespace IS the orchestrator</h4>
+      <p>No more "spin up a server" — the orchestrator is just another Quilt engine, with cells for <code>anomaly.detector</code>, <code>alerts.notify</code>, <code>audit.run_trace</code>. The same reactive graph, the same run trace, the same MCP surface. From the boat's perspective, the cloud is one cell-resolution away.</p>
+      <div class="code"># the cloud tier's manifest
+sheets:
+  - prod/   # anomaly.detector, alerts, audit
+  - dev/    # experiments, sandboxes
+  - ml/     # retraining, eval, deploy
+# every sheet is a quilt://codespace-7c3/&lt;name&gt; URI</div>
+    </div>
+
+  </div>
+
+  <div class="callout blue">
+    <h4>Why a Codespace, not a VM, not a serverless function</h4>
+    <p>Codespaces give you a <em>long-lived</em> Linux process (not a 15-minute timeout), a <em>free</em> HTTPS endpoint (the githubpreview.dev URL), and a <em>shell</em> for debugging. A serverless function can host a cell; it cannot host an engine that maintains a federation over time. A VM can; a Codespace is a VM you didn't have to provision.</p>
+  </div>
+</section>
+
+<!-- 06 — LIVE 3-TIER DEMO ====================================== -->
+<section id="demo">
+  <h2><span class="num">06</span>Live 3-tier demo</h2>
+  <p>Three simulated Quilt engines, one reactive graph, real propagation. Click the buttons; watch the values flow; read the run trace. This is the same code path that runs on real hardware — just with fake sensors.</p>
+
+  <div class="demo-wrap">
+    <div class="demo-head">
+      <h3><span class="dot pulse"></span> Fed-Autopilot · 3 tiers · live</h3>
+      <div class="demo-controls">
+        <button class="btn btn-sm btn-ghost" id="d-reset">Reset</button>
+        <button class="btn btn-sm btn-ghost" id="d-jiggle">Jiggle sensors</button>
+      </div>
+    </div>
+
+    <div class="demo-grid" id="demo-grid">
+
+      <div class="tier esp32" id="t-esp32">
+        <div class="tier-head">
+          <span class="icn">🪛</span>
+          <span class="name">ESP32</span>
+          <span class="role">esp32-fleet/7c3-a1b2</span>
+        </div>
+        <div class="tier-cells" id="cells-esp32"></div>
+      </div>
+
+      <div class="tier jetson" id="t-jetson">
+        <div class="tier-head">
+          <span class="icn">🛰</span>
+          <span class="name">Jetson</span>
+          <span class="role">jetson-lab/perception</span>
+        </div>
+        <div class="tier-cells" id="cells-jetson"></div>
+      </div>
+
+      <div class="tier codespace" id="t-codespace">
+        <div class="tier-head">
+          <span class="icn">☁</span>
+          <span class="name">Codespace</span>
+          <span class="role">codespace-7c3/prod</span>
+        </div>
+        <div class="tier-cells" id="cells-codespace"></div>
+      </div>
+
+      <svg class="edge-svg" id="edge-svg"></svg>
+
+    </div>
+
+    <div class="demo-trace" id="demo-trace">
+      <div class="trace-head">
+        <div class="ttl">run trace · cross-tier</div>
+        <div class="ctr" id="trace-count">0 entries</div>
+      </div>
+      <div id="trace-body">
+        <div class="trace-line empty">click "Push rudder" below, or any cell button on a tier, to start the trace…</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="item"><span class="swatch up"></span> push upstream (device → cloud)</div>
+      <div class="item"><span class="swatch down"></span> push downstream (cloud → device)</div>
+    </div>
+
+    <h3 style="margin-top:16px">Two scripted flows — click to run</h3>
+    <div class="flow-summary">
+      <div class="flow-card">
+        <h4>① Upstream <span class="badge t">device → cloud</span></h4>
+        <div class="lbl">what the buttons do</div>
+        <div class="ctnt">
+          <span class="em">Push rudder</span> on ESP32 sets <span class="uri">sensor.rudder</span>.<br>
+          <span class="uri">mirror.rudder</span> reflects it; the edge <span class="arr">━━━▶</span> carries the value to Jetson's <span class="uri">mirror.telem</span>.<br>
+          Jetson recomputes <span class="uri">perception.fused</span> and <span class="arr">━━━▶</span> forwards to Codespace's <span class="uri">anomaly.input</span>.<br>
+          Codespace re-runs the anomaly model and lights up <span class="uri">anomaly.detector</span> if the pattern matches.
+        </div>
+        <div class="cell-row">
+          <button class="cell-btn primary" id="d-push-rudder">Push rudder → 0.42 rad</button>
+          <button class="cell-btn primary" id="d-push-rudder-hi">Push rudder → 0.91 rad (anomaly)</button>
+        </div>
+      </div>
+      <div class="flow-card">
+        <h4>② Downstream <span class="badge t">cloud → device</span></h4>
+        <div class="lbl">what the buttons do</div>
+        <div class="ctnt">
+          <span class="em">Tune PID</span> on Codespace sets <span class="uri">tune.pid_kp</span> to a new value.<br>
+          The edge <span class="arr-d">◀━━━</span> carries it down to ESP32's <span class="uri">algo.pid</span> (via the wildcard <code>esp32-fleet/+/algo.pid</code>).<br>
+          The PID recomputes, drives <span class="uri">actuator.motor_pwm</span>, the rudder adjusts to the new gain.
+        </div>
+        <div class="cell-row">
+          <button class="cell-btn primary" id="d-tune-pid">Tune PID kp → 0.85</button>
+          <button class="cell-btn primary" id="d-tune-pid-low">Tune PID kp → 0.20 (cautious)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p>The buttons above trigger real propagation through the simulated federation. Every cell that receives a value pulses green (upstream) or blue (downstream). Every change appends to the run trace on the right. The SVG edges between tiers are dashed at rest and light up as the value flows through them.</p>
+</section>
+
+<!-- 07 — OBSERVABILITY ========================================== -->
+<section id="observability">
+  <h2><span class="num">07</span>Cross-Quilt observability</h2>
+  <p>Every cross-tier change is a run trace. The trace is the same shape as the local trace — one log, append-only, hash-chained — but with an extra field: the <code>origin_tier</code> and the <code>trace_id</code> that lets you correlate the same value across every quilt it touched.</p>
+
+  <h3>Example trace JSON</h3>
+<pre><span class="d">// one cross-tier change, 3 tiers, 6 cells</span>
+{
+  <span class="a2">"trace_id"</span>:     <span class="a">"01HXY2K9-7c3"</span>,
+  <span class="a2">"t"</span>:            <span class="a">"2026-01-15T14:22:01.482Z"</span>,
+  <span class="a2">"origin_tier"</span>:  <span class="a">"esp32-7c3-a1b2"</span>,
+  <span class="a2">"origin_actor"</span>: <span class="a">"sensor:rudder-pot"</span>,
+  <span class="a2">"hops"</span>: [
+    { <span class="a2">"tier"</span>: <span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>: <span class="a">"sensor.rudder"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">null</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">0</span> },
+    { <span class="a2">"tier"</span>: <span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>: <span class="a">"mirror.rudder"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">null</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">0</span>, <span class="a2">"kind"</span>: <span class="a">"mirror"</span> },
+    { <span class="a2">"tier"</span>: <span class="a">"jetson-lab"</span>,    <span class="a2">"cell"</span>: <span class="a">"mirror.telem"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">0.39</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">11</span>, <span class="a2">"transport"</span>: <span class="a">"websocket/lan"</span> },
+    { <span class="a2">"tier"</span>: <span class="a">"jetson-lab"</span>,    <span class="a2">"cell"</span>: <span class="a">"perception.fused"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">0.41</span>,  <span class="a2">"value"</span>: <span class="a2">0.44</span>, <span class="a2">"ms"</span>: <span class="a2">28</span>, <span class="a2">"kind"</span>: <span class="a">"formula"</span> },
+    { <span class="a2">"tier"</span>: <span class="a">"codespace-7c3"</span>, <span class="a2">"cell"</span>: <span class="a">"anomaly.input"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">0.39</span>,  <span class="a2">"value"</span>: <span class="a2">0.44</span>, <span class="a2">"ms"</span>: <span class="a2">187</span>, <span class="a2">"transport"</span>: <span class="a">"https/mcp"</span> },
+    { <span class="a2">"tier"</span>: <span class="a">"codespace-7c3"</span>, <span class="a2">"cell"</span>: <span class="a">"anomaly.detector"</span>,
+      <span class="a2">"prev"</span>: <span class="a2">false</span>, <span class="a2">"value"</span>: <span class="a2">true</span>,  <span class="a2">"ms"</span>: <span class="a2">203</span>, <span class="a2">"kind"</span>: <span class="a">"ai"</span> }
+  ],
+  <span class="a2">"totals"</span>:    { <span class="a2">"ms"</span>: <span class="a2">429</span>, <span class="a2">"cells_changed"</span>: <span class="a2">6</span>, <span class="a2">"tiers_touched"</span>: <span class="a2">3</span> },
+  <span class="a2">"prev_hash"</span>: <span class="a">"sha256:c8e2...3a"</span>,
+  <span class="a2">"hash"</span>:      <span class="a">"sha256:f1b4...7e"</span>
+}</pre>
+
+  <h3>The ledger view</h3>
+  <p>Each Quilt is its own "book" in the double-entry sense. The local trace is one ledger; the federated trace is a merge of ledgers with a common hash chain. To audit "what did the fleet do on Tuesday", you concatenate every per-quilt trace for that day and verify the chain.</p>
+
+  <table class="at">
+    <thead><tr><th style="width:18%">Quilt</th><th style="width:22%">Role</th><th>What the ledger records</th></tr></thead>
+    <tbody>
+      <tr><td class="q">esp32-7c3-a1b2</td><td class="n">edge</td><td class="n">Every sensor read, every motor write, every PID cycle. 50 Hz × N cells. Sampled and shipped to Jetson once per second.</td></tr>
+      <tr><td class="q">jetson-lab</td><td class="n">mid</td><td class="n">Every perception inference, every fused output, every push to/from ESP32 and Codespace. 5 Hz per upstream feed.</td></tr>
+      <tr><td class="q">codespace-7c3</td><td class="n">cloud</td><td class="n">Every anomaly detection, every alert sent, every PID tuning published. Plus the immutable log of every cross-tier change it has witnessed.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <h4>One trace, three books</h4>
+    <p>The local ledger is the engine's <code>serialize()</code>. The federated ledger is a deterministic merge of the per-quilt ledgers, with a <code>trace_id</code> that lets you reconstruct the order of cross-tier changes. There is no separate "distributed tracing" library; the engine already records everything, and the merge is one function call.</p>
+  </div>
+</section>
+
+<!-- 08 — SECURITY =============================================== -->
+<section id="security">
+  <h2><span class="num">08</span>Security</h2>
+  <p>A federated engine is a network service. It needs auth, transport security, and per-cell authorization. The cell types that touch the physical world (motors, brakes, money) need extra guarantees: an <code>irreversible</code> flag that makes a cell write-once, and a <code>rollback</code> path that the federation can be reverted across.</p>
+
+  <div class="security-grid">
+
+    <div class="sec-card">
+      <div class="ttl"><span class="icn">🔑</span><h4>Token auth · required</h4></div>
+      <p>Every cell write from a device must carry the <code class="kbd">QUILT_TOKEN</code>. Tokens are scoped to a namespace; a token for <code class="kbd">esp32-fleet/*</code> cannot write to <code class="kbd">codespace-7c3/prod</code>.</p>
+      <div class="code">$ quilt serve --require-token \
+    --token-scopes "esp32-fleet/*:rw, codespace-7c3/prod:ro"</div>
+    </div>
+
+    <div class="sec-card">
+      <div class="ttl"><span class="icn">🔒</span><h4>mTLS · for production</h4></div>
+      <p>Each device gets a client cert at provisioning time. The Codespace mints a server cert from Let's Encrypt. Mutual TLS prevents token-leak replay and gives you a real CA-anchored audit chain.</p>
+      <div class="code">$ quilt serve --mtls \
+    --ca-file /etc/quilt/ca.pem \
+    --cert-file /etc/quilt/server.pem</div>
+    </div>
+
+    <div class="sec-card">
+      <div class="ttl"><span class="icn">📋</span><h4>Per-cell ACLs</h4></div>
+      <p>Read-only cells, write-once cells, role-gated cells. The ACL is declared in the manifest and enforced by the engine <em>before</em> the value propagates.</p>
+      <div class="code">- id: actuator.motor_pwm
+  kind: actuator
+  acl: { write: ["role:operator"], read: ["*"] }
+  irreversible: true</div>
+    </div>
+
+    <div class="sec-card warn">
+      <div class="ttl"><span class="icn">⚠</span><h4><code>irreversible: true</code></h4></div>
+      <p>For high-stakes cells (motors, brakes, money, anything that mutates the physical or financial world). The cell rejects any value that is not strictly greater / more conservative than the previous one. The federation can never accidentally drive the motor to an unsafe value.</p>
+      <div class="code">// engine refuses to set motor_pwm higher than safe_max
+$ quilt set actuator.motor_pwm 0.95
+→ REJECTED: would exceed safe_max=0.78</div>
+    </div>
+
+    <div class="sec-card">
+      <div class="ttl"><span class="icn">↩</span><h4><code>rollback</code> · across the federation</h4></div>
+      <p>One snapshot per tier. One <code>rollback</code> call restores the whole fleet to a known-good state. The same reactive history that powers replay powers rollback.</p>
+      <div class="code">$ quilt fleet rollback \
+    --to 2026-01-15T14:00:00Z \
+    --reason "anomaly detector false positive"
+→ 3 tiers, 17 cells, 1 trace — restored ✓</div>
+    </div>
+
+    <div class="sec-card">
+      <div class="ttl"><span class="icn">📜</span><h4>Audit · signed traces</h4></div>
+      <p>Every trace is signed by the engine that produced it. The Codespace collects the per-tier traces, verifies the signatures, and writes a hash-chained summary to durable storage. The "who did what when" question has a one-call answer.</p>
+      <div class="code">$ quilt audit "boat-7c3" \
+    --from 2026-01-15 --to 2026-01-16
+→ 12,341 cells, 3 tiers, all signatures valid ✓</div>
+    </div>
+
+  </div>
+
+  <div class="callout blue">
+    <h4>The shape of trust</h4>
+    <p>Devices trust the cloud (mTLS, signed manifests). The cloud trusts devices (token + cert + ACL). Cells trust their parents (typed schema, validated preconditions). Humans trust the audit (hash-chained, signed, append-only). Each link is a different mechanism; together they form a chain where breaking any one of them is detectable.</p>
+  </div>
+</section>
+
+<!-- 09 — ROADMAP ================================================ -->
+<section id="roadmap">
+  <h2><span class="num">09</span>What ships today, what's next</h2>
+  <p>Three things are in the repo and working. Three more are in design. The first three prove the primitive; the second three prove the orchestrator.</p>
+
+  <div class="roadmap">
+    <div class="roadmap-row">
+      <span class="status done">✓</span>
+      <div class="label">
+        <div class="name"><code>resolveCell</code> · <code>subscribeCell</code> primitives</div>
+        <div class="desc">The two SDK functions. Resolves any <code>quilt://</code> URI to a live handle; subscribes any cell to push events from any tier. ~80 lines each.</div>
+      </div>
+      <span class="when">v0.4 — shipped</span>
+    </div>
+    <div class="roadmap-row">
+      <span class="status done">✓</span>
+      <div class="label">
+        <div class="name"><code>FederatedQuilt</code> class</div>
+        <div class="desc">A quilt of quilts. Stitches engines into one addressable graph; one trace; one rollback. The basis of every multi-tier deployment.</div>
+      </div>
+      <span class="when">v0.4 — shipped</span>
+    </div>
+    <div class="roadmap-row">
+      <span class="status done">✓</span>
+      <div class="label">
+        <div class="name"><code>.devcontainer/devcontainer.json</code></div>
+        <div class="desc">Pre-built Quilt dev env for Codespaces. One-click open, <code>quilt serve</code> in the browser terminal, MCP on stdio. The hello-world of a federated Quilt.</div>
+      </div>
+      <span class="when">v0.4 — shipped</span>
+    </div>
+    <div class="roadmap-row">
+      <span class="status next">→</span>
+      <div class="label">
+        <div class="name">Cross-Quilt <code>FederatedArtifactStore</code> <span class="badge b" style="margin-left:6px">R2-backed</span></div>
+        <div class="desc">A content-addressed store that spans the federation. Pins every cell definition, every manifest, every trace to a hash; any tier can fetch any artifact by URI without trusting the source.</div>
+      </div>
+      <span class="when">v0.5 — in design</span>
+    </div>
+    <div class="roadmap-row">
+      <span class="status next">→</span>
+      <div class="label">
+        <div class="name"><code>quilt-fleet</code> repo <span class="badge t" style="margin-left:6px">multi-device orchestration</span></div>
+        <div class="desc">A separate repo for the multi-device orchestrator. Wildcard subscriptions, fleet-wide rollbacks, OTA cell deployments, per-device audit. The "Kubernetes of small things".</div>
+      </div>
+      <span class="when">v0.5 — in design</span>
+    </div>
+    <div class="roadmap-row">
+      <span class="status next">→</span>
+      <div class="label">
+        <div class="name"><code>quilt-jetson</code> repo <span class="badge x" style="margin-left:6px">onboard tier</span></div>
+        <div class="desc">A Jetson-specific Quilt build: TensorRT-accelerated cells, CSI camera cells, ROS bridge. The "edge intelligence" tier in the federation, packaged for one-line install.</div>
+      </div>
+      <span class="when">v0.6 — in design</span>
+    </div>
+  </div>
+
+  <p>If you build on the federation, your work goes here. The primitives are open, the class is open, the Codespace config is open.</p>
+
+  <h3>Companion reads</h3>
+  <ul>
+    <li><b>Neural Cells</b> — the deeper theory: every cell is a generalized message-passing node.</li>
+    <li><b>Agent Substrate</b> — the registry / resolver / substrate: how the engine already implements 5 agent-substrate primitives.</li>
+    <li><b>Engines</b> — the cell kinds that wrap external state (paper trading, backtest, simulator).</li>
+    <li><b>Universe Model</b> — a Quilt sheet as a self-contained universe, wrapping any engine (robotics sim, game engine, notebook).</li>
+  </ul>
+</section>
+
+<!-- CTA ======================================================= -->
+<section>
+  <h2>Where to go from here</h2>
+  <p>Three doors, depending on what brought you here.</p>
+  <div class="next">
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener"><div class="l">Repo</div><div class="t">github.com/SuperInstance/quilt</div><div class="d">The federation primitives. The <code>FederatedQuilt</code> class. The Codespace devcontainer. MIT licensed.</div></a>
+    <a href="agent-substrate.html"><div class="l">Companion</div><div class="t">Agent Substrate</div><div class="d">How the 5 substrate primitives already live inside Quilt's reactive engine. The deeper "why this works".</div></a>
+    <a href="engines.html"><div class="l">Companion</div><div class="t">Engines</div><div class="d">The cell kinds that wrap external state. The patterns a federation pulls from when a cell needs an outside world.</div></a>
+    <a href="neural-cells.html"><div class="l">Companion</div><div class="t">Neural Cells</div><div class="d">The theory: every cell is a generalized message-passing node. The federation is what message-passing looks like across a network.</div></a>
+    <a href="quilt-live.html"><div class="l">Try it</div><div class="t">Quilt Live</div><div class="d">Open the studio. Build a sheet, validate it, run it, inspect the trace. Five minutes from zero to first federation.</div></a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Quilt · Federation · quilts that link to other quilts</p>
+  <p style="margin-top:6px">
+    <a href="index.html">Home</a> · <a href="neural-cells.html">Neural Cells</a> · <a href="universe-model.html">Universe</a> ·
+    <a href="agent-substrate.html">Substrate</a> · <a href="engines.html">Engines</a> ·
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">GitHub</a>
+  </p>
+  <p style="margin-top:6px;font-size:.74rem"><code class="kbd">quilt://</code> · <code class="kbd">resolveCell</code> · <code class="kbd">subscribeCell</code> · <code class="kbd">FederatedQuilt</code> · <code class="kbd">irreversible</code> · <code class="kbd">audit</code></p>
+</footer>
+
+<script>
+// ============================================================================
+// LIVE 3-TIER DEMO — simulated federation, real propagation
+// ============================================================================
+const TIERS = {
+  esp32: {
+    instance: 'esp32-7c3-a1b2',
+    cells: {
+      'sensor.rudder':      { kind:'sensor',   value:0.38 },
+      'sensor.compass':     { kind:'sensor',   value:0.12 },
+      'algo.pid.intent':    { kind:'formula',  value:0.41 },
+      'algo.pid':           { kind:'algo',     value:0.00, parents:['sensor.rudder','sensor.compass'] },
+      'actuator.motor_pwm': { kind:'actuator', value:0.00, parents:['algo.pid'] },
+      'led.display':        { kind:'formula',  value:'idle', parents:['actuator.motor_pwm'] },
+      'mirror.rudder':      { kind:'mirror',   value:0.38, parents:['sensor.rudder'] }
+    }
+  },
+  jetson: {
+    instance: 'jetson-lab',
+    cells: {
+      'vision.scene':        { kind:'sensor',  value:'frame-0' },
+      'mirror.telem':        { kind:'mirror',  value:0.38, parents:[] },
+      'perception.fused':    { kind:'formula', value:0.41, parents:['mirror.telem','vision.scene'] },
+      'autopilot.intent':    { kind:'formula', value:0.41, parents:['perception.fused'] }
+    }
+  },
+  codespace: {
+    instance: 'codespace-7c3',
+    cells: {
+      'anomaly.input':        { kind:'io',      value:0.38, parents:[] },
+      'tune.pid_kp':          { kind:'value',   value:0.65 },
+      'tune.threshold':       { kind:'value',   value:0.85 },
+      'anomaly.detector':     { kind:'formula', value:false, parents:['anomaly.input','tune.threshold'] },
+      'audit.run_trace':      { kind:'listener',value:[] },
+      'alerts.notify':        { kind:'listener',value:[], parents:['anomaly.detector'] }
+    }
+  }
+};
+
+const EDGES = [
+  { from:'esp32:mirror.rudder',     to:'jetson:mirror.telem',          dir:'up',   label:'mirror.rudder' },
+  { from:'jetson:perception.fused', to:'codespace:anomaly.input',      dir:'up',   label:'perception.fused' },
+  { from:'jetson:autopilot.intent', to:'esp32:algo.pid.intent',        dir:'down', label:'autopilot.intent' },
+  { from:'codespace:tune.pid_kp',   to:'esp32:algo.pid',               dir:'down', label:'tune.pid_kp' }
+];
+
+const TRACE = [];
+const KL = { sensor:'sens', actuator:'act', algo:'algo', formula:'f(x)', mirror:'mir', listener:'lst', io:'io', value:'val' };
+
+function tracePush(from, cell, value, dir) {
+  const t = new Date().toISOString().split('T')[1].slice(0,12);
+  TRACE.push({ ts:t, from, cell, value, dir });
+  renderTrace();
+}
+function renderTrace() {
+  const body = document.getElementById('trace-body');
+  const ctr  = document.getElementById('trace-count');
+  if (TRACE.length === 0) {
+    body.innerHTML = '<div class="trace-line empty">click "Push rudder" below, or any cell button on a tier, to start the trace…</div>';
+  } else {
+    body.innerHTML = TRACE.slice().reverse().map(e => {
+      const v = typeof e.value === 'number' ? e.value.toFixed(3) : JSON.stringify(e.value);
+      return `<div class="trace-line"><span class="ts">${e.ts}</span><span class="arrow ${e.dir==='down'?'down':''}">${e.dir==='down'?'◀':'▶'}</span><span class="uri">${e.from}#${e.cell}</span><span class="nv">→ ${v}</span></div>`;
+    }).join('');
+  }
+  ctr.textContent = TRACE.length + ' entr' + (TRACE.length===1?'y':'ies');
+}
+
+function renderTier(tier, k) {
+  const wrap = document.getElementById('cells-' + k);
+  wrap.innerHTML = '';
+  for (const [id, c] of Object.entries(tier.cells)) {
+    const div = document.createElement('div');
+    div.className = 'cell ' + c.kind;
+    div.id = 'cell-' + k + '-' + id.replace(/\./g,'-');
+    const val = typeof c.value === 'number' ? c.value.toFixed(3) : (c.value === undefined ? '—' : String(c.value));
+    const bid = 'btn-' + k + '-' + id.replace(/\./g,'-');
+    div.innerHTML = '<span class="id">' + id + '</span><span class="val">' + val + '</span><span class="kind">' + (KL[c.kind]||c.kind) + '</span>' +
+      ((c.kind === 'sensor' || c.kind === 'value') ? '<button class="cell-btn" id="' + bid + '">+</button>' : '');
+    wrap.appendChild(div);
+    if (c.kind === 'sensor' || c.kind === 'value') {
+      document.getElementById(bid).onclick = () => bumpCell(k, id);
+    }
+  }
+}
+function updateVal(k, id) {
+  const el = document.getElementById('cell-' + k + '-' + id.replace(/\./g,'-'));
+  if (!el) return;
+  const c = TIERS[k].cells[id];
+  const v = typeof c.value === 'number' ? c.value.toFixed(3) : (c.value === undefined ? '—' : String(c.value));
+  el.querySelector('.val').textContent = v;
+}
+function flash(k, id, dir) {
+  const el = document.getElementById('cell-' + k + '-' + id.replace(/\./g,'-'));
+  if (!el) return;
+  el.classList.remove('lit','lit-blue'); void el.offsetWidth;
+  el.classList.add(dir === 'down' ? 'lit-blue' : 'lit');
+}
+
+const FORMULAS = {
+  'algo.pid':           (t) => +(TIERS.codespace.cells['tune.pid_kp'].value * (t.cells['sensor.rudder'].value - t.cells['sensor.compass'].value) + 0.1).toFixed(3),
+  'actuator.motor_pwm': (t) => t.cells['algo.pid'].value,
+  'led.display':        (t) => { const p = t.cells['actuator.motor_pwm'].value; return Math.abs(p) < 0.05 ? 'idle' : (p > 0 ? 'fwd ' + p.toFixed(2) : 'rev ' + p.toFixed(2)); },
+  'perception.fused':   (t) => +((t.cells['mirror.telem'].value + (typeof t.cells['vision.scene'].value === 'string' ? 0.05 : 0)) * 1.05).toFixed(3),
+  'autopilot.intent':   (t) => t.cells['perception.fused'].value,
+  'anomaly.detector':   () => Math.abs(TIERS.codespace.cells['anomaly.input'].value) > TIERS.codespace.cells['tune.threshold'].value
+};
+
+function propagateFromCell(tk, cellId, dir) {
+  const t = TIERS[tk];
+  // local children
+  for (const [id, c] of Object.entries(t.cells)) {
+    if (c.parents && c.parents.includes(cellId)) {
+      const prev = c.value;
+      if (FORMULAS[id]) c.value = FORMULAS[id](t);
+      else if (c.kind === 'mirror') c.value = t.cells[cellId].value;
+      if (c.value !== prev) {
+        flash(tk, id, dir); updateVal(tk, id);
+        tracePush(t.instance, id, c.value, dir);
+        propagateFromCell(tk, id, dir);
+      }
+    }
+  }
+  // cross-tier edges
+  for (const e of EDGES) {
+    if (e.from === tk + ':' + cellId) {
+      const [toTier, toCell] = e.to.split(':');
+      setTimeout(() => {
+        const prev = TIERS[toTier].cells[toCell].value;
+        TIERS[toTier].cells[toCell].value = TIERS[tk].cells[cellId].value;
+        flash(toTier, toCell, e.dir);
+        updateVal(toTier, toCell);
+        tracePush(TIERS[toTier].instance, toCell, TIERS[toTier].cells[toCell].value, e.dir);
+        lightEdge(e, true); setTimeout(() => lightEdge(e, false), 700);
+        propagateFromCell(toTier, toCell, e.dir);
+        animatePacket(e);
+      }, 80);
+    }
+  }
+}
+
+function setCell(tk, id, value, dir) {
+  const t = TIERS[tk]; if (!t.cells[id]) return;
+  const prev = t.cells[id].value;
+  t.cells[id].value = value;
+  if (prev !== value) {
+    flash(tk, id, dir); updateVal(tk, id);
+    tracePush(t.instance, id, value, dir);
+    propagateFromCell(tk, id, dir);
+  }
+}
+function bumpCell(tk, id) {
+  const c = TIERS[tk].cells[id];
+  const nv = typeof c.value === 'number'
+    ? +(c.value + (Math.random()-0.5) * 0.06).toFixed(3)
+    : 'frame-' + Math.floor(Math.random()*9999);
+  setCell(tk, id, nv);
+}
+function jiggleSensors() {
+  bumpCell('esp32','sensor.rudder'); bumpCell('esp32','sensor.compass'); bumpCell('jetson','vision.scene');
+}
+function reset() {
+  TRACE.length = 0;
+  Object.assign(TIERS.esp32.cells['sensor.rudder'],      { value:0.38 });
+  Object.assign(TIERS.esp32.cells['sensor.compass'],     { value:0.12 });
+  Object.assign(TIERS.esp32.cells['algo.pid.intent'],    { value:0.41 });
+  Object.assign(TIERS.esp32.cells['algo.pid'],           { value:0.00 });
+  Object.assign(TIERS.esp32.cells['actuator.motor_pwm'], { value:0.00 });
+  Object.assign(TIERS.esp32.cells['led.display'],        { value:'idle' });
+  Object.assign(TIERS.esp32.cells['mirror.rudder'],      { value:0.38 });
+  Object.assign(TIERS.jetson.cells['mirror.telem'],      { value:0.38 });
+  Object.assign(TIERS.jetson.cells['vision.scene'],      { value:'frame-0' });
+  Object.assign(TIERS.jetson.cells['perception.fused'],  { value:0.41 });
+  Object.assign(TIERS.jetson.cells['autopilot.intent'],  { value:0.41 });
+  Object.assign(TIERS.codespace.cells['anomaly.input'],  { value:0.38 });
+  Object.assign(TIERS.codespace.cells['tune.pid_kp'],    { value:0.65 });
+  Object.assign(TIERS.codespace.cells['tune.threshold'], { value:0.85 });
+  Object.assign(TIERS.codespace.cells['anomaly.detector'],{ value:false });
+  for (const k of Object.keys(TIERS)) renderTier(TIERS[k], k);
+  drawAllEdges(); renderTrace();
+}
+
+// --- SVG edges + packet animation ------------------------------------------
+function lightEdge(edge, on) {
+  const el = document.querySelector('[data-edge="' + edge.from + '->' + edge.to + '"]');
+  if (el) { el.classList.toggle('active', on && edge.dir === 'up'); el.classList.toggle('active-down', on && edge.dir === 'down'); }
+}
+function drawAllEdges() {
+  const svg = document.getElementById('edge-svg');
+  const grid = document.getElementById('demo-grid');
+  const g = grid.getBoundingClientRect();
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', '0 0 ' + g.width + ' ' + g.height);
+  svg.setAttribute('width', g.width); svg.setAttribute('height', g.height);
+  for (const e of EDGES) {
+    const [ft, fc] = e.from.split(':');
+    const [tt, tc] = e.to.split(':');
+    const a = document.getElementById('cell-' + ft + '-' + fc.replace(/\./g,'-'));
+    const b = document.getElementById('cell-' + tt + '-' + tc.replace(/\./g,'-'));
+    if (!a || !b) continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const x1 = ra.right - g.left, y1 = ra.top + ra.height/2 - g.top;
+    const x2 = rb.left  - g.left, y2 = rb.top + rb.height/2 - g.top;
+    const mid = (x1+x2)/2;
+    const d = 'M ' + x1 + ' ' + y1 + ' C ' + mid + ' ' + y1 + ', ' + mid + ' ' + y2 + ', ' + x2 + ' ' + y2;
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', d); p.setAttribute('data-edge', e.from + '->' + e.to);
+    svg.appendChild(p);
+  }
+}
+function animatePacket(edge) {
+  const grid = document.getElementById('demo-grid');
+  const g = grid.getBoundingClientRect();
+  const [ft, fc] = edge.from.split(':');
+  const [tt, tc] = edge.to.split(':');
+  const a = document.getElementById('cell-' + ft + '-' + fc.replace(/\./g,'-'));
+  const b = document.getElementById('cell-' + tt + '-' + tc.replace(/\./g,'-'));
+  if (!a || !b) return;
+  const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  const sx = edge.dir === 'up' ? ra.right : rb.left;
+  const sy = ra.top + ra.height/2;
+  const ex = edge.dir === 'up' ? rb.left  : ra.right;
+  const ey = rb.top + rb.height/2;
+  const pk = document.createElement('div');
+  pk.className = 'packet ' + (edge.dir === 'up' ? 'up' : 'down');
+  pk.style.left = (sx - g.left) + 'px'; pk.style.top = (sy - g.top) + 'px';
+  grid.appendChild(pk);
+  requestAnimationFrame(() => { pk.style.left = (ex - g.left) + 'px'; pk.style.top = (ey - g.top) + 'px'; });
+  setTimeout(() => pk.remove(), 700);
+}
+
+// --- init + button wiring ---------------------------------------------------
+for (const k of Object.keys(TIERS)) renderTier(TIERS[k], k);
+requestAnimationFrame(drawAllEdges);
+window.addEventListener('resize', drawAllEdges);
+
+document.getElementById('d-push-rudder').onclick     = () => setCell('esp32', 'sensor.rudder', 0.42);
+document.getElementById('d-push-rudder-hi').onclick  = () => setCell('esp32', 'sensor.rudder', 0.91);
+document.getElementById('d-tune-pid').onclick        = () => setCell('codespace', 'tune.pid_kp', 0.85, 'down');
+document.getElementById('d-tune-pid-low').onclick    = () => setCell('codespace', 'tune.pid_kp', 0.20, 'down');
+document.getElementById('d-jiggle').onclick          = jiggleSensors;
+document.getElementById('d-reset').onclick           = reset;
+
+document.querySelectorAll('.anchor-nav a, .hero .btn[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href');
+    if (id && id.startsWith('#')) {
+      e.preventDefault();
+      document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
