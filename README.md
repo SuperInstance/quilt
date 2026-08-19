@@ -14,7 +14,7 @@
 [![Status](https://img.shields.io/badge/status-v0.2.0-brightgreen)](https://github.com/superinstance/quilt)
 [![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen)](https://github.com/superinstance/quilt)
 
-**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Simulator](https://superinstance.github.io/quilt/landing/simulator.html)** · **[Read the manifesto →](docs/manifesto.md)** · **[Tutorial →](tutorials/README.md)** · **[Examples →](examples/)** · **[Architecture →](docs/architecture.md)** · **[Harness guide →](docs/harness-guide.md)** · **[Throughput notes →](docs/throughput.md)**
+**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Simulator](https://superinstance.github.io/quilt/landing/simulator.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
 
 ---
 
