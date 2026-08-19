@@ -3,16 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quilt Live — a portable reactive data OS</title>
+<title>Quilt Live — portable reactive data OS</title>
 <meta name="description" content="A single-file, browser-native, reactive data OS. Spreadsheet as runtime. You own the data.">
-<meta property="og:title" content="Quilt Live — a portable reactive data OS">
-<meta property="og:description" content="A single-file, browser-native, reactive data OS. Spreadsheet as runtime. You own the data.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://superinstance.github.io/quilt/landing/quilt-live.html">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%97%B3%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0d0f12;
@@ -39,7 +31,7 @@
   body {
     background: var(--bg);
     color: var(--fg);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 14px;
     line-height: 1.45;
     overflow: hidden;
@@ -101,20 +93,6 @@
   }
   header.topbar .pill.saving .dot { background: var(--warn); }
   header.topbar .pill.dirty .dot { background: var(--err); }
-  header.topbar a.back {
-    color: var(--fg-dim);
-    text-decoration: none;
-    font-size: 0.8rem;
-    padding: 4px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    transition: all 0.1s;
-  }
-  header.topbar a.back:hover {
-    color: var(--fg);
-    border-color: var(--accent);
-    background: var(--bg-3);
-  }
 
   main {
     display: grid;
@@ -191,7 +169,7 @@
     border-color: var(--accent);
   }
   .cell .id {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.85rem;
     color: var(--fg);
     overflow: hidden;
@@ -213,7 +191,7 @@
   .cell.kind-router .kind { color: var(--router); }
   .cell.kind-io .kind { color: var(--io); }
   .cell .value {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.8rem;
     color: var(--fg);
     overflow: hidden;
@@ -238,7 +216,7 @@
     background: transparent;
     border: 1px solid var(--accent);
     color: var(--fg);
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.8rem;
     padding: 2px 6px;
     border-radius: 3px;
@@ -315,7 +293,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 0.5rem;
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     white-space: pre-wrap;
     word-break: break-all;
     max-height: 240px;
@@ -339,7 +317,7 @@
     background: var(--bg-3);
     color: var(--fg);
     border-radius: 3px;
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     cursor: pointer;
   }
   .pill-row .pill:hover { background: var(--accent); color: #0d0f12; }
@@ -445,7 +423,6 @@
 <body>
 <div class="app" id="app">
   <header class="topbar">
-    <a class="back" href="https://superinstance.github.io/quilt/" title="Back to Quilt">← Quilt</a>
     <h1><span class="glyph">◳</span> Quilt Live</h1>
     <span class="tag" id="sheet-name">untitled</span>
     <span class="spacer"></span>
@@ -524,7 +501,7 @@
     </div>
     <div class="step">
       <h4>4. Save your work</h4>
-      <p><strong>Save</strong> stores it in a browser cookie (auto-loads next time). <strong>Download</strong> gives you a single .html with the state baked in — you can email it, commit it, or run it offline forever.</p>
+      <p><strong>Save</strong> stores it in a browser cookie (auto-loads next time). <strong>Download</strong> gives you a single .html file with the state baked in — you can email it, commit it, or run it offline forever.</p>
     </div>
     <div class="actions">
       <button class="primary" id="btn-onboard-done">Got it</button>
@@ -1644,6 +1621,7 @@ function renderGrid() {
       renderAll();
     });
     grid.appendChild(row);
+    // Render the value column asynchronously
     renderCellValue(cell);
   }
 }
@@ -1657,6 +1635,7 @@ async function renderCellValue(cell) {
     el.textContent = `<error: ${v.error.message || v.error}>`;
     el.classList.add('error');
   } else if (cell.def.kind === 'value' || cell.def.kind === 'sensor') {
+    // editable
     el.innerHTML = '';
     const input = document.createElement('input');
     input.className = 'editor';
@@ -1687,7 +1666,7 @@ function renderDetail() {
     panel.innerHTML = '<div class="empty-hint">Select a cell to see its dependencies and dependents.</div>';
     return;
   }
-  const cell = engine.getCell(selectedCell);
+  const cell = engine.cells.get(selectedCell);
   if (!cell) {
     panel.innerHTML = '<div class="empty-hint">Cell not found.</div>';
     return;
@@ -1745,6 +1724,7 @@ function renderDetail() {
   document.getElementById('btn-delete-cell')?.addEventListener('click', () => {
     if (!confirm(`Delete cell "${cell.id}"?`)) return;
     engine.cells.delete(cell.id);
+    // Remove from dependents' dep sets
     for (const other of engine.cells.values()) {
       other.dependencies.delete(cell.id);
       other.dependents.delete(cell.id);
@@ -1831,7 +1811,7 @@ function openAddCell() {
     value: '42  (or any JSON value)',
     formula: '=a + b  (a and b must already exist)',
     api: 'https://api.example.com/data  (or model:foo)',
-    program: "return { foo: 42, bar: runtime.get('a').data };",
+    program: 'return { foo: 42, bar: runtime.get("a").data };',
     sensor: 'simulated  (or any source name)',
     router: 'rules:\n  - when: "true"\n    route: { value: 1 }',
   }.value;
@@ -1871,6 +1851,7 @@ function confirmAddCell() {
       }
     }
     engine.defineCell(def);
+    // Wire deps if formula
     if (kind === 'formula') engine._autoDetectDeps(engine.cells.get(id));
     closeAddCell();
     scheduleAutoSave();
@@ -1939,10 +1920,14 @@ function closeModal(id) {
 }
 
 function downloadApp() {
+  // Clone the current document, embed the state, serialize, download.
   const docHtml = document.documentElement.outerHTML;
+  // Embed the state into a known place.
   const stateJson = snapshotEngine();
   // Note: avoid literal "close-script" sequences inside this script block.
   const bootScript = '<scr' + 'ipt>window.__QUILT_BOOT_STATE__ = ' + stateJson + ';</scr' + 'ipt>';
+  // If the document already has a boot script (built at compile time),
+  // replace it. Otherwise inject one before the app script.
   let patched;
   if (/<script>window\.__QUILT_BOOT_STATE__[\s\S]*?<\/script>/.test(docHtml)) {
     patched = docHtml.replace(
@@ -1950,11 +1935,13 @@ function downloadApp() {
       bootScript
     );
   } else {
+    // Inject before the engine script.
     patched = docHtml.replace(
       /<script>\s*\n?\s*\/\/ quilt-lite\.js/,
       bootScript + '\n<script>\n// quilt-lite.js'
     );
     if (patched === docHtml) {
+      // Fallback: inject before the first <script>.
       patched = docHtml.replace(/<script>/, bootScript + '\n<script>');
     }
   }
@@ -1974,6 +1961,7 @@ function downloadApp() {
 // Keyboard
 // ============================================================
 function handleKeydown(e) {
+  // Don't capture if in an input/textarea (let the cell editor handle it).
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
     if (e.key === 'Escape') e.target.blur();
     return;
@@ -1985,6 +1973,7 @@ function handleKeydown(e) {
   if (e.key === '/') { openHelp(); return; }
   if (e.key === 'q' || e.key === 'Q') {
     if (confirm('Quit? Your state is saved in the cookie and in any downloaded .html.')) {
+      // noop — browsers don't really "quit"
       toast('Close this tab to exit.', 'ok');
     }
     return;
@@ -2024,6 +2013,7 @@ function openHelp() {
 // Wire up
 // ============================================================
 function init() {
+  // Top bar buttons
   document.getElementById('btn-examples').onclick = openExamples;
   document.getElementById('btn-add-cell').onclick = openAddCell;
   document.getElementById('btn-save').onclick = openSaveDialog;
@@ -2031,6 +2021,7 @@ function init() {
   document.getElementById('btn-reset').onclick = resetSheet;
   document.getElementById('btn-help').onclick = openHelp;
 
+  // Modals
   document.getElementById('btn-close-examples').onclick = () => closeModal('modal-examples');
   document.getElementById('btn-onboard-done').onclick = () => {
     setCookie(ONBOARD_KEY, '1', 9999);
@@ -2039,17 +2030,21 @@ function init() {
   document.getElementById('btn-add-confirm').onclick = confirmAddCell;
   document.getElementById('btn-add-cancel').onclick = closeAddCell;
 
+  // Keyboard
   document.addEventListener('keydown', handleKeydown);
 
+  // Restore state: cookie first, else boot script, else starter example
   let restored = false;
   if (getCookie(SAVE_COOKIE)) restored = loadFromCookie();
   if (!restored && window.__QUILT_BOOT_STATE__) restored = loadSnapshot(JSON.stringify(window.__QUILT_BOOT_STATE__));
   if (!restored) loadExample('starter');
 
+  // Show onboarding on first visit
   if (!getCookie(ONBOARD_KEY)) {
     document.getElementById('onboarding').style.display = 'flex';
   }
 
+  // Hide the loader text
   const grid = document.getElementById('grid');
   if (grid.querySelector('.empty-hint')) {
     grid.innerHTML = '';
@@ -2081,12 +2076,14 @@ function openExamples() {
   document.getElementById('modal-examples').style.display = 'flex';
 }
 
+// Save before unload (so a quick Cmd-Q keeps the cookie up to date)
 window.addEventListener('beforeunload', () => {
   if (getCookie(COOKIE_CONSENT) === 'yes') {
     setCookie(SAVE_COOKIE, snapshotEngine(), COOKIE_DAYS);
   }
 });
 
+// Boot.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
