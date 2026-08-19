@@ -1293,4 +1293,441 @@ function generateInstanceId(tier: QuiltTier): string {
   return `${tier}-${suffix}`;
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+//  Federated artifact store
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * FederatedArtifactStore — a multi-tier, content-addressed artifact store
+ * with R2 as the canonical backing store and per-tier caches.
+ *
+ * Three-tier architecture:
+ *   1. **Local memory** (fastest, per-instance) — for hot artifacts
+ *   2. **Tier-local disk** (fast, per-instance) — for warm artifacts
+ *   3. **R2 / S3** (canonical, shared) — for everything else
+ *
+ * Every artifact is content-addressed (sha256). Lookups can specify which
+ * tiers to consult. Promotion from cold → warm → hot happens on read.
+ *
+ * This is the missing piece for cross-tier federation: an ESP32 can fetch
+ * a model from R2 via the codespace's local cache, a Cloudflare Worker
+ * can read a sheet from R2 with zero cold-start penalty, a Jetpack can
+ * upload a run trace to R2 so the central server can replay it.
+ *
+ * R2 SDK is dynamically imported so this module works in non-R2
+ * environments (browsers, Node, Workers without R2 binding). When the R2
+ * binding is not available, only the local cache tier is used.
+ */
+export interface FederatedStoreOptions {
+  /** R2 binding (Workers) — pass `env.MY_BUCKET`. */
+  r2?: {
+    put: (key: string, value: ReadableStream | ArrayBuffer | string) => Promise<unknown>;
+    get: (key: string) => Promise<{ body: ReadableStream; bodyUsed?: boolean } | null>;
+    delete?: (key: string) => Promise<void>;
+    list?: (opts?: { prefix?: string; limit?: number; cursor?: string }) => Promise<{
+      objects: Array<{ key: string; uploaded: string; size: number }>;
+      cursor?: string;
+      truncated: boolean;
+    }>;
+  };
+  /** R2 bucket name (required if r2 is set). */
+  r2Bucket?: string;
+  /** Tier-local cache: filesystem-style key/value. Defaults to an in-memory cache. */
+  local?: {
+    get: (key: string) => Promise<{ bytes: Uint8Array; metadata: ArtifactMetadata } | null>;
+    put: (key: string, bytes: Uint8Array, metadata: ArtifactMetadata) => Promise<void>;
+    delete?: (key: string) => Promise<void>;
+    list?: (prefix?: string) => Promise<Array<{ key: string; metadata: ArtifactMetadata }>>;
+  };
+  /** Max local cache size in bytes (LRU eviction). */
+  maxLocalBytes?: number;
+  /** Custom logger. */
+  log?: (msg: string, level?: 'info' | 'warn' | 'error') => void;
+}
+
+interface CacheEntry {
+  bytes: Uint8Array;
+  metadata: ArtifactMetadata;
+  size: number;
+  lastAccess: number;
+}
+
+export class FederatedArtifactStore implements ArtifactStore {
+  private hotCache = new Map<string, CacheEntry>();
+  private currentBytes = 0;
+  private readonly maxBytes: number;
+  private readonly local: NonNullable<FederatedStoreOptions['local']>;
+  private readonly opts: FederatedStoreOptions;
+
+  constructor(opts: FederatedStoreOptions = {}) {
+    this.opts = opts;
+    this.maxBytes = opts.maxLocalBytes ?? 64 * 1024 * 1024; // 64 MB default
+    this.local = opts.local ?? new MemoryCacheBackend();
+  }
+
+  private log(msg: string, level: 'info' | 'warn' | 'error' = 'info'): void {
+    this.opts.log?.(msg, level);
+  }
+
+  /** Build the R2 key for a logical URI + version. */
+  private r2Key(uri: QuiltURI, version?: string): string {
+    // Strip `quilt://` prefix; preserve bucket/name:version structure
+    const clean = uri.replace(/^quilt:\/\//, '');
+    return version ? `${clean}:${version}` : clean;
+  }
+
+  /** Promote an entry to hot cache; LRU-evict if over limit. */
+  private touchHot(key: string, entry: CacheEntry): void {
+    entry.lastAccess = Date.now();
+    this.hotCache.set(key, entry);
+    this.currentBytes += entry.size;
+    while (this.currentBytes > this.maxBytes && this.hotCache.size > 1) {
+      // Evict LRU
+      let oldest: string | null = null;
+      let oldestTime = Infinity;
+      for (const [k, e] of this.hotCache) {
+        if (e.lastAccess < oldestTime) { oldest = k; oldestTime = e.lastAccess; }
+      }
+      if (oldest && oldest !== key) {
+        const evicted = this.hotCache.get(oldest);
+        if (evicted) this.currentBytes -= evicted.size;
+        this.hotCache.delete(oldest);
+      } else break;
+    }
+  }
+
+  async put(logicalUri: QuiltURI, bytes: Uint8Array | string, metadata: ArtifactMetadata): Promise<{ uri: QuiltURI; version: string }> {
+    const data = typeof bytes === 'string' ? new TextEncoder().encode(bytes) : bytes;
+    const contentHash = metadata.contentHash ?? hashBytes(data);
+    const version = metadata.version ?? contentHash.slice(0, 12);
+    const fullUri = `${logicalUri}:${version}` as QuiltURI;
+    const fullMeta: ArtifactMetadata = { ...metadata, contentHash, createdAt: metadata.createdAt ?? new Date().toISOString() };
+
+    // 1. Write to local tier
+    await this.local.put(fullUri, data, fullMeta);
+
+    // 2. Write to hot cache
+    const entry: CacheEntry = { bytes: data, metadata: fullMeta, size: data.byteLength, lastAccess: Date.now() };
+    this.touchHot(fullUri, entry);
+
+    // 3. Replicate to R2 if available (best-effort; failure doesn't break the put)
+    if (this.opts.r2 && this.opts.r2Bucket) {
+      try {
+        const key = this.r2Key(logicalUri, version);
+        await this.opts.r2.put(key, data);
+        this.log(`R2 put: ${key} (${data.byteLength} bytes)`, 'info');
+      } catch (e) {
+        this.log(`R2 put failed for ${logicalUri}: ${(e as Error).message}`, 'warn');
+      }
+    }
+
+    return { uri: fullUri, version };
+  }
+
+  async get(uri: QuiltURI): Promise<{ bytes: Uint8Array; metadata: ArtifactMetadata }> {
+    // 1. Hot cache
+    const hot = this.hotCache.get(uri);
+    if (hot) { hot.lastAccess = Date.now(); return { bytes: hot.bytes, metadata: hot.metadata }; }
+
+    // 2. Local tier
+    const local = await this.local.get(uri);
+    if (local) {
+      const entry: CacheEntry = { ...local, size: local.bytes.byteLength, lastAccess: Date.now() };
+      this.touchHot(uri, entry);
+      return { bytes: local.bytes, metadata: local.metadata };
+    }
+
+    // 3. R2 (cold tier)
+    if (this.opts.r2) {
+      const key = this.r2Key(uri);
+      const obj = await this.opts.r2.get(key);
+      if (obj) {
+        const bytes = new Uint8Array(await new Response(obj.body).arrayBuffer());
+        const metadata: ArtifactMetadata = { contentHash: hashBytes(bytes), createdAt: new Date().toISOString() };
+        // Promote: write through local + hot
+        await this.local.put(uri, bytes, metadata);
+        const entry: CacheEntry = { bytes, metadata, size: bytes.byteLength, lastAccess: Date.now() };
+        this.touchHot(uri, entry);
+        this.log(`R2 hit: ${key} (${bytes.byteLength} bytes, promoted to local)`, 'info');
+        return { bytes, metadata };
+      }
+    }
+
+    throw new Error(`Artifact not found in any tier: ${uri}`);
+  }
+
+  async exists(uri: QuiltURI): Promise<boolean> {
+    if (this.hotCache.has(uri)) return true;
+    if (await this.local.get(uri).then((x) => !!x)) return true;
+    if (this.opts.r2) {
+      const obj = await this.opts.r2.get(this.r2Key(uri));
+      return !!obj;
+    }
+    return false;
+  }
+
+  async listVersions(logicalUri: QuiltURI): Promise<{ version: string; createdAt: string }[]> {
+    const out: { version: string; createdAt: string }[] = [];
+    const prefix = logicalUri + ':';
+    // Local
+    if (this.local.list) {
+      const items = await this.local.list(prefix);
+      for (const it of items) {
+        const version = it.key.slice(prefix.length);
+        out.push({ version, createdAt: typeof it.metadata.createdAt === 'string' ? it.metadata.createdAt : '' });
+      }
+    }
+    // R2
+    if (this.opts.r2?.list) {
+      const r2List = await this.opts.r2.list({ prefix: this.r2Key(logicalUri) });
+      for (const obj of r2List.objects) {
+        const version = obj.key.split(':').pop() ?? '';
+        if (!out.find((o) => o.version === version)) {
+          out.push({ version, createdAt: obj.uploaded });
+        }
+      }
+    }
+    return out;
+  }
+
+  /** Invalidate a URI from all tiers. */
+  async invalidate(uri: QuiltURI): Promise<void> {
+    this.hotCache.delete(uri);
+    await this.local.delete?.(uri);
+    if (this.opts.r2?.delete) {
+      await this.opts.r2.delete(this.r2Key(uri));
+    }
+  }
+
+  /** Inspect hot cache (for debugging / metrics). */
+  hotStats(): { entries: number; bytes: number; maxBytes: number } {
+    return { entries: this.hotCache.size, bytes: this.currentBytes, maxBytes: this.maxBytes };
+  }
+}
+
+/** In-memory cache backend (default for `local`). */
+export class MemoryCacheBackend {
+  private store = new Map<string, { bytes: Uint8Array; metadata: ArtifactMetadata }>();
+  async get(key: string) { return this.store.get(key) ?? null; }
+  async put(key: string, bytes: Uint8Array, metadata: ArtifactMetadata) { this.store.set(key, { bytes, metadata }); }
+  async delete(key: string) { this.store.delete(key); }
+  async list(prefix?: string) {
+    const out: Array<{ key: string; metadata: ArtifactMetadata }> = [];
+    for (const [k, v] of this.store) if (!prefix || k.startsWith(prefix)) out.push({ key: k, metadata: v.metadata });
+    return out;
+  }
+}
+
+/** Filesystem-backed cache tier (Node.js). */
+export class FileSystemCacheBackend {
+  private rootDir: string;
+  constructor(rootDir: string) { this.rootDir = rootDir; }
+  private path(key: string): string {
+    // Sanitize: replace non-alphanumeric with underscores
+    const safe = key.replace(/[^a-zA-Z0-9._-]/g, '_');
+    return `${this.rootDir}/${safe}`;
+  }
+  async get(key: string): Promise<{ bytes: Uint8Array; metadata: ArtifactMetadata } | null> {
+    try {
+      const { readFile } = await import('node:fs/promises');
+      const data = await readFile(this.path(key));
+      // Read metadata from sidecar
+      let metadata: ArtifactMetadata = { contentHash: hashBytes(new Uint8Array(data)) };
+      try {
+        const { readFile: r2 } = await import('node:fs/promises');
+        const metaJson = await r2(this.path(key) + '.meta.json', 'utf8');
+        metadata = JSON.parse(metaJson);
+      } catch { /* no metadata file */ }
+      return { bytes: new Uint8Array(data), metadata };
+    } catch { return null; }
+  }
+  async put(key: string, bytes: Uint8Array, metadata: ArtifactMetadata): Promise<void> {
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    const { dirname } = await import('node:path');
+    await mkdir(dirname(this.path(key)), { recursive: true });
+    await writeFile(this.path(key), bytes);
+    await writeFile(this.path(key) + '.meta.json', JSON.stringify(metadata, null, 2));
+  }
+  async delete(key: string): Promise<void> {
+    try {
+      const { unlink } = await import('node:fs/promises');
+      await unlink(this.path(key));
+      await unlink(this.path(key) + '.meta.json');
+    } catch { /* ignore */ }
+  }
+  async list(prefix?: string): Promise<Array<{ key: string; metadata: ArtifactMetadata }>> {
+    const { readdir, readFile } = await import('node:fs/promises');
+    try {
+      const files = await readdir(this.rootDir);
+      const out: Array<{ key: string; metadata: ArtifactMetadata }> = [];
+      for (const f of files) {
+        if (f.endsWith('.meta.json')) continue;
+        const k = f; // reconstruction: we don't have the original URI, but the key matches
+        if (prefix && !k.startsWith(prefix)) continue;
+        let metadata: ArtifactMetadata = { contentHash: '' };
+        try {
+          metadata = JSON.parse(await readFile(`${this.rootDir}/${f}.meta.json`, 'utf8'));
+        } catch { /* ignore */ }
+        out.push({ key: k, metadata });
+      }
+      return out;
+    } catch { return []; }
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+//  MQTT transport for IoT-native pub/sub
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * MqttCellTransport — an IoT-native cell transport using MQTT 5.0.
+ *
+ * Each Quilt cell is published to a topic of the form:
+ *   quilt/[instance]/[sheet]/#/[cell-path]
+ *
+ * Subscribers can subscribe to:
+ *   - A specific cell: quilt/+/+/foo/bar
+ *   - A whole sheet: quilt/+/+/#/foo
+ *   - A whole instance: quilt/esp32-1/#/+
+ *   - The whole federation: quilt/#/+/+/+
+ *
+ * MQTT's retained-message + last-will-and-testament features mean cells
+ * are auto-replayed on reconnect, and dead instances are detected in <1s.
+ *
+ * This is the natural transport for ESP32 / Jetson fleets behind a
+ * local broker (Mosquitto, EMQX, HiveMQ, AWS IoT Core, Azure IoT Hub).
+ */
+export interface MqttTransportOptions {
+  /** MQTT broker URL (e.g., `mqtt://broker:1883`, `mqtts://...:8883`). */
+  url: string;
+  /** Client id (defaults to instance id). */
+  clientId?: string;
+  /** Username/password (optional). */
+  username?: string;
+  password?: string;
+  /** Will message on disconnect. */
+  will?: { topic: string; payload: Uint8Array; qos: 0 | 1 | 2; retain: boolean };
+  /** QoS for cell publishes. Default 1. */
+  qos?: 0 | 1 | 2;
+  /** Whether published cells should be retained. Default true. */
+  retain?: boolean;
+}
+
+/**
+ * A minimal mqtt-like client interface. We don't import the `mqtt` package
+ * directly because it's an optional peer dependency. Pass any client that
+ * conforms to this shape: `mqtt`, `mqtt.js`, `aedes`, etc.
+ */
+export interface MqttLikeClient {
+  on(event: 'connect' | 'message' | 'error' | 'close', cb: (...args: unknown[]) => void): void;
+  subscribe(topic: string, opts?: { qos: 0 | 1 | 2 }, cb?: (err: Error | null) => void): void;
+  publish(topic: string, payload: Uint8Array | string, opts?: { qos: 0 | 1 | 2; retain: boolean }, cb?: () => void): void;
+  end(force?: boolean): void;
+}
+
+export class MqttCellTransport implements CellTransport {
+  private readonly client: MqttLikeClient;
+  private readonly opts: MqttTransportOptions;
+  private readonly listeners = new Map<string, Set<(v: unknown) => void>>();
+  private connected = false;
+
+  constructor(client: MqttLikeClient, opts: MqttTransportOptions) {
+    this.client = client;
+    this.opts = { qos: 1, retain: true, ...opts };
+    this.wire();
+  }
+
+  private wire(): void {
+    this.client.on('connect', () => { this.connected = true; });
+    this.client.on('close', () => { this.connected = false; });
+    this.client.on('message', (topic: unknown, payload: unknown) => {
+      const t = String(topic);
+      const p = payload instanceof Uint8Array ? payload : new Uint8Array(payload as ArrayBuffer);
+      try {
+        const decoded = JSON.parse(new TextDecoder().decode(p));
+        for (const [pattern, cbs] of this.listeners) {
+          if (mqttTopicMatches(pattern, t)) {
+            for (const cb of cbs) cb(decoded);
+          }
+        }
+      } catch { /* malformed payload, ignore */ }
+    });
+  }
+
+  async resolve(uri: string): Promise<CellHandle> {
+    const ref = parseCellRef(uri);
+    // Topic format: quilt/{instance}/{sheet}/{cellPath}
+    // Subscribers can use wildcards: quilt/+/+/#, quilt/+/foo/+/bar, etc.
+    const topic = `quilt/${ref.instance}/${ref.sheet}/${ref.cellPath}`;
+    return { uri, ref, transport: 'mqtt', topic };
+  }
+
+  async getValue(uri: string, timeoutMs: number = 5000): Promise<unknown> {
+    // MQTT doesn't have a synchronous get. We subscribe and wait for the
+    // next retained message, with a configurable timeout.
+    const ref = parseCellRef(uri);
+    const topic = `quilt/${ref.instance}/${ref.sheet}/${ref.cellPath}`;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { unsub(); reject(new Error(`MQTT getValue timeout for ${uri}`)); }, timeoutMs);
+      const cb = (v: unknown) => { clearTimeout(timer); unsub(); resolve(v); };
+      const subs = this.listeners.get(topic) ?? new Set();
+      subs.add(cb);
+      this.listeners.set(topic, subs);
+      const unsub = () => { subs.delete(cb); if (subs.size === 0) this.listeners.delete(topic); };
+      this.client.subscribe(topic, { qos: this.opts.qos ?? 1 });
+    });
+  }
+
+  subscribe(uri: string, onValue: (v: unknown) => void): () => void {
+    const ref = parseCellRef(uri);
+    const topic = `quilt/${ref.instance}/${ref.sheet}/${ref.cellPath}`;
+    const cb = (v: unknown) => onValue(v);
+    const subs = this.listeners.get(topic) ?? new Set();
+    subs.add(cb);
+    this.listeners.set(topic, subs);
+    this.client.subscribe(topic, { qos: this.opts.qos ?? 1 });
+    return () => {
+      subs.delete(cb);
+      if (subs.size === 0) this.listeners.delete(topic);
+    };
+  }
+
+  publish(uri: string, value: unknown): void {
+    const ref = parseCellRef(uri);
+    const topic = `quilt/${ref.instance}/${ref.sheet}/${ref.cellPath}`;
+    const payload = new TextEncoder().encode(JSON.stringify(value));
+    this.client.publish(topic, payload, { qos: this.opts.qos ?? 1, retain: this.opts.retain ?? true });
+  }
+
+  /** Direct topic access (for non-Quilt MQTT topics). */
+  publishRaw(topic: string, payload: Uint8Array | string, retain?: boolean): void {
+    this.client.publish(topic, payload, { qos: this.opts.qos ?? 1, retain: retain ?? this.opts.retain ?? true });
+  }
+
+  subscribeRaw(topic: string, cb: (topic: string, payload: Uint8Array) => void): () => void {
+    const handler = (t: unknown, p: unknown) => {
+      const payload = p instanceof Uint8Array ? p : new Uint8Array(p as ArrayBuffer);
+      cb(String(t), payload);
+    };
+    this.client.on('message', handler as (...args: unknown[]) => void);
+    this.client.subscribe(topic, { qos: this.opts.qos ?? 1 });
+    return () => { /* mqtt.js doesn't expose off, callers should manage client lifecycle */ };
+  }
+
+  isConnected(): boolean { return this.connected; }
+  close(): void { this.client.end(true); }
+}
+
+/** MQTT topic matching with wildcards. `+` matches one level; `#` matches many. */
+export function mqttTopicMatches(pattern: string, topic: string): boolean {
+  const p = pattern.split('/');
+  const t = topic.split('/');
+  for (let i = 0; i < p.length; i++) {
+    if (p[i] === '#') return true;
+    if (p[i] === '+') { if (t[i] === undefined) return false; continue; }
+    if (p[i] !== t[i]) return false;
+  }
+  return p.length === t.length;
+}
+
 
