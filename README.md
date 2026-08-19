@@ -137,7 +137,7 @@ This is a real Quilt engine running. The wires are real. The propagation is real
 
 ---
 
-## 🎬 The 8 cell kinds, visualized
+## 🎬 The 9 cell kinds, visualized
 
 ```
    ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
@@ -206,7 +206,7 @@ You write the cells. The engine handles the propagation. The order of writes doe
    └────────────┼───────────────────┼──────────────────┼──────────┘
                 ▼                   ▼                  ▼
            ┌────────┐          ┌─────────┐        ┌──────────┐
-           │  8 cell│          │ formulas │        │ external │
+           │  9 cell│          │ formulas │        │ external │
            │  kinds │          │ programs │        │ systems  │
            │        │          │ listeners│        │          │
            └────────┘          └─────────┘        └──────────┘
@@ -221,7 +221,7 @@ You can use any layer in isolation. The sheet format is the public contract.
 
 ---
 
-## What is this, really?
+## What is this, really? (a longer story)
 
 You already know spreadsheets — columns of numbers, formulas that snap
 back to life when you change an input. Now keep the spreadsheet, but
@@ -306,7 +306,7 @@ this is the substrate.
 └──────────────────────────────────────────────────────────┘
 ```
 
-The Rust port has the same shape — same 8 cell kinds, same engine, same CLI/MCP surfaces. The difference: `node` + JavaScript instead of `tokio` + `rhai`. See [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust).
+The Rust port has the same shape — same 9 cell kinds, same engine, same CLI/MCP surfaces. The difference: `node` + JavaScript instead of `tokio` + `rhai`. See [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust).
 
 ---
 
@@ -475,7 +475,7 @@ import("@quilt/core").then(async ({ QuiltEngine, parseSheet }) => {
 
 ---
 
-## The 8 cell kinds
+## The 9 cell kinds
 
 <p align="center">
   <img src="assets/images/cell-types.jpg" alt="Many different kinds of cells living in one grid — values, formulas, programs, models" width="640"><br>
@@ -1373,7 +1373,7 @@ Two separate things, both common:
 
 ## Glossary
 
-### The 8 cell kinds
+### The 9 cell kinds
 
 | Kind | What it is | When to use it |
 | --- | --- | --- |
