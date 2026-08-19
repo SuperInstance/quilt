@@ -110,6 +110,10 @@ A portable, reactive data OS in one HTML file. **~70 KB, zero dependencies.** Ev
 
 [→ Open Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.html) · [Source on GitHub](https://github.com/SuperInstance/quilt-live) · [See the 54 examples](https://github.com/SuperInstance/quilt-live/tree/main/examples)
 
+### Where is this going?
+
+Read the **[5-year roadmap](quilt-roadmap-2026.md)** for the bigger picture — Quilt on ESP32, mesh networking, agents as sheets, the personal data mesh. We have sketches for [`quilt-esp32`](https://github.com/SuperInstance/quilt-esp32) (microcontroller runtime), [`quilt-mesh`](https://github.com/SuperInstance/quilt-mesh) (peer-to-peer sync), and [`quilt-agent`](https://github.com/SuperInstance/quilt-agent) (LLM agents as sheets).
+
 ---
 
 ## Quick start (5 minutes)
