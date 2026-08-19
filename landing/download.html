@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download Quilt — every artifact, one place</title>
+<meta name="description" content="Download Quilt in every form. Single HTML, npm package, Cargo crate, MCP server, Docker image, WASM, ESP32 firmware. Pick your weapon.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+.downloads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 40px 0; }
+@media (max-width: 700px) { .downloads { grid-template-columns: 1fr; } }
+
+.dl { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; transition: all 0.2s; }
+.dl:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.dl.recommended { border-color: var(--green); background: linear-gradient(180deg, var(--bg-card), rgba(126,198,153,0.05)); }
+.dl .rec { display: inline-block; padding: 2px 8px; background: var(--green); color: var(--bg); font-size: 0.7rem; font-weight: 700; border-radius: 4px; margin-bottom: 8px; }
+.dl .icon { font-size: 2.5rem; margin-bottom: 8px; }
+.dl h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
+.dl .meta { display: flex; gap: 8px; margin: 8px 0 12px; flex-wrap: wrap; }
+.dl .meta span { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 2px 6px; background: var(--bg-elev); border-radius: 3px; color: var(--text-dim); }
+.dl .meta span.size { color: var(--green); }
+.dl .desc { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+.dl pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 0.8rem; line-height: 1.5; margin-bottom: 12px; }
+.dl .btn { display: inline-block; padding: 10px 20px; background: var(--green); color: var(--bg); border-radius: 6px; font-size: 0.9rem; font-weight: 600; margin-right: 8px; margin-bottom: 4px; }
+.dl .btn:hover { background: var(--blue); }
+.dl .btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.dl .btn.ghost:hover { color: var(--text); border-color: var(--green); }
+
+.platforms { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 40px 0; }
+.platforms h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; }
+.platforms .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.platforms .plat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.platforms .plat .name { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+.platforms .plat .size { font-size: 0.75rem; color: var(--green); margin-top: 4px; }
+.platforms .plat .arch { font-size: 0.7rem; color: var(--text-faint); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+.versions { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 40px 0; }
+.versions h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; }
+.versions table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.versions th, .versions td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.versions th { color: var(--text-faint); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; }
+.versions td a { color: var(--green); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="download.html" class="active">Download</a>
+    <a href="start.html">Get started</a>
+    <a href="build.html">Build</a>
+    <a href="docs.html">Docs</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Download <span class="grad-text">Quilt</span></h1>
+  <p class="lead">Every artifact, one place. Pick your weapon. Same cell model, every target.</p>
+</div>
+
+<main>
+
+  <div class="downloads">
+    <div class="dl recommended">
+      <div class="rec">recommended</div>
+      <div class="icon">📜</div>
+      <h3>Quilt Live</h3>
+      <div class="meta">
+        <span class="size">70 KB</span>
+        <span>single HTML</span>
+        <span>no install</span>
+        <span>works offline</span>
+      </div>
+      <div class="desc">A single HTML file with the engine, the UI, and 5 starter examples baked in. Open it. Save it. Email it. Run it offline forever.</div>
+      <pre>curl -O https://superinstance.github.io/quilt/landing/quilt-live.html
+open quilt-live.html</pre>
+      <a href="quilt-live.html" class="btn">Open in browser</a>
+      <a href="https://github.com/SuperInstance/quilt-live" class="btn ghost" target="_blank">Source</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">📦</div>
+      <h3>TypeScript (npm)</h3>
+      <div class="meta">
+        <span>npm</span>
+        <span>Node 18+</span>
+        <span>98 tests</span>
+        <span>MIT</span>
+      </div>
+      <div class="desc">The canonical reactive engine. Use this for apps, MCP servers, library code, and production Node deployments.</div>
+      <pre>npm install @quilt/core @quilt/cli
+npx quilt run my-sheet.yaml</pre>
+      <a href="https://github.com/SuperInstance/quilt" class="btn" target="_blank">GitHub →</a>
+      <a href="https://www.npmjs.com/package/@quilt/core" class="btn ghost" target="_blank">npm</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🦀</div>
+      <h3>Rust (Cargo)</h3>
+      <div class="meta">
+        <span class="size">3.2 MB</span>
+        <span>static binary</span>
+        <span>no deps</span>
+        <span>Apache 2.0</span>
+      </div>
+      <div class="desc">The production runtime. Single static binary, no Node.js, no GC. Drop on a server, an edge device, a Raspberry Pi, anywhere there's a CPU.</div>
+      <pre>cargo install quilt-cli
+quilt run my-sheet.yaml</pre>
+      <a href="https://github.com/SuperInstance/quilt-rust" class="btn" target="_blank">GitHub →</a>
+      <a href="https://crates.io/crates/quilt" class="btn ghost" target="_blank">crates.io</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🔌</div>
+      <h3>MCP server</h3>
+      <div class="meta">
+        <span>stdio</span>
+        <span>SSE</span>
+        <span>HTTP</span>
+        <span>every cell is a tool</span>
+      </div>
+      <div class="desc">Every named cell in your sheet becomes an MCP tool. Plug into Claude Code, Cursor, or any MCP client. The sheet is the tool registry.</div>
+      <pre>npx quilt mcp my-sheet.yaml
+# or:
+claude mcp add my-server -- npx @quilt/mcp my-sheet.yaml</pre>
+      <a href="https://github.com/SuperInstance/quilt" class="btn" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🔧</div>
+      <h3>ESP32 firmware</h3>
+      <div class="meta">
+        <span class="size">32 KB</span>
+        <span>no_std</span>
+        <span>$3 chip</span>
+        <span>MIT</span>
+      </div>
+      <div class="desc">A no_std Rust port. Fits in 32 KB flash. Runs on bare metal. 64 cells, 8 deps per cell, 32-char IDs. The reactive runtime, on a chip.</div>
+      <pre>git clone https://github.com/SuperInstance/quilt-esp32
+cargo build --target xtensa-esp32-espidf
+espflash flash target/xtensa-esp32-espidf/release/quilt-esp32</pre>
+      <a href="quilt-esp32.html" class="btn">Try the board</a>
+      <a href="https://github.com/SuperInstance/quilt-esp32" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">📦</div>
+      <h3>WASM module</h3>
+      <div class="meta">
+        <span class="size">180 KB</span>
+        <span>any host</span>
+        <span>sandboxed</span>
+        <span>Apache 2.0</span>
+      </div>
+      <div class="desc">The engine, compiled to WebAssembly. Load it from any host — a browser, a Node process, a serverless function, an edge runtime.</div>
+      <pre>const quilt = await WebAssembly.instantiate(wasm);
+const value = quilt.exports.get('budget.total');</pre>
+      <a href="https://github.com/SuperInstance/quilt" class="btn" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🐳</div>
+      <h3>Docker image</h3>
+      <div class="meta">
+        <span class="size">8 MB</span>
+        <span>scratch</span>
+        <span>multi-arch</span>
+        <span>no shell</span>
+      </div>
+      <div class="desc">A scratch-based Docker image. The binary is the only thing in it. 8 MB total, no layers, no shell, no package manager.</div>
+      <pre>docker pull quilt/runtime:latest
+docker run -p 8080:8080 quilt/runtime my-sheet.yaml</pre>
+      <a href="https://hub.docker.com/r/quilt/runtime" class="btn" target="_blank">Docker Hub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🕸️</div>
+      <h3>quilt-mesh (peer-to-peer)</h3>
+      <div class="meta">
+        <span>CRDT</span>
+        <span>Lamport</span>
+        <span>3 tests</span>
+        <span>MIT</span>
+      </div>
+      <div class="desc">The mesh protocol. Two devices sync cells peer-to-peer. No server, no internet. Lamport clocks + per-peer version vectors.</div>
+      <pre>let alice = QuiltMesh::new("alice");
+let bob   = QuiltMesh::new("bob");
+alice.gossip_with(&mut bob);</pre>
+      <a href="quilt-mesh.html" class="btn">Try the mesh</a>
+      <a href="https://github.com/SuperInstance/quilt-mesh" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🔐</div>
+      <h3>quilt-vault (encryption)</h3>
+      <div class="meta">
+        <span>WebCrypto</span>
+        <span>ECDH P-256</span>
+        <span>AES-GCM</span>
+        <span>10 tests</span>
+      </div>
+      <div class="desc">Encrypted cells. Per-cell ACLs. The server only ever sees ciphertext. Real WebCrypto, no mocks.</div>
+      <pre>const vault = new QuiltVault();
+await vault.generateKey();
+await vault.set('budget.savings', { amount: 42000 }, { viewers: ['alice'] });</pre>
+      <a href="quilt-vault.html" class="btn">Try the vault</a>
+      <a href="https://github.com/SuperInstance/quilt-vault" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">⏱</div>
+      <h3>quilt-time (time travel)</h3>
+      <div class="meta">
+        <span>fork/rewind</span>
+        <span>17 tests</span>
+        <span>~3 KB</span>
+        <span>MIT</span>
+      </div>
+      <div class="desc">Time travel for cells. Every cell has a history. Fork, rewind, replay, merge. The cell is a value over time.</div>
+      <pre>const q = new QuiltTime();
+q.set('counter', 1);
+q.set('counter', 2);
+q.at('counter', 1); // → 1</pre>
+      <a href="quilt-time.html" class="btn">Try time travel</a>
+      <a href="https://github.com/SuperInstance/quilt-time" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🤖</div>
+      <h3>quilt-agent</h3>
+      <div class="meta">
+        <span>memory</span>
+        <span>tools</span>
+        <span>reasoning</span>
+        <span>goals</span>
+      </div>
+      <div class="desc">AI agents as sheets. The agent's memory, tools, reasoning, and goals are all cells. The reactive engine handles the orchestration.</div>
+      <pre>id: research-agent
+cells:
+  - id: input.task
+    kind: value
+    value: "What is Quilt?"
+  - id: tool.llm
+    kind: api
+    endpoint: "https://api.openai.com/v1/chat/completions"</pre>
+      <a href="quilt-agent.html" class="btn">Try the agent</a>
+      <a href="https://github.com/SuperInstance/quilt-agent" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">👁</div>
+      <h3>quilt-vision</h3>
+      <div class="meta">
+        <span>image</span>
+        <span>caption</span>
+        <span>detect</span>
+        <span>OCR</span>
+      </div>
+      <div class="desc">Computer vision as cells. Image, caption, classify, detect, OCR, palette, faces, depth. The picture is a live, reactive cell graph.</div>
+      <pre>- id: image
+  kind: vision.image
+  source: upload
+- id: caption
+  kind: vision.caption
+  model: blip-base</pre>
+      <a href="quilt-vision.html" class="btn">Try vision</a>
+      <a href="https://github.com/SuperInstance/quilt-vision" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+
+    <div class="dl">
+      <div class="icon">🔮</div>
+      <h3>quilt-zk</h3>
+      <div class="meta">
+        <span>ZK</span>
+        <span>6 circuits</span>
+        <span>7 tests</span>
+        <span>MIT</span>
+      </div>
+      <div class="desc">Zero-knowledge proofs over Quilt cells. Prove statements about cells without revealing the cells. Range, membership, equality, hash, signature, composite.</div>
+      <pre>- id: balance
+  kind: value
+  value: 75320
+  private: true
+- id: proof
+  kind: zk.prove
+  circuit: range-proof</pre>
+      <a href="quilt-zk.html" class="btn">Try ZK</a>
+      <a href="https://github.com/SuperInstance/quilt-zk" class="btn ghost" target="_blank">GitHub →</a>
+    </div>
+  </div>
+
+  <!-- Pre-built binaries -->
+  <div class="platforms">
+    <h2>Pre-built binaries</h2>
+    <p style="color: var(--text-dim); margin-bottom: 16px; font-size: 0.9rem;">The Rust runtime, built and ready. No Rust install needed. Drop on a server, run.</p>
+    <div class="grid">
+      <div class="plat">
+        <div class="name">Linux x86_64</div>
+        <div class="size">3.2 MB</div>
+        <div class="arch">musl, stripped</div>
+      </div>
+      <div class="plat">
+        <div class="name">Linux aarch64</div>
+        <div class="size">3.1 MB</div>
+        <div class="arch">ARM, musl</div>
+      </div>
+      <div class="plat">
+        <div class="name">macOS x86_64</div>
+        <div class="size">3.4 MB</div>
+        <div class="arch">Intel</div>
+      </div>
+      <div class="plat">
+        <div class="name">macOS aarch64</div>
+        <div class="size">3.2 MB</div>
+        <div class="arch">Apple Silicon</div>
+      </div>
+      <div class="plat">
+        <div class="name">Windows x86_64</div>
+        <div class="size">3.6 MB</div>
+        <div class="arch">.exe, msvc</div>
+      </div>
+      <div class="plat">
+        <div class="name">Raspberry Pi</div>
+        <div class="size">3.0 MB</div>
+        <div class="arch">ARMv7, glibc</div>
+      </div>
+      <div class="plat">
+        <div class="name">WASM</div>
+        <div class="size">180 KB</div>
+        <div class="arch">wasm32, browser</div>
+      </div>
+      <div class="plat">
+        <div class="name">ESP32</div>
+        <div class="size">32 KB</div>
+        <div class="arch">xtensa-esp32</div>
+      </div>
+    </div>
+    <p style="margin-top: 16px; color: var(--text-faint); font-size: 0.85rem;">All binaries are reproducible from source. <a href="https://github.com/SuperInstance/quilt-rust/releases" target="_blank">See all releases on GitHub →</a></p>
+  </div>
+
+  <!-- Versions table -->
+  <div class="versions">
+    <h2>All versions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Notes</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>v0.3.0</strong></td>
+          <td>Q3 2026</td>
+          <td>in progress</td>
+          <td>Studio, IDE, synoptic, voice, camera, mesh, PWA</td>
+          <td><a href="#">— </a></td>
+        </tr>
+        <tr>
+          <td><strong>v0.2.0</strong></td>
+          <td>Q2 2026</td>
+          <td>shipped</td>
+          <td>98 tests, 54 examples, 146 verified checks, 0 warnings</td>
+          <td><a href="https://github.com/SuperInstance/quilt/releases/tag/v0.2.0" target="_blank">GitHub</a></td>
+        </tr>
+        <tr>
+          <td><strong>v0.1.0</strong></td>
+          <td>Q1 2026</td>
+          <td>shipped</td>
+          <td>First release, 4 examples, 3 templates</td>
+          <td><a href="https://github.com/SuperInstance/quilt/releases/tag/v0.1.0" target="_blank">GitHub</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  <p>Pick the artifact that matches your environment. Same cell model, every target.</p>
+</footer>
+
+</body>
+</html>

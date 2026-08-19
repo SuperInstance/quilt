@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Changelog — what's new in Quilt</title>
+<meta name="description" content="Release notes for Quilt. Every version, every feature, every bug fix. From v0.1.0 to the present.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin: 32px 0; }
+@media (max-width: 600px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+.stat .v { font-size: 1.4rem; font-weight: 700; color: var(--green); font-family: 'JetBrains Mono', monospace; }
+.stat .label { font-size: 0.75rem; color: var(--text-faint); }
+
+.version { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+.version.latest { border-color: var(--green); }
+.version h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.version .date { color: var(--text-faint); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+.version .tag { display: inline-block; padding: 2px 8px; background: var(--green); color: var(--bg); font-size: 0.7rem; font-weight: 700; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+.version .tag.minor { background: var(--blue); }
+.version .tag.patch { background: var(--gray); color: var(--bg); }
+.version .tag.ship { background: var(--green); }
+
+.version h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin: 16px 0 8px; font-weight: 600; }
+.version ul { margin-left: 20px; color: var(--text-dim); }
+.version li { margin-bottom: 4px; }
+.version li.added::marker { color: var(--green); }
+.version li.fixed::marker { color: var(--yellow); }
+.version li.removed::marker { color: var(--red); }
+.version li.changed::marker { color: var(--blue); }
+.version pre { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; margin: 4px 0; font-size: 0.8rem; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="changelog.html" class="active">Changelog</a>
+    <a href="docs.html">Docs</a>
+    <a href="timeline.html">Roadmap</a>
+    <a href="https://github.com/SuperInstance/quilt/releases" target="_blank">Releases ↗</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>What's <span class="grad-text">new</span></h1>
+  <p class="lead">Every version of Quilt, every feature, every bug fix. From v0.1.0 to the present.</p>
+</div>
+
+<main>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="v">v0.2.0</div><div class="label">current version</div></div>
+    <div class="stat"><div class="v">146</div><div class="label">tests passing</div></div>
+    <div class="stat"><div class="v">11</div><div class="label">repos</div></div>
+    <div class="stat"><div class="v">30+</div><div class="label">web pages</div></div>
+  </div>
+
+  <div class="version latest">
+    <h2>v0.3.0 <span class="tag">in progress</span> <span class="date">Q3 2026</span></h2>
+    <p style="color: var(--text-dim); margin-bottom: 12px;">The web platform. Real-time, real sensors, real-time collaboration, real performance.</p>
+
+    <h3>Added</h3>
+    <ul>
+      <li class="added">Quilt Studio with multi-user collaboration (BroadcastChannel + WebRTC).</li>
+      <li class="added">Quilt IDE — full multi-pane workbench with editor, graph, console, time travel.</li>
+      <li class="added">Synoptic view — 2D and 3D visualization of cell propagation.</li>
+      <li class="added">Voice cell — real Web Speech API integration.</li>
+      <li class="added">Camera cell — real getUserMedia + Canvas pixel analysis.</li>
+      <li class="added">Mesh cell — peer-to-peer sync between browser tabs via BroadcastChannel.</li>
+      <li class="added">PWA support — installable, offline-first service worker.</li>
+      <li class="added">30 new example sheets (54 → 84 total).</li>
+      <li class="added">9 new documentation pages: cells, patterns, playground, compare, start, about, apps, build, perf, tour, faq, changelog.</li>
+      <li class="added">23-sheet curated gallery with search and filter.</li>
+      <li class="added">5-year timeline visualization.</li>
+    </ul>
+  </div>
+
+  <div class="version">
+    <h2>v0.2.0 <span class="tag ship">shipped</span> <span class="date">Q2 2026</span></h2>
+    <p style="color: var(--text-dim); margin-bottom: 12px;">Production-grade. The cell model stabilized, the tests pass, the binaries ship.</p>
+
+    <h3>Added</h3>
+    <ul>
+      <li class="added">Quilt (TypeScript) v0.2.0 — full engine, 8 cell kinds, 98 tests pass.</li>
+      <li class="added">Quilt (Rust) v0.2.0 — sync core, async at the boundary, 3.2 MB stripped binary.</li>
+      <li class="added">Quilt Live v0.2.0 — single HTML file, 70 KB, 146 verified checks across 5 test files.</li>
+      <li class="added">54 example sheets covering productivity, finance, fitness, music, photography, education, automotive, networking, communication, science, security, geography, real estate, travel, gaming, dev tools, time, showcase, meta.</li>
+      <li class="added">Per-context memoization in the engine.</li>
+      <li class="added">Helper functions (qget, qcall).</li>
+      <li class="added">Sensor <code>default</code> field for placeholder values.</li>
+    </ul>
+
+    <h3>Fixed</h3>
+    <ul>
+      <li class="fixed">Formula rewrite placeholder pass handles dot-segmented IDs.</li>
+      <li class="fixed">YAML block lists parse correctly.</li>
+      <li class="fixed">Program cell dependency pre-evaluation works for multi-line blocks.</li>
+      <li class="fixed">Flow-style maps parse correctly.</li>
+      <li class="fixed">Multi-line block scalars work in cells, formulas, programs.</li>
+    </ul>
+  </div>
+
+  <div class="version">
+    <h2>v0.1.0 <span class="tag ship">shipped</span> <span class="date">Q1 2026</span></h2>
+    <p style="color: var(--text-dim); margin-bottom: 12px;">The first cut. The runtime, the cell model, the YAML format. The thing that became everything else.</p>
+
+    <h3>Added</h3>
+    <ul>
+      <li class="added">@quilt/core — TypeScript reactive engine. 8 cell kinds, per-context memoization.</li>
+      <li class="added">@quilt/mcp — every cell as an MCP tool. Native stdio server.</li>
+      <li class="added">@quilt/cli — run, eval, watch. The dev experience.</li>
+      <li class="added">4 example sheets: budget, weather, tracker, counter.</li>
+      <li class="added">3 templates: starter, agent, sensor-pipeline.</li>
+      <li class="added">Landing page with the manifesto.</li>
+      <li class="added">5-chapter tutorial.</li>
+      <li class="added">5 docs: manifesto, architecture, recipes, comparison, security.</li>
+    </ul>
+  </div>
+
+  <div class="version">
+    <h2>The sketch repos</h2>
+    <p style="color: var(--text-dim); margin-bottom: 12px;">The 8 sketches that established the long-term vision. Each is its own repo with its own README and tests.</p>
+
+    <h3>Added</h3>
+    <ul>
+      <li class="added"><a href="quilt-esp32.html">quilt-esp32</a> — no_std Rust on a $3 chip. 2 tests pass. 32 KB flash.</li>
+      <li class="added"><a href="quilt-mesh.html">quilt-mesh</a> — broker-less CRDT mesh. 3 tests pass. Lamport clocks + per-peer version vectors.</li>
+      <li class="added"><a href="quilt-agent.html">quilt-agent</a> — AI agents as cells. Research agent example. Memory, tools, reasoning, goals.</li>
+      <li class="added"><a href="quilt-time.html">quilt-time</a> — time travel. 17 tests pass. Fork, rewind, replay, merge.</li>
+      <li class="added"><a href="quilt-vault.html">quilt-vault</a> — encrypted cells. 10 tests pass. Real WebCrypto ECDH + AES-GCM.</li>
+      <li class="added"><a href="quilt-vision.html">quilt-vision</a> — vision cells. 8 cell kinds. Image, caption, classify, detect, OCR, palette, faces, depth.</li>
+      <li class="added"><a href="quilt-zk.html">quilt-zk</a> — zero-knowledge proofs. 7 tests pass. 6 pre-built circuits.</li>
+      <li class="added"><a href="quilt-flow.html">quilt-flow</a> — visual graph. 8 tests pass. Node, Wire, Graph, force-directed layout, ASCII renderer.</li>
+    </ul>
+  </div>
+
+  <div class="version">
+    <h2>The roadmap</h2>
+    <p style="color: var(--text-dim); margin-bottom: 12px;">A 5-year plan. Q1 2026 shipped; Q2 in progress; Q3-Q4 sketched.</p>
+
+    <h3>Shipped</h3>
+    <ul>
+      <li class="added">Q1 2026: the runtime (TS, Rust, Live).</li>
+      <li class="added">Q2 2026: time, vault, rooms, mesh, esp32, packs.</li>
+    </ul>
+
+    <h3>Coming</h3>
+    <ul>
+      <li class="added">Q3 2026: agent, vision, zk, build, the IDE, the synoptic view, real-time multi-user.</li>
+      <li class="added">Q4 2026: flow, print, music, fabric, civic, fs.</li>
+      <li class="added">2027: a mesh of personal devices, a runtime for personal AI, the cell model as the substrate of personal data.</li>
+    </ul>
+
+    <p style="margin-top: 16px;">See the full <a href="timeline.html">5-year timeline</a>.</p>
+  </div>
+
+</main>
+
+<footer>
+  <p>Subscribe to <a href="https://github.com/SuperInstance/quilt/releases" target="_blank">GitHub releases</a> for notifications.</p>
+</footer>
+
+</body>
+</html>
