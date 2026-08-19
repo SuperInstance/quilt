@@ -1,0 +1,60 @@
+{
+  "name": "Quilt — a cellular runtime",
+  "short_name": "Quilt",
+  "description": "A reactive, typed, cellular runtime. From microcontroller to browser to mesh.",
+  "start_url": "/quilt/landing/",
+  "scope": "/quilt/landing/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quilt Live",
+      "short_name": "Live",
+      "url": "/quilt/landing/quilt-live.html",
+      "description": "Open the single-file runtime"
+    },
+    {
+      "name": "Playground",
+      "short_name": "Play",
+      "url": "/quilt/landing/playground.html",
+      "description": "Live coding environment"
+    },
+    {
+      "name": "Studio",
+      "short_name": "Studio",
+      "url": "/quilt/landing/studio.html",
+      "description": "Visual editor"
+    },
+    {
+      "name": "Synoptic",
+      "short_name": "Synoptic",
+      "url": "/quilt/landing/synoptic.html",
+      "description": "Cell animation"
+    }
+  ]
+}

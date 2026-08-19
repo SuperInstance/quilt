@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Mesh — peer-to-peer cell sync</title>
+<meta name="description" content="A real peer-to-peer cell mesh. Open this page in two tabs and watch cells sync in real time. CRDT, Lamport clocks, gossip. The mesh is the network.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 20px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 24px 24px 60px; }
+
+.instructions { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.instructions h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; font-weight: 600; }
+.instructions ol { margin-left: 20px; color: var(--text-dim); }
+.instructions li { margin-bottom: 6px; }
+
+.status-bar { display: flex; gap: 16px; padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin: 20px 0; align-items: center; }
+.status-bar .me { padding: 4px 10px; border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; }
+.status-bar .me.peer-1 { background: rgba(126,198,153,0.15); color: var(--green); }
+.status-bar .me.peer-2 { background: rgba(95,168,211,0.15); color: var(--blue); }
+.status-bar .me.peer-3 { background: rgba(187,126,198,0.15); color: var(--purple); }
+.status-bar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 1.5s ease-in-out infinite; margin-right: 6px; }
+.status-bar .stats { display: flex; gap: 16px; margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); }
+.status-bar .stats .v { color: var(--green); font-weight: 600; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 20px 0; }
+.cell-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; transition: all 0.2s; }
+.cell-card.changed { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
+.cell-card.conflict { border-color: var(--yellow); box-shadow: 0 0 0 1px var(--yellow); }
+.cell-card .head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.cell-card .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.cell-card .lamport { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.cell-card input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; margin-bottom: 6px; }
+.cell-card input:focus { outline: none; border-color: var(--green); }
+.cell-card .meta { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+
+.peers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+.peer-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.peer-card .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+.peer-card .id .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 4px; }
+.peer-card .vv { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); }
+.peer-card.you { border-color: var(--green); }
+.peer-card .vv-row { display: flex; justify-content: space-between; padding: 2px 0; }
+
+.log { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin: 20px 0; max-height: 280px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.log .ev { padding: 3px 0; display: flex; gap: 6px; }
+.log .ev .ts { color: var(--text-faint); }
+.log .ev .peer { min-width: 60px; font-weight: 600; }
+.log .ev .peer-1 { color: var(--green); }
+.log .ev .peer-2 { color: var(--blue); }
+.log .ev .peer-3 { color: var(--purple); }
+.log .ev .msg { color: var(--text-dim); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="mesh-live.html" class="active">Mesh</a>
+    <a href="voice.html">Voice</a>
+    <a href="camera.html">Camera</a>
+    <a href="quilt-mesh.html">Mesh repo</a>
+    <a href="quilt-live.html">Live</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>The mesh is the <span class="grad-text">network</span></h1>
+  <p class="lead">Open this page in two browser tabs and watch cells sync peer-to-peer. No server, no internet, no account. CRDT + Lamport clocks + gossip. Just like <a href="quilt-mesh.html" style="color: var(--green);">quilt-mesh</a>, but live in your browser.</p>
+</div>
+
+<main>
+
+  <div class="instructions">
+    <h3>How to test</h3>
+    <ol>
+      <li>Click the button below to enable mesh sync on this tab. You'll get a peer ID like <code>peer-2-abc123</code>.</li>
+      <li>Open this same page in a second tab, window, or browser.</li>
+      <li>Edit a cell in one tab — it appears in the other. Try changing values simultaneously to see the CRDT resolve conflicts.</li>
+      <li>Disconnect your internet. The cells still work locally. Reconnect — they sync.</li>
+    </ol>
+  </div>
+
+  <div class="status-bar">
+    <span class="me" id="my-id">peer-?</span>
+    <span><span class="dot"></span>Connected</span>
+    <div class="stats">
+      <div>cells: <span class="v" id="stat-cells">0</span></div>
+      <div>peers: <span class="v" id="stat-peers">0</span></div>
+      <div>events: <span class="v" id="stat-events">0</span></div>
+      <div>clock: <span class="v" id="stat-clock">0</span></div>
+    </div>
+  </div>
+
+  <div class="peers" id="peers"></div>
+
+  <div class="cells" id="cells"></div>
+
+  <div class="log" id="log"></div>
+
+</main>
+
+<footer>
+  <p>Peer-to-peer via BroadcastChannel. Same machine = same channel. For cross-machine mesh, see <a href="quilt-mesh.html">quilt-mesh</a>.</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT MESH LIVE — peer-to-peer cell sync
+// ============================================================================
+
+const PEER_COLORS = ['peer-1', 'peer-2', 'peer-3'];
+const PEER_HEX = ['#7ec699', '#5fa8d3', '#bb7ec6'];
+
+const cells = [
+  { id: 'counter', initial: 0 },
+  { id: 'temperature', initial: 22.5 },
+  { id: 'message', initial: 'Hello, mesh!' },
+  { id: 'status', initial: 'ok' },
+  { id: 'budget.total', initial: 5000 },
+  { id: 'budget.spent', initial: 1200 },
+  { id: 'budget.remaining', initial: 0 },
+];
+
+// ============== Mesh state ==============
+class MeshPeer {
+  constructor(id) {
+    this.id = id;
+    this.clock = 0;
+    this.values = {}; // cell id → { value, t, author }
+    this.peerLog = []; // event log
+    this.versionVector = {}; // peer id → last seen clock
+    cells.forEach(c => this.values[c.id] = { value: c.initial, t: 0, author: this.id });
+  }
+  tick() { return ++this.clock; }
+  set(cellId, value) {
+    const t = this.tick();
+    this.values[cellId] = { value, t, author: this.id };
+    this.peerLog.push({ cellId, value, t, author: this.id });
+    broadcast({ type: 'event', from: this.id, cellId, value, t });
+  }
+  applyRemote(event) {
+    if (event.t > (this.values[event.cellId]?.t || 0)) {
+      this.values[event.cellId] = { value: event.value, t: event.t, author: event.from };
+    }
+    if (event.t > (this.versionVector[event.from] || 0)) {
+      this.versionVector[event.from] = event.t;
+    }
+  }
+}
+
+const myId = 'peer-' + (1 + Math.floor(Math.random() * 1000)) + '-' + Math.random().toString(36).slice(2, 6);
+const peerClass = PEER_COLORS[Math.abs(myId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 3];
+const me = new MeshPeer(myId);
+
+// ============== BroadcastChannel ==============
+const channel = new BroadcastChannel('quilt-mesh-v1');
+const knownPeers = new Map();
+knownPeers.set(myId, { lastSeen: Date.now(), class: peerClass });
+
+channel.addEventListener('message', (e) => {
+  const msg = e.data;
+  if (msg.from === myId) return;
+  if (!knownPeers.has(msg.from)) {
+    knownPeers.set(msg.from, { lastSeen: Date.now(), class: PEER_COLORS[knownPeers.size % 3] });
+    log(myId, '👋 New peer: ' + msg.from);
+    // Send our state
+    Object.values(me.values).forEach(v => {
+      broadcast({ type: 'event', from: myId, cellId: Object.keys(me.values).find(k => me.values[k] === v), value: v.value, t: v.t });
+    });
+  } else {
+    knownPeers.get(msg.from).lastSeen = Date.now();
+  }
+  if (msg.type === 'event') {
+    me.applyRemote(msg);
+    renderCells(true);
+    log(msg.from, '← ' + msg.cellId + ' = ' + JSON.stringify(msg.value) + ' (t=' + msg.t + ')');
+  } else if (msg.type === 'hello') {
+    // Greet
+    broadcast({ type: 'hello-back', from: myId });
+  }
+});
+
+function broadcast(msg) {
+  try { channel.postMessage(msg); } catch (e) {}
+}
+
+// ============== Render ==============
+function renderCells(remote = false) {
+  const el = document.getElementById('cells');
+  el.innerHTML = cells.map(c => {
+    const v = me.values[c.id];
+    return `<div class="cell-card" id="cell-${c.id}">
+      <div class="head">
+        <span class="id">${c.id}</span>
+        <span class="lamport">t=${v.t} · ${v.author === myId ? 'mine' : v.author}</span>
+      </div>
+      <input type="text" value="${escapeAttr(JSON.stringify(v.value))}" data-cell="${c.id}">
+      <div class="meta">last write: ${v.author === myId ? 'you' : v.author} @ ${new Date(v.t * 1000).toISOString().slice(11, 19) || 'clock=' + v.t}</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', () => {
+      let v;
+      try { v = JSON.parse(input.value); } catch { v = input.value; }
+      me.set(input.dataset.cell, v);
+      renderCells();
+    });
+  });
+  // stats
+  document.getElementById('stat-cells').textContent = cells.length;
+  document.getElementById('stat-peers').textContent = knownPeers.size;
+  document.getElementById('stat-events').textContent = me.peerLog.length;
+  document.getElementById('stat-clock').textContent = me.clock;
+}
+
+function renderPeers() {
+  const el = document.getElementById('peers');
+  el.innerHTML = '';
+  knownPeers.forEach((info, pid) => {
+    const isMe = pid === myId;
+    const peerV = isMe ? me.versionVector : (Object.keys(knownPeers).filter(p => p !== pid).reduce((a, p) => { a[p] = 0; return a; }, {}));
+    el.innerHTML += `<div class="peer-card ${isMe ? 'you' : ''}">
+      <div class="id" style="color: ${PEER_HEX[parseInt(info.class.slice(5)) - 1] || 'var(--green)'};"><span class="dot"></span>${isMe ? 'you: ' : ''}${pid}</div>
+      <div class="vv">
+        ${isMe ? '<div class="vv-row"><span>clock:</span><span>' + me.clock + '</span></div>' : ''}
+        <div class="vv-row"><span>last seen:</span><span>${((Date.now() - info.lastSeen) / 1000).toFixed(1)}s ago</span></div>
+        <div class="vv-row"><span>cells:</span><span>${Object.keys(me.values).length}</span></div>
+      </div>
+    </div>`;
+  });
+}
+
+function log(from, msg) {
+  const el = document.getElementById('log');
+  const ev = document.createElement('div');
+  ev.className = 'ev';
+  const fromClass = from === myId ? peerClass : (PEER_COLORS[Math.abs(from.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 3] || 'peer-1');
+  const t = new Date().toLocaleTimeString();
+  ev.innerHTML = `<span class="ts">[${t.slice(0,8)}]</span><span class="peer ${fromClass}">${from === myId ? 'me' : from.slice(0, 10)}</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 100) el.removeChild(el.lastChild);
+}
+
+function escapeAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+
+// ============== Init ==============
+document.getElementById('my-id').textContent = myId;
+document.getElementById('my-id').classList.add(peerClass);
+
+// Init formulas (computed from values)
+function recomputeFormulas() {
+  const spent = me.values['budget.spent']?.value || 0;
+  const total = me.values['budget.total']?.value || 0;
+  me.values['budget.remaining'] = { value: total - spent, t: me.clock, author: myId };
+  // status
+  const remaining = me.values['budget.remaining'].value;
+  me.values['status'] = { value: remaining < 0 ? 'over' : remaining < 1000 ? 'low' : 'ok', t: me.clock, author: myId };
+  // counter always increments
+  if (me.peerLog.length > 0) me.values['counter'] = { value: me.peerLog.length, t: me.clock, author: myId };
+}
+
+// Re-render periodically
+setInterval(() => {
+  recomputeFormulas();
+  renderPeers();
+  document.getElementById('stat-clock').textContent = me.clock;
+  document.getElementById('stat-events').textContent = me.peerLog.length;
+}, 1000);
+
+renderCells();
+renderPeers();
+log(myId, '🎬 Mesh online. Open this page in another tab to see cells sync.');
+broadcast({ type: 'hello', from: myId });
+</script>
+
+</body>
+</html>

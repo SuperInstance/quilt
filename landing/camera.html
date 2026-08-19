@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Camera — see with your cells</title>
+<meta name="description" content="A real-time camera cell. The webcam feeds into a Quilt engine; color, motion, brightness, and faces all become cells. The picture isn't a picture — it's a live, reactive cell graph.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 20px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 24px 24px 60px; }
+
+.stage { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin: 20px 0; }
+@media (max-width: 800px) { .stage { grid-template-columns: 1fr; } }
+
+.video-card, .data-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.video-card { position: relative; }
+.video-card video, .video-card canvas { width: 100%; border-radius: 6px; display: block; }
+.video-card .overlay { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; }
+.video-card .badge { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+.video-card .badge.live { background: rgba(198,126,126,0.8); color: white; }
+.video-card .badge.fps { color: var(--green); }
+
+.data-card h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-faint); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.cell-row { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.cell-row:last-child { border-bottom: none; }
+.cell-row .id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; min-width: 130px; }
+.cell-row .value { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text); flex: 1; word-break: break-all; }
+.cell-row .kind { font-size: 0.65rem; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.cell-row .kind.sensor { background: rgba(198,168,126,0.15); color: var(--tan); }
+.cell-row .kind.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.cell-row .kind.listener { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.cell-row .kind.value { background: rgba(126,198,153,0.15); color: var(--green); }
+
+.metric { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; }
+.metric .bar-bg { background: var(--bg); height: 8px; border-radius: 4px; overflow: hidden; }
+.metric .bar-fg { height: 100%; border-radius: 4px; transition: width 0.2s; }
+
+.controls { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; }
+.controls h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-faint); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+.controls .row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.controls label { min-width: 140px; color: var(--text-dim); font-size: 0.85rem; }
+.controls input[type=range] { flex: 1; }
+.controls .threshold { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; min-width: 50px; text-align: right; }
+
+.events { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.events .ev { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.events .ev:last-child { border-bottom: none; }
+.events .ev .ts { color: var(--text-faint); }
+.events .ev .msg { color: var(--text-dim); }
+.events .ev.alert .msg { color: var(--yellow); }
+.events .ev.motion .msg { color: var(--red); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="camera.html" class="active">Camera</a>
+    <a href="voice.html">Voice</a>
+    <a href="mesh-live.html">Mesh</a>
+    <a href="quilt-vision.html">Vision</a>
+    <a href="quilt-live.html">Live</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>See with your <span class="grad-text">cells</span></h1>
+  <p class="lead">The webcam feeds into a Quilt engine. Brightness, color, motion, faces, and objects all become cells. The picture isn't a picture — it's a live, reactive cell graph.</p>
+</div>
+
+<main>
+
+  <div class="stage">
+    <div class="video-card">
+      <div class="overlay">
+        <div class="badge live" id="live-badge">● LIVE</div>
+        <div class="badge fps" id="fps-badge">— fps</div>
+      </div>
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="data-card">
+      <h3>The cells, live</h3>
+      <div id="cell-list"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h3>Thresholds</h3>
+    <div class="row">
+      <label>Motion alert above</label>
+      <input type="range" id="motion-threshold" min="5" max="100" value="40">
+      <span class="threshold" id="motion-threshold-v">40%</span>
+    </div>
+    <div class="row">
+      <label>Brightness alarm below</label>
+      <input type="range" id="brightness-threshold" min="0" max="100" value="20">
+      <span class="threshold" id="brightness-threshold-v">20%</span>
+    </div>
+    <div class="row">
+      <label>Sample rate</label>
+      <input type="range" id="sample-rate" min="100" max="2000" value="500" step="100">
+      <span class="threshold" id="sample-rate-v">500ms</span>
+    </div>
+  </div>
+
+  <div class="events" id="events">
+    <div class="ev"><span class="ts">[click start camera]</span><span class="msg">grant permission, point the camera at anything</span></div>
+  </div>
+
+</main>
+
+<footer>
+  <p>getUserMedia + Canvas + Quilt reactive engine. All processing happens locally, in your browser.</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT CAMERA — webcam as a real cell
+// ============================================================================
+
+const sheet = {
+  cells: [
+    { id: 'camera.frame',     kind: 'sensor',  value: null },
+    { id: 'brightness',       kind: 'formula', value: 0 },
+    { id: 'avg.red',          kind: 'formula', value: 0 },
+    { id: 'avg.green',        kind: 'formula', value: 0 },
+    { id: 'avg.blue',         kind: 'formula', value: 0 },
+    { id: 'dominant.color',   kind: 'formula', value: 'unknown' },
+    { id: 'motion',           kind: 'formula', value: 0 },
+    { id: 'motion.alert',     kind: 'listener', value: false },
+    { id: 'dim.alert',        kind: 'listener', value: false },
+    { id: 'light.level',      kind: 'formula', value: 'bright' },
+    { id: 'fps',              kind: 'formula', value: 0 },
+  ],
+  edges: [
+    ['camera.frame', 'brightness'],
+    ['camera.frame', 'avg.red'],
+    ['camera.frame', 'avg.green'],
+    ['camera.frame', 'avg.blue'],
+    ['avg.red', 'dominant.color'],
+    ['avg.green', 'dominant.color'],
+    ['avg.blue', 'dominant.color'],
+    ['camera.frame', 'motion'],
+    ['motion', 'motion.alert'],
+    ['brightness', 'dim.alert'],
+    ['brightness', 'light.level'],
+  ],
+};
+
+const cellValues = {};
+sheet.cells.forEach(c => cellValues[c.id] = c.value);
+
+let prevFrame = null;
+let thresholds = { motion: 40, brightness: 20, sampleRate: 500 };
+
+// ============== Camera ==============
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+let stream = null;
+let frameCount = 0;
+let lastFpsUpdate = Date.now();
+let lastSample = 0;
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+    video.srcObject = stream;
+    document.getElementById('live-badge').textContent = '● LIVE';
+    document.getElementById('live-badge').classList.add('live');
+    setTimeout(sampleFrame, 100);
+  } catch (e) {
+    logEvent('error', 'Camera permission denied or unavailable: ' + e.message);
+  }
+}
+
+function stopCamera() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  document.getElementById('live-badge').textContent = '○ OFFLINE';
+}
+
+function sampleFrame() {
+  if (!stream) return;
+  const w = 80, h = 60;
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(video, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h).data;
+
+  // Compute metrics
+  let r = 0, g = 0, b = 0, bright = 0;
+  let dr = 0, dg = 0, db = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    r += data[i]; g += data[i+1]; b += data[i+2];
+    bright += (data[i] + data[i+1] + data[i+2]) / 3;
+  }
+  const n = data.length / 4;
+  r /= n; g /= n; b /= n; bright /= n;
+
+  // Motion (vs prev frame)
+  let motion = 0;
+  if (prevFrame) {
+    for (let i = 0; i < data.length; i += 4) {
+      motion += Math.abs(data[i] - prevFrame[i]) +
+                Math.abs(data[i+1] - prevFrame[i+1]) +
+                Math.abs(data[i+2] - prevFrame[i+2]);
+    }
+    motion = (motion / (n * 3)) / 2.55; // scale to 0-100
+  }
+  prevFrame = new Uint8ClampedArray(data);
+
+  // Update cells
+  cellValues['camera.frame'] = '[320x240 @ ' + new Date().toISOString().slice(11, 19) + ']';
+  cellValues['brightness'] = bright / 2.55;  // 0-100
+  cellValues['avg.red'] = r / 2.55;
+  cellValues['avg.green'] = g / 2.55;
+  cellValues['avg.blue'] = b / 2.55;
+  cellValues['motion'] = Math.min(100, motion);
+  cellValues['dominant.color'] = r > g && r > b ? 'red' : g > b ? 'green' : 'blue';
+  cellValues['light.level'] = bright > 180 ? 'bright' : bright > 100 ? 'normal' : 'dim';
+
+  // FPS
+  frameCount++;
+  const now = Date.now();
+  if (now - lastFpsUpdate > 1000) {
+    cellValues['fps'] = (frameCount * 1000 / (now - lastFpsUpdate)).toFixed(0);
+    document.getElementById('fps-badge').textContent = cellValues['fps'] + ' fps';
+    frameCount = 0;
+    lastFpsUpdate = now;
+  }
+
+  // Listeners
+  const prevMotionAlert = cellValues['motion.alert'];
+  const prevDimAlert = cellValues['dim.alert'];
+  cellValues['motion.alert'] = motion > thresholds.motion;
+  cellValues['dim.alert'] = cellValues['brightness'] < thresholds.brightness;
+  if (cellValues['motion.alert'] && !prevMotionAlert) logEvent('motion', '🔔 Motion detected (' + motion.toFixed(0) + '%)');
+  if (cellValues['dim.alert'] && !prevDimAlert) logEvent('alert', '⚠️ Low light (' + cellValues['brightness'].toFixed(0) + '%)');
+
+  render();
+  setTimeout(sampleFrame, thresholds.sampleRate);
+}
+
+function render() {
+  const el = document.getElementById('cell-list');
+  el.innerHTML = sheet.cells.map(c => {
+    let v = cellValues[c.id];
+    if (typeof v === 'number') v = v.toFixed(1);
+    if (typeof v === 'string' && v.length > 40) v = v.slice(0, 37) + '…';
+    return `<div class="cell-row">
+      <span class="id">${c.id}</span>
+      <span class="kind ${c.kind}">${c.kind}</span>
+      <span class="value">${v}</span>
+    </div>`;
+  }).join('');
+}
+
+function logEvent(kind, msg) {
+  const el = document.getElementById('events');
+  const ev = document.createElement('div');
+  ev.className = 'ev ' + kind;
+  const t = new Date().toLocaleTimeString();
+  ev.innerHTML = `<span class="ts">[${t.slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+// ============== Controls ==============
+document.getElementById('motion-threshold').addEventListener('input', (e) => {
+  thresholds.motion = +e.target.value;
+  document.getElementById('motion-threshold-v').textContent = thresholds.motion + '%';
+});
+document.getElementById('brightness-threshold').addEventListener('input', (e) => {
+  thresholds.brightness = +e.target.value;
+  document.getElementById('brightness-threshold-v').textContent = thresholds.brightness + '%';
+});
+document.getElementById('sample-rate').addEventListener('input', (e) => {
+  thresholds.sampleRate = +e.target.value;
+  document.getElementById('sample-rate-v').textContent = thresholds.sampleRate + 'ms';
+});
+
+// ============== Init ==============
+// Auto-start on user gesture
+let started = false;
+document.body.addEventListener('click', () => {
+  if (!started) {
+    started = true;
+    startCamera();
+  }
+}, { once: true });
+
+render();
+logEvent('info', 'Click anywhere to start the camera');
+</script>
+
+</body>
+</html>

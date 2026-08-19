@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What can I build with Quilt? — 30 real apps</title>
+<meta name="description" content="30 real apps you can build with Quilt, from smart home controllers to multiplayer games to personal finance to AI agents. With cell graphs and code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+.filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin: 32px 0 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.filter { padding: 4px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; cursor: pointer; color: var(--text-dim); font-family: inherit; }
+.filter:hover { color: var(--text); }
+.filter.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+
+.apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.app { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.2s; }
+.app:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.app .icon { font-size: 2rem; margin-bottom: 8px; }
+.app h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+.app .tagline { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 12px; }
+.app .cells { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.app .cell-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 2px 6px; background: var(--bg); border-radius: 3px; color: var(--text-faint); }
+.app .difficulty { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--text-faint); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.app .difficulty .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green); }
+.app .difficulty .dot.empty { background: var(--border); }
+.app .sheet-link { display: inline-block; margin-top: 8px; padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.app .sheet-link:hover { color: var(--green); border-color: var(--green); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="apps.html" class="active">Apps</a>
+    <a href="gallery.html">Sheets</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>What can I build with <span class="grad-text">Quilt</span>?</h1>
+  <p class="lead">30 real apps you can build, ordered by domain. Each one is a small cell graph. Most are working today. The ambitious ones sketch where the model can go.</p>
+</div>
+
+<main>
+
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter active" data-cat="all">All 30</button>
+    <button class="filter" data-cat="home">Home</button>
+    <button class="filter" data-cat="finance">Finance</button>
+    <button class="filter" data-cat="health">Health</button>
+    <button class="filter" data-cat="productivity">Productivity</button>
+    <button class="filter" data-cat="creative">Creative</button>
+    <button class="filter" data-cat="agents">Agents</button>
+    <button class="filter" data-cat="games">Games</button>
+    <button class="filter" data-cat="iot">IoT</button>
+    <button class="filter" data-cat="data">Data</button>
+    <button class="filter" data-cat="dev">Dev tools</button>
+  </div>
+
+  <div class="apps-grid" id="apps-grid"></div>
+
+</main>
+
+<footer>
+  <p>Each app is a YAML file. Most are under 50 lines. The ambitious ones are sketches with clear paths to production.</p>
+</main>
+
+<script>
+const APPS = [
+  // ================== HOME ==================
+  { cat: 'home', icon: '🌡', title: 'Smart thermostat', tagline: 'Read a temperature sensor, drive a heating element.', cells: ['sensor.temp', 'formula.comfort', 'listener.alert', 'io.heater'], difficulty: 1, sheet: 'thermostat.yaml' },
+  { cat: 'home', icon: '🔒', title: 'Doorbell camera', tagline: 'Motion → snapshot → upload → notify.', cells: ['sensor.motion', 'program.capture', 'api.upload', 'listener.notify'], difficulty: 2, sheet: 'doorbell.yaml' },
+  { cat: 'home', icon: '🌱', title: 'Plant watering', tagline: 'Soil moisture sensor drives a water pump.', cells: ['sensor.moisture', 'formula.threshold', 'io.pump', 'listener.log'], difficulty: 1, sheet: 'plant-watering.yaml' },
+  { cat: 'home', icon: '💡', title: 'Adaptive lighting', tagline: 'Light sensor + motion = turn on the lights.', cells: ['sensor.light', 'sensor.motion', 'formula.should_turn_on', 'io.lights'], difficulty: 1, sheet: 'adaptive-lights.yaml' },
+  { cat: 'home', icon: '☕', title: 'Coffee schedule', tagline: 'Time of day + day of week = brew coffee.', cells: ['sensor.clock', 'value.schedule', 'formula.should_brew', 'io.coffee_maker'], difficulty: 1, sheet: 'coffee.yaml' },
+
+  // ================== FINANCE ==================
+  { cat: 'finance', icon: '💰', title: 'Budget tracker', tagline: 'Track spend, alert when over budget.', cells: ['value.budget', 'value.spent', 'formula.percent', 'listener.alert'], difficulty: 1, sheet: 'budget.yaml' },
+  { cat: 'finance', icon: '📈', title: 'Portfolio tracker', tagline: 'Pull live prices, compute P&L, alert on change.', cells: ['api.prices', 'formula.value', 'formula.pnl', 'listener.notify'], difficulty: 2, sheet: 'portfolio.yaml' },
+  { cat: 'finance', icon: '🧾', title: 'Receipt scanner', tagline: 'Camera → OCR → amount → expense sheet.', cells: ['sensor.camera', 'api.ocr', 'formula.amount', 'api.expenses'], difficulty: 3, sheet: 'receipts.yaml' },
+  { cat: 'finance', icon: '💳', title: 'Subscription audit', tagline: 'List all subscriptions, total monthly, flag unused.', cells: ['value.subs', 'formula.monthly_total', 'formula.annual_cost', 'listener.unused'], difficulty: 2, sheet: 'subscriptions.yaml' },
+  { cat: 'finance', icon: '🎯', title: 'Savings goal', tagline: 'Track progress toward a savings goal, with a forecast.', cells: ['value.goal', 'value.balance', 'formula.percent', 'formula.forecast'], difficulty: 1, sheet: 'savings.yaml' },
+
+  // ================== HEALTH ==================
+  { cat: 'health', icon: '❤️', title: 'Heart rate monitor', tagline: 'Read from BLE, log to disk, alert on anomaly.', cells: ['sensor.heart_rate', 'formula.avg', 'listener.alert', 'program.log'], difficulty: 2, sheet: 'heart-rate.yaml' },
+  { cat: 'health', icon: '😴', title: 'Sleep tracker', tagline: 'Motion sensor + light sensor = sleep quality.', cells: ['sensor.motion', 'sensor.light', 'formula.sleep_quality', 'program.log'], difficulty: 2, sheet: 'sleep.yaml' },
+  { cat: 'health', icon: '🏃', title: 'Workout timer', tagline: 'Interval timer with audio cues and log.', cells: ['sensor.timer', 'value.intervals', 'program.cue', 'program.log'], difficulty: 2, sheet: 'workout.yaml' },
+  { cat: 'health', icon: '💧', title: 'Water tracker', tagline: 'Tap to log a glass, compute daily total, goal progress.', cells: ['value.glasses', 'formula.daily_total', 'formula.percent', 'listener.goal_met'], difficulty: 1, sheet: 'water.yaml' },
+
+  // ================== PRODUCTIVITY ==================
+  { cat: 'productivity', icon: '📋', title: 'Daily standup', tagline: 'What I did, what I\'ll do, blockers — for the team.', cells: ['value.yesterday', 'value.today', 'value.blockers', 'api.slack'], difficulty: 1, sheet: 'standup.yaml' },
+  { cat: 'productivity', icon: '⏱', title: 'Pomodoro timer', tagline: '25/5/15 timer with break reminders.', cells: ['sensor.timer', 'value.duration', 'formula.phase', 'listener.notify'], difficulty: 1, sheet: 'pomodoro.yaml' },
+  { cat: 'productivity', icon: '📓', title: 'Personal journal', tagline: 'Encrypted journal with daily prompts, search, mood.', cells: ['value.entry', 'value.mood', 'api.encrypt', 'api.save'], difficulty: 2, sheet: 'journal.yaml' },
+  { cat: 'productivity', icon: '🎯', title: 'Habit tracker', tagline: 'Daily checkboxes, streaks, weekly summary.', cells: ['value.habits', 'formula.streak', 'formula.weekly', 'program.notify'], difficulty: 2, sheet: 'habits.yaml' },
+  { cat: 'productivity', icon: '📅', title: 'Calendar aggregator', tagline: 'Pull from Google + iCloud + Outlook, merge, dedupe.', cells: ['api.google', 'api.icloud', 'api.outlook', 'formula.merge'], difficulty: 3, sheet: 'calendar-merge.yaml' },
+
+  // ================== CREATIVE ==================
+  { cat: 'creative', icon: '🎵', title: 'Generative music', tagline: 'A formula that produces a chord progression, played live.', cells: ['value.scale', 'value.tempo', 'program.notes', 'api.play'], difficulty: 3, sheet: 'music-gen.yaml' },
+  { cat: 'creative', icon: '🎨', title: 'Color palette', tagline: 'Extract a 5-color palette from any image.', cells: ['sensor.image', 'program.palette', 'formula.complement'], difficulty: 2, sheet: 'palette.yaml' },
+  { cat: 'creative', icon: '✍️', title: 'Writing prompt', tagline: 'A formula that combines themes, characters, settings → prompt.', cells: ['value.themes', 'value.characters', 'formula.prompt', 'api.llm'], difficulty: 2, sheet: 'writing-prompt.yaml' },
+  { cat: 'creative', icon: '📸', title: 'Photo organizer', tagline: 'Auto-tag, auto-caption, find by description.', cells: ['sensor.image', 'api.caption', 'api.tags', 'formula.search'], difficulty: 3, sheet: 'photo-org.yaml' },
+
+  // ================== AGENTS ==================
+  { cat: 'agents', icon: '🤖', title: 'Research agent', tagline: 'Takes a question, searches the web, summarizes.', cells: ['input.task', 'memory', 'api.search', 'api.llm', 'output'], difficulty: 2, sheet: 'research-agent.yaml' },
+  { cat: 'agents', icon: '💬', title: 'Discord bot', tagline: 'A Quilt sheet that responds to Discord messages.', cells: ['sensor.message', 'router.by_channel', 'api.llm', 'api.reply'], difficulty: 3, sheet: 'discord-bot.yaml' },
+  { cat: 'agents', icon: '📰', title: 'News summarizer', tagline: 'Pull feeds, dedupe, summarize, deliver to your inbox.', cells: ['api.rss', 'formula.dedupe', 'api.llm', 'api.email'], difficulty: 2, sheet: 'news.yaml' },
+
+  // ================== GAMES ==================
+  { cat: 'games', icon: '🎮', title: 'Tic-tac-toe', tagline: 'A 9-cell sheet, fully reactive game state.', cells: ['value.board', 'formula.winner', 'formula.available', 'program.ai'], difficulty: 2, sheet: 'tic-tac-toe.yaml' },
+  { cat: 'games', icon: '♟', title: 'Chess timer', tagline: 'Two players, two clocks, increment, alarm.', cells: ['sensor.timer', 'value.p1', 'value.p2', 'listener.alarm'], difficulty: 1, sheet: 'chess-timer.yaml' },
+  { cat: 'games', icon: '🃏', title: 'Card shuffler', tagline: 'A formula that draws N cards from a deck, no repeats.', cells: ['value.deck', 'formula.shuffle', 'formula.draw'], difficulty: 2, sheet: 'cards.yaml' },
+
+  // ================== IOT ==================
+  { cat: 'iot', icon: '🌡', title: 'Greenhouse', tagline: 'Soil, light, humidity, temperature — all sensors, all cells.', cells: ['sensor.temp', 'sensor.humid', 'sensor.light', 'sensor.moisture', 'io.water', 'io.light', 'io.fan'], difficulty: 2, sheet: 'greenhouse.yaml' },
+  { cat: 'iot', icon: '🚪', title: 'Door sensor', tagline: 'Reed switch, MQTT publish, log every event.', cells: ['sensor.door', 'api.mqtt', 'program.log', 'listener.alert'], difficulty: 1, sheet: 'door.yaml' },
+
+  // ================== DATA ==================
+  { cat: 'data', icon: '📊', title: 'CSV analyzer', tagline: 'Load a CSV, compute stats, export to chart.', cells: ['api.csv', 'formula.stats', 'program.chart'], difficulty: 2, sheet: 'csv-analyzer.yaml' },
+  { cat: 'data', icon: '🗃', title: 'Personal CRM', tagline: 'Track contacts, last touch, follow-up reminders.', cells: ['value.contacts', 'formula.last_touch', 'listener.remind'], difficulty: 2, sheet: 'crm.yaml' },
+  { cat: 'data', icon: '🔍', title: 'Log search', tagline: 'Stream a log file, find patterns, alert on match.', cells: ['api.tail', 'formula.pattern', 'listener.match', 'api.slack'], difficulty: 3, sheet: 'log-search.yaml' },
+
+  // ================== DEV TOOLS ==================
+  { cat: 'dev', icon: '🛠', title: 'Webhook router', tagline: 'One URL, dispatch to many based on event type.', cells: ['api.webhook', 'router.by_event', 'api.slack', 'api.email'], difficulty: 2, sheet: 'webhook-router.yaml' },
+  { cat: 'dev', icon: '⏰', title: 'Cron as cells', tagline: 'Time-based triggers, but every job is inspectable.', cells: ['sensor.timer', 'value.schedule', 'program.run', 'listener.log'], difficulty: 1, sheet: 'cron.yaml' },
+  { cat: 'dev', icon: '🔐', title: 'API gateway', tagline: 'Single entry point, auth, rate limit, log.', cells: ['api.gateway', 'router.by_key', 'listener.rate_limit', 'program.log'], difficulty: 3, sheet: 'api-gateway.yaml' },
+];
+
+const grid = document.getElementById('apps-grid');
+function render(filter = 'all') {
+  const filtered = filter === 'all' ? APPS : APPS.filter(a => a.cat === filter);
+  grid.innerHTML = filtered.map(a => `
+    <div class="app" data-cat="${a.cat}">
+      <div class="icon">${a.icon}</div>
+      <h3>${a.title}</h3>
+      <div class="tagline">${a.tagline}</div>
+      <div class="cells">
+        ${a.cells.map(c => `<span class="cell-tag">${c}</span>`).join('')}
+      </div>
+      <div class="difficulty">
+        Difficulty: ${Array(3).fill(0).map((_, i) => `<span class="dot ${i < a.difficulty ? '' : 'empty'}"></span>`).join('')}
+      </div>
+      <a class="sheet-link" href="quilt-live.html">→ ${a.sheet}</a>
+    </div>
+  `).join('');
+}
+render();
+
+document.querySelectorAll('.filter').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.filter').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  render(b.dataset.cat);
+});
+</script>
+
+</body>
+</html>

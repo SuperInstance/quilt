@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Build — sheet to binary, sheet to bundle, sheet to MCP</title>
+<meta name="description" content="Build a Quilt sheet into a deployable artifact. Single static binary. NPM package. Single HTML. MCP server. Web bundle. ESP32 firmware.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+.target-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 40px 0; }
+@media (max-width: 700px) { .target-grid { grid-template-columns: 1fr; } }
+.target { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+.target:hover { border-color: var(--green); }
+.target.active { border-color: var(--green); background: rgba(126,198,153,0.05); }
+.target .icon { font-size: 2rem; margin-bottom: 8px; }
+.target h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.target .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); }
+
+.config-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; }
+.config-panel h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; font-weight: 600; }
+.config-panel .row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.config-panel label { min-width: 140px; color: var(--text-dim); font-size: 0.85rem; }
+.config-panel input[type=text] { flex: 1; padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.config-panel input:focus { outline: none; border-color: var(--green); }
+
+section { margin-bottom: 60px; }
+section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+section .desc { color: var(--text-dim); margin-bottom: 24px; }
+
+.output { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 16px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6; }
+.output .step { padding: 4px 0; display: flex; gap: 8px; }
+.output .step .num { color: var(--text-faint); }
+.output .step .ok { color: var(--green); font-weight: 600; }
+.output .step .err { color: var(--red); font-weight: 600; }
+.output .step .cmd { color: var(--text); }
+.output .step .out { color: var(--text-dim); padding-left: 20px; }
+.output .step .out.lg { color: var(--green); padding-left: 0; font-size: 0.95rem; }
+
+.steps-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin: 16px 0; }
+.step-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+.step-card .num { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; }
+.step-card .title { color: var(--text); font-size: 0.9rem; font-weight: 600; margin: 4px 0; }
+.step-card .desc { color: var(--text-dim); font-size: 0.8rem; }
+
+.take { padding: 16px; background: var(--bg-card); border-left: 3px solid var(--green); border-radius: 0 6px 6px 0; margin: 16px 0; }
+.take strong { color: var(--text); display: block; margin-bottom: 4px; }
+.take p { color: var(--text-dim); margin: 0; }
+
+.btn { display: inline-block; padding: 10px 20px; background: var(--green); color: var(--bg); border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--blue); }
+.btn:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="build.html" class="active">Build</a>
+    <a href="docs.html">Docs</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="perf.html">Perf</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Sheet → <span class="grad-text">binary</span></h1>
+  <p class="lead">A Quilt sheet is a program. Pick a target. Get a deployable artifact. One command, one output. The cell model stays the same.</p>
+</div>
+
+<main>
+
+  <div class="target-grid" id="targets">
+    <div class="target active" data-target="binary">
+      <div class="icon">🦀</div>
+      <h3>Static binary</h3>
+      <div class="meta">Linux · macOS · Windows · ARM</div>
+    </div>
+    <div class="target" data-target="mcp">
+      <div class="icon">🔌</div>
+      <h3>MCP server</h3>
+      <div class="meta">stdio · sse · http</div>
+    </div>
+    <div class="target" data-target="web">
+      <div class="icon">🌐</div>
+      <h3>Web bundle</h3>
+      <div class="meta">single HTML · npm</div>
+    </div>
+    <div class="target" data-target="esp32">
+      <div class="icon">🔌</div>
+      <h3>ESP32 firmware</h3>
+      <div class="meta">no_std · 32 KB flash</div>
+    </div>
+    <div class="target" data-target="wasm">
+      <div class="icon">📦</div>
+      <h3>WASM module</h3>
+      <div class="meta">any host · sandboxed</div>
+    </div>
+    <div class="target" data-target="docker">
+      <div class="icon">🐳</div>
+      <h3>Docker image</h3>
+      <div class="meta">scratch · distroless</div>
+    </div>
+  </div>
+
+  <div class="config-panel">
+    <h3>Source sheet</h3>
+    <div class="row">
+      <label>Path</label>
+      <input type="text" id="sheet-path" value="./weather.yaml">
+    </div>
+    <div class="row">
+      <label>Engine</label>
+      <input type="text" id="engine" value="auto (Rust if available, else TS)">
+    </div>
+  </div>
+
+  <button class="btn" id="build-btn">▶ Build</button>
+
+  <div class="output" id="output">
+    <div class="step"><span class="num">→</span><span class="cmd">click "Build" to compile</span></div>
+  </div>
+
+  <section>
+    <h2>What the build does</h2>
+    <p class="desc">Every target goes through the same pipeline. The cell model is preserved across all of them.</p>
+    <div class="steps-list">
+      <div class="step-card">
+        <div class="num">1</div>
+        <div class="title">Parse sheet</div>
+        <div class="desc">Read the YAML, validate against the schema, build the cell graph.</div>
+      </div>
+      <div class="step-card">
+        <div class="num">2</div>
+        <div class="title">Resolve deps</div>
+        <div class="desc">Topological sort, detect cycles, mark reachable cells.</div>
+      </div>
+      <div class="step-card">
+        <div class="num">3</div>
+        <div class="title">Bundle</div>
+        <div class="desc">Inline the engine, the cells, the adapters — into a single artifact.</div>
+      </div>
+      <div class="step-card">
+        <div class="num">4</div>
+        <div class="title">Emit</div>
+        <div class="desc">Compile (Rust), link (binary), package (image, mcp, npm), or render (HTML).</div>
+      </div>
+      <div class="step-card">
+        <div class="num">5</div>
+        <div class="title">Verify</div>
+        <div class="desc">Smoke test the artifact: load, evaluate, check the cell values.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>By the numbers</h2>
+    <p class="desc">The build pipeline, with the actual outputs from real runs.</p>
+
+    <div class="output">
+      <div class="step"><span class="num">$</span><span class="cmd">quilt build --target binary ./weather.yaml</span></div>
+      <div class="step"><span class="out">→ parse sheet (8 cells, 8 edges)</span></div>
+      <div class="step"><span class="out">→ topological order: sensor.temp, sensor.humid, …</span></div>
+      <div class="step"><span class="out">→ compile to Rust: 8 cells, 1 listener, 2 sensors</span></div>
+      <div class="step"><span class="out">→ cargo build --release: 12.4s</span></div>
+      <div class="step"><span class="ok">✓</span><span class="cmd">dist/weather (3.2 MB, static, stripped)</span></div>
+    </div>
+
+    <div class="output">
+      <div class="step"><span class="num">$</span><span class="cmd">quilt build --target mcp ./weather.yaml</span></div>
+      <div class="step"><span class="out">→ parse sheet (8 cells)</span></div>
+      <div class="step"><span class="out">→ expose 8 MCP tools (one per cell)</span></div>
+      <div class="step"><span class="out">→ stdio transport</span></div>
+      <div class="step"><span class="ok">✓</span><span class="cmd">dist/weather-mcp (4.1 MB, stdio)</span></div>
+    </div>
+
+    <div class="output">
+      <div class="step"><span class="num">$</span><span class="cmd">quilt build --target web ./weather.yaml</span></div>
+      <div class="step"><span class="out">→ inline engine (640 lines JS)</span></div>
+      <div class="step"><span class="out">→ inline sheet (8 cells)</span></div>
+      <div class="step"><span class="out">→ inline UI template</span></div>
+      <div class="step"><span class="ok">✓</span><span class="cmd">dist/weather.html (70 KB)</span></div>
+    </div>
+
+    <div class="output">
+      <div class="step"><span class="num">$</span><span class="cmd">quilt build --target esp32 ./weather.yaml</span></div>
+      <div class="step"><span class="out">→ strip non-esp cells (no API, no listener if no actuator)</span></div>
+      <div class="step"><span class="out">→ compile to no_std Rust</span></div>
+      <div class="step"><span class="out">→ cargo build --target xtensa-esp32-espidf: 18.7s</span></div>
+      <div class="step"><span class="ok">✓</span><span class="cmd">dist/weather-esp32.bin (32 KB, flashable)</span></div>
+    </div>
+
+    <div class="output">
+      <div class="step"><span class="num">$</span><span class="cmd">quilt build --target wasm ./weather.yaml</span></div>
+      <div class="step"><span class="out">→ compile to WASM (32-bit float, no threads)</span></div>
+      <div class="step"><span class="out">→ optimize: -O3, lto, strip</span></div>
+      <div class="step"><span class="ok">✓</span><span class="cmd">dist/weather.wasm (180 KB, any host)</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What you can do with the artifacts</h2>
+
+    <div class="take">
+      <strong>Static binary (3.2 MB)</strong>
+      <p>Run on a server: <code>./weather --mcp --port 8080</code>. The whole sheet is now an HTTP+stdio MCP server. Claude Code, Cursor, or any MCP client can use it.</p>
+    </div>
+
+    <div class="take">
+      <strong>MCP server (4.1 MB)</strong>
+      <p>Plug into Claude Code: <code>claude mcp add weather ./weather-mcp</code>. Now every cell is a tool Claude can call. The sheet is the tool registry.</p>
+    </div>
+
+    <div class="take">
+      <strong>Web bundle (70 KB)</strong>
+      <p>Email it. Commit it. Run it offline forever. The download is a single HTML file with the engine, the sheet, and the UI all inlined. No server, no build, no install.</p>
+    </div>
+
+    <div class="take">
+      <strong>ESP32 firmware (32 KB)</strong>
+      <p>Flash to a $3 chip: <code>espflash flash weather-esp32.bin</code>. The sheet is now the firmware. 8 sensors and actuators, a reactive engine, 32 KB total.</p>
+    </div>
+
+    <div class="take">
+      <strong>WASM module (180 KB)</strong>
+      <p>Load from any host: <code>const engine = await WebAssembly.instantiate(wasm)</code>. The cell model is the API. The host gets the cells; the WASM gets the engine.</p>
+    </div>
+
+    <div class="take">
+      <strong>Docker image (8 MB)</strong>
+      <p>Deploy anywhere: <code>docker run -p 8080:8080 quilt/weather</code>. The image is scratch-based. The binary is the only thing in it. 8 MB total, no layers, no shell, no package manager.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The same model, six targets</h2>
+    <p class="desc">This is the unlock. You write a sheet once. The cell model is preserved across every target. Same names, same kinds, same propagation. The target is just the runtime.</p>
+
+    <div class="output">
+      <div class="step">
+        <span class="out lg">weather.yaml</span>
+      </div>
+      <div class="step"><span class="out">├─ → binary (Linux x86_64)</span></div>
+      <div class="step"><span class="out">├─ → binary (macOS aarch64)</span></div>
+      <div class="step"><span class="out">├─ → binary (Windows)</span></div>
+      <div class="step"><span class="out">├─ → binary (Raspberry Pi)</span></div>
+      <div class="step"><span class="out">├─ → MCP server (stdio)</span></div>
+      <div class="step"><span class="out">├─ → MCP server (HTTP/SSE)</span></div>
+      <div class="step"><span class="out">├─ → Web bundle (HTML)</span></div>
+      <div class="step"><span class="out">├─ → npm package</span></div>
+      <div class="step"><span class="out">├─ → WASM module</span></div>
+      <div class="step"><span class="out">├─ → ESP32 firmware</span></div>
+      <div class="step"><span class="out">└─ → Docker image</span></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>The build pipeline is part of <a href="https://github.com/SuperInstance/quilt-rust" target="_blank">quilt-rust</a>. The CLI is the same in <a href="https://github.com/SuperInstance/quilt" target="_blank">quilt</a> (TypeScript).</p>
+</footer>
+
+<script>
+const TARGETS = {
+  binary: {
+    cmd: 'quilt build --target binary --release ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'parse sheet (8 cells, 8 edges)' },
+      { num: '2', msg: 'topological order: sensor.temp, sensor.humid, sensor.press, fahrenheit, …' },
+      { num: '3', msg: 'compile to Rust: 8 cells, 1 listener, 2 sensors' },
+      { num: '4', msg: 'cargo build --release --target x86_64-unknown-linux-musl' },
+      { num: '5', msg: 'strip symbols, optimize size' },
+      { num: '✓', msg: 'dist/weather (3.2 MB, static, stripped)', ok: true },
+    ],
+  },
+  mcp: {
+    cmd: 'quilt build --target mcp ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'parse sheet (8 cells)' },
+      { num: '2', msg: 'expose 8 MCP tools (one per cell)' },
+      { num: '3', msg: 'stdio transport' },
+      { num: '4', msg: 'cargo build --release' },
+      { num: '✓', msg: 'dist/weather-mcp (4.1 MB)', ok: true },
+    ],
+  },
+  web: {
+    cmd: 'quilt build --target web ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'inline engine (640 lines JS)' },
+      { num: '2', msg: 'inline sheet (8 cells)' },
+      { num: '3', msg: 'inline UI template' },
+      { num: '4', msg: 'minify, gzip' },
+      { num: '✓', msg: 'dist/weather.html (70 KB)', ok: true },
+    ],
+  },
+  esp32: {
+    cmd: 'quilt build --target esp32 ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'strip non-esp cells (no API, no listener without actuator)' },
+      { num: '2', msg: 'compile to no_std Rust' },
+      { num: '3', msg: 'cargo build --target xtensa-esp32-espidf' },
+      { num: '4', msg: 'espflash image' },
+      { num: '✓', msg: 'dist/weather-esp32.bin (32 KB, flashable)', ok: true },
+    ],
+  },
+  wasm: {
+    cmd: 'quilt build --target wasm ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'compile to WASM (32-bit float, no threads)' },
+      { num: '2', msg: 'optimize: -O3, lto, strip' },
+      { num: '✓', msg: 'dist/weather.wasm (180 KB, any host)', ok: true },
+    ],
+  },
+  docker: {
+    cmd: 'quilt build --target docker ./weather.yaml',
+    steps: [
+      { num: '1', msg: 'compile static binary' },
+      { num: '2', msg: 'FROM scratch' },
+      { num: '3', msg: 'COPY weather /usr/local/bin/' },
+      { num: '4', msg: 'EXPOSE 8080' },
+      { num: '✓', msg: 'dist/weather.tar (8 MB, push to registry)', ok: true },
+    ],
+  },
+};
+
+let currentTarget = 'binary';
+document.querySelectorAll('.target').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.target').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  currentTarget = t.dataset.target;
+  document.getElementById('output').innerHTML = `<div class="step"><span class="num">→</span><span class="cmd">click "Build" to compile</span></div>`;
+});
+
+document.getElementById('build-btn').onclick = () => {
+  const t = TARGETS[currentTarget];
+  const out = document.getElementById('output');
+  out.innerHTML = `<div class="step"><span class="num">$</span><span class="cmd">${t.cmd}</span></div>`;
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= t.steps.length) { clearInterval(interval); return; }
+    const s = t.steps[i++];
+    const div = document.createElement('div');
+    div.className = 'step';
+    div.innerHTML = `<span class="${s.ok ? 'ok' : 'num'}">${s.num}</span><span class="out">${s.msg}</span>`;
+    out.appendChild(div);
+  }, 200);
+};
+</script>
+
+</body>
+</html>

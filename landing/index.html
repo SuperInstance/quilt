@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quilt — every cell is a live, addressable capability</title>
 <meta name="description" content="A reactive, typed, cellular runtime. From microcontroller to browser to mesh. The spreadsheet model, finally done right.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237ec699'/%3E%3Cstop offset='0.5' stop-color='%235fa8d3'/%3E%3Cstop offset='1' stop-color='%23bb7ec6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Ctext x='50' y='65' font-family='sans-serif' font-size='55' font-weight='bold' text-anchor='middle' fill='%230a0a0a'%3EQ%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -269,6 +272,12 @@ footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
       <a href="patterns.html">Patterns</a>
       <a href="playground.html">Playground</a>
       <a href="cells.html">Cells</a>
+      <a href="apps.html">Apps</a>
+      <a href="build.html">Build</a>
+      <a href="perf.html">Perf</a>
+      <a href="voice.html">Voice</a>
+      <a href="camera.html">Camera</a>
+      <a href="mesh-live.html">Mesh</a>
       <a href="compare.html">Compare</a>
       <a href="start.html">Get started</a>
       <a href="about.html">About</a>
@@ -291,10 +300,17 @@ footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
       <a href="ide.html" class="btn">IDE</a>
       <a href="synoptic.html" class="btn">Synoptic 🎬</a>
       <a href="synoptic3d.html" class="btn">3D View</a>
+      <a href="voice.html" class="btn">🎙 Voice</a>
+      <a href="camera.html" class="btn">📷 Camera</a>
+      <a href="mesh-live.html" class="btn">🕸 Mesh</a>
       <a href="patterns.html" class="btn">Patterns</a>
+      <a href="apps.html" class="btn">Apps</a>
       <a href="tutorial.html" class="btn">Tutorial</a>
       <a href="gallery.html" class="btn">Gallery</a>
+      <a href="build.html" class="btn">Build</a>
+      <a href="perf.html" class="btn">Perf</a>
       <a href="compare.html" class="btn btn-ghost">Compare</a>
+      <a href="start.html" class="btn btn-ghost">Get started</a>
       <a href="showcase.html" class="btn btn-ghost">All 11 repos</a>
     </div>
   </div>
@@ -1070,6 +1086,14 @@ cells:
   }
   renderOutputs();
 })();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 </script>
 
 </body>
