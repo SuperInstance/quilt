@@ -1195,6 +1195,8 @@ Six new production-grade examples:
 - **[Recipes](docs/recipes.md)** — 10 common patterns, copy-paste
 - **[Comparison](docs/comparison.md)** — how Quilt differs from n8n, LangGraph, etc.
 - **[Security](docs/security.md)** — the trust model, what to do in production
+- **[Engineering Bar](docs/engineering-bar.md)** — what "done right" means for a Quilt repo (8 layers)
+- **[Repo Audit](docs/repo-audit.md)** — current state of all 15 repos, scored 0-10
 
 ---
 
