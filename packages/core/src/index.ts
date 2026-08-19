@@ -64,3 +64,4 @@ export { evaluateRouter } from './cells/router.js';
 export { fireListener } from './cells/listener.js';
 export { makeSensorValue } from './cells/sensor.js';
 export { makeIoValue } from './cells/io.js';
+export { evaluateAI, type AIKind, type AICellConfig, type AIEngineLike } from './cells/ai.js';

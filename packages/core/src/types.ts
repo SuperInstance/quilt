@@ -155,7 +155,8 @@ export type CellKind =
   | 'sensor'
   | 'listener'
   | 'router'
-  | 'io';
+  | 'io'
+  | 'ai';
 
 // =====================================================================
 //  STATUS — every value knows its own state

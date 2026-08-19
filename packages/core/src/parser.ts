@@ -58,7 +58,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { SheetDef, CellDef, CellKind } from './types.js';
 
 const VALID_KINDS: CellKind[] = [
-  'value', 'formula', 'api', 'program', 'sensor', 'listener', 'router', 'io',
+  'value', 'formula', 'api', 'program', 'sensor', 'listener', 'router', 'io', 'ai',
 ];
 
 /**

@@ -110,6 +110,7 @@ import { evaluateRouter } from './cells/router.js';
 import { fireListener } from './cells/listener.js';
 import { makeSensorValue } from './cells/sensor.js';
 import { makeIoValue } from './cells/io.js';
+import { evaluateAI, type AIEngineLike } from './cells/ai.js';
 import type { ProgramRuntime } from './cells/program.js';
 
 /**
@@ -122,9 +123,11 @@ import type { ProgramRuntime } from './cells/program.js';
 export interface EngineOptions {
   maxConcurrency?: number;
   tracing?: boolean;
+  /** Optional AI engine for `kind: 'ai'` cells. If null, AI cells will error. */
+  ai?: AIEngineLike;
 }
 
-const defaultOptions: Required<EngineOptions> = {
+const defaultOptions: Required<Omit<EngineOptions, 'ai'>> = {
   maxConcurrency: 16,
   tracing: false,
 };
@@ -140,12 +143,13 @@ export class QuiltEngine implements ProgramRuntime {
   private subscriptions = new Map<string, Subscription>();
   private inflight = new Map<CellId, Promise<CellValue>>();
   private traces: EvaluationTrace[] = [];
-  private options: Required<EngineOptions>;
+  private options: Required<Omit<EngineOptions, 'ai'>> & { ai?: AIEngineLike };
   private subscriptionCounter = 0;
 
   constructor(id: string = 'default', options: EngineOptions = {}) {
     this.id = id;
-    this.options = { ...defaultOptions, ...options };
+    const { ai, ...rest } = options;
+    this.options = { ...defaultOptions, ...rest, ai };
   }
 
   // ===========================================================================
@@ -176,7 +180,7 @@ export class QuiltEngine implements ProgramRuntime {
     // Build dependency edges. For formulas, auto-detect by scanning
     // the expression. For everything else, use the declared `deps`.
     for (const cell of this.cells.values()) {
-      if (cell.def.kind === 'formula' && cell.def.expr) {
+      if (cell.def.kind === 'formula' || cell.def.kind === 'ai') {
         this.autoDetectDeps(cell);
       }
       for (const dep of cell.def.deps ?? []) {
@@ -272,7 +276,8 @@ export class QuiltEngine implements ProgramRuntime {
 
       case 'api':
       case 'program':
-      case 'router': {
+      case 'router':
+      case 'ai': {
         const key = contextKey(fullCtx);
         const cached = cell.contextCache.get(key);
         if (cached && cached.status === 'ready') {
@@ -482,6 +487,38 @@ export class QuiltEngine implements ProgramRuntime {
       result = await evaluateProgram(cell, ctx, input, this);
     } else if (cell.def.kind === 'router') {
       result = await evaluateRouter(cell, ctx, input, this);
+    } else if (cell.def.kind === 'ai') {
+      if (!this.options.ai) {
+        result = { data: null, status: 'error', error: { message: 'AI cell evaluated but no AI engine configured. Pass an `ai` engine to the QuiltEngine constructor.' } };
+      } else {
+        // Recursively resolve upstream cell values for {{id}} substitution
+        const resolved = new Set<string>();
+        const resolver = (id: string): any => {
+          if (resolved.has(id)) return null;
+          resolved.add(id);
+          const c = this.cells.get(id);
+          if (!c) return null;
+          if (c.value.status === 'ready') return c.value.data;
+          if (c.value.status === 'pending' || c.value.status === 'evaluating') {
+            // Upstream not yet evaluated — for value cells, evaluate sync
+            if (c.def.kind === 'value') {
+              c.value = evaluateValue(c, ctx);
+              return c.value.data;
+            }
+            return null;
+          }
+          if (c.value.status === 'error') return null;
+          return c.value.data;
+        };
+        const aiResult = await evaluateAI(cell.def as any, ctx, this.options.ai, resolver);
+        result = {
+          data: aiResult.value,
+          status: aiResult.error ? 'error' : 'ready',
+          error: aiResult.error ? { message: aiResult.error } : undefined,
+          effects: [{ kind: 'model', provider: (cell.def as any).provider || 'unknown' }],
+          computedAt: Date.now(),
+        };
+      }
     } else {
       result = { data: undefined, status: 'error', error: { message: `not effectful: ${cell.def.kind}` } };
     }
@@ -536,7 +573,9 @@ export class QuiltEngine implements ProgramRuntime {
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
       if (!dep) continue;
-      if (dep.def.kind === 'formula' || dep.def.kind === 'value') {
+      // Effectful cells (api, program, router, ai) also need cache invalidation
+      // when an upstream value changes
+      if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai') {
         dep.value = { ...dep.value, status: 'stale' };
         dep.contextCache.clear();
       }
@@ -587,14 +626,28 @@ export class QuiltEngine implements ProgramRuntime {
    *
    * Good enough for MVP. A real implementation would parse the
    * expression into an AST and walk it.
+   *
+   * For AI cells, we scan the prompt, input, and image fields for
+   * {{cell.id}} references.
    */
   private autoDetectDeps(cell: Cell): void {
-    if (!cell.def.expr) return;
+    let fields: string[] = [];
+    if (cell.def.expr) fields.push(cell.def.expr);
+    if (cell.def.kind === 'ai') {
+      const ai = cell.def as any;
+      if (ai.prompt) fields.push(ai.prompt);
+      if (ai.input) fields.push(ai.input);
+      if (ai.image) fields.push(ai.image);
+    }
+    if (fields.length === 0) return;
+    const text = fields.join(' ');
     const knownIds = new Set(this.cells.keys());
     for (const id of knownIds) {
       if (id === cell.id) continue;
-      const re = new RegExp(`\\b${escapeRegex(id)}\\b`);
-      if (re.test(cell.def.expr)) {
+      // Match either {{id}} (template) or \bid\b (raw token)
+      const reTemplate = new RegExp(`\\{\\{\\s*${escapeRegex(id)}\\s*\\}\\}`);
+      const reToken = new RegExp(`\\b${escapeRegex(id)}\\b`);
+      if (reTemplate.test(text) || reToken.test(text)) {
         this.addDep(cell.id, id);
       }
     }
