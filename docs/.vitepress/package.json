@@ -1,0 +1,17 @@
+{
+  "name": "@quilt/docs",
+  "version": "0.6.0",
+  "description": "Quilt documentation site (VitePress)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0",
+    "vitepress-plugin-search": "^1.0.0",
+    "vue": "^3.4.0"
+  }
+}
