@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt IDE — the workbench for cell graphs</title>
+<meta name="description" content="A full IDE for Quilt sheets. Source editor, live cell graph, console, time-travel, profiler. The workbench for cell graphs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --bg-elev-3: #232323; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --gray: #888; --radius: 4px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.5; overflow: hidden; height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ============================ APP ============================ */
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+
+/* TOP: title bar */
+.titlebar { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: var(--bg-elev); border-bottom: 1px solid var(--border); -webkit-app-region: drag; }
+.titlebar-l { display: flex; align-items: center; gap: 12px; }
+.titlebar-r { display: flex; gap: 6px; align-items: center; -webkit-app-region: no-drag; }
+.tb-logo { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; }
+.tb-mark { width: 18px; height: 18px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 3px; }
+.tb-menu { display: flex; gap: 4px; font-size: 0.8rem; color: var(--text-dim); }
+.tb-menu a { padding: 4px 8px; border-radius: 4px; }
+.tb-menu a:hover { background: var(--bg-elev-2); color: var(--text); }
+
+/* TABS */
+.tabs { display: flex; background: var(--bg-elev-2); border-bottom: 1px solid var(--border); padding: 0 12px; }
+.tab { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--bg); border: 1px solid var(--border); border-bottom: none; border-radius: 4px 4px 0 0; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; margin-top: 4px; margin-right: 2px; }
+.tab.active { background: var(--bg-elev); color: var(--text); }
+.tab .x { color: var(--text-faint); cursor: pointer; padding: 0 4px; }
+.tab .x:hover { color: var(--red); }
+.tab .dot { width: 6px; height: 6px; border-radius: 50%; }
+.tab .dot.value { background: var(--green); }
+.tab .dot.dirty { background: var(--yellow); }
+
+/* MAIN: 3-pane layout */
+.main { display: grid; grid-template-columns: 240px 1fr 320px; min-height: 0; overflow: hidden; }
+
+/* SIDEBAR LEFT: file tree */
+.sidebar { background: var(--bg-elev); border-right: 1px solid var(--border); overflow-y: auto; padding: 8px 0; }
+.sidebar-section { padding: 4px 0; }
+.sidebar-title { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); font-weight: 600; }
+.sidebar-title .actions { display: flex; gap: 4px; }
+.sidebar-title button { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 0 4px; }
+.sidebar-title button:hover { color: var(--text); }
+.file-tree { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.file-item { display: flex; align-items: center; gap: 6px; padding: 4px 12px; cursor: pointer; color: var(--text-dim); }
+.file-item:hover { background: var(--bg-elev-2); color: var(--text); }
+.file-item.active { background: var(--bg-elev-2); color: var(--green); }
+.file-item .ico { width: 14px; }
+.file-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.file-item .meta { color: var(--text-faint); font-size: 0.7rem; margin-left: auto; }
+
+/* MAIN: editor + graph */
+.editor-area { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.pane-tabs { display: flex; background: var(--bg-elev-2); border-bottom: 1px solid var(--border); }
+.pane-tab { padding: 6px 16px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; }
+.pane-tab:hover { color: var(--text); }
+.pane-tab.active { color: var(--text); border-bottom-color: var(--green); background: var(--bg-elev); }
+.pane-content { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+
+.editor-pane { position: absolute; inset: 0; display: grid; grid-template-columns: 48px 1fr; }
+.editor-gutter { background: var(--bg-elev); border-right: 1px solid var(--border); padding: 8px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-faint); text-align: right; user-select: none; overflow: hidden; }
+.editor-gutter .ln { padding: 0 8px; }
+.editor-gutter .ln.active { color: var(--green); }
+.editor-textarea { background: var(--bg); color: var(--text); border: none; outline: none; padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; resize: none; tab-size: 2; }
+.editor-textarea::selection { background: rgba(126,198,153,0.3); }
+
+.graph-pane { position: absolute; inset: 0; overflow: hidden; background: var(--bg); }
+#graph-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.graph-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; background: rgba(19,19,19,0.9); border: 1px solid var(--border); border-radius: 999px; padding: 4px; z-index: 10; backdrop-filter: blur(20px); }
+.graph-btn { padding: 4px 10px; background: transparent; border: none; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; border-radius: 999px; font-family: inherit; }
+.graph-btn:hover { color: var(--text); }
+.graph-btn.active { background: var(--green); color: var(--bg); }
+
+.console-pane { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); }
+.console-out { flex: 1; overflow-y: auto; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.console-line { padding: 2px 0; display: flex; gap: 8px; }
+.console-line .ts { color: var(--text-faint); }
+.console-line .lvl { font-weight: 600; }
+.console-line.info .lvl { color: var(--blue); }
+.console-line.warn .lvl { color: var(--yellow); }
+.console-line.error .lvl { color: var(--red); }
+.console-line.success .lvl { color: var(--green); }
+.console-line .msg { color: var(--text-dim); }
+.console-prompt { border-top: 1px solid var(--border); padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.console-prompt .arrow { color: var(--green); }
+.console-prompt input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 0.85rem; }
+
+.timetravel-pane { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 16px; }
+.tt-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.tt-controls button { padding: 6px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+.tt-controls button:hover { color: var(--text); }
+.tt-slider { flex: 1; }
+.tt-events { flex: 1; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.tt-event { padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.tt-event .ts { color: var(--text-faint); width: 60px; }
+.tt-event .id { color: var(--green); width: 120px; }
+.tt-event .v { color: var(--text-dim); }
+
+/* SIDEBAR RIGHT: properties / inspector */
+.rightbar { background: var(--bg-elev); border-left: 1px solid var(--border); overflow-y: auto; padding: 0; }
+.right-section { border-bottom: 1px solid var(--border); padding: 12px 16px; }
+.right-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 8px; font-weight: 600; }
+.right-empty { color: var(--text-faint); font-size: 0.8rem; font-style: italic; }
+.prop { display: flex; justify-content: space-between; padding: 4px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.prop .k { color: var(--text-faint); }
+.prop .v { color: var(--text); }
+.prop .v.green { color: var(--green); }
+.prop input { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 2px 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; width: 110px; text-align: right; outline: none; }
+.prop input:focus { border-color: var(--green); }
+
+/* STATUS BAR */
+.statusbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; background: var(--blue); color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; flex-shrink: 0; }
+.statusbar .left, .statusbar .right { display: flex; gap: 16px; align-items: center; }
+.statusbar .item { display: flex; align-items: center; gap: 4px; }
+.statusbar .item .icon { font-size: 10px; }
+.statusbar .item .v { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- TITLE BAR -->
+  <div class="titlebar">
+    <div class="titlebar-l">
+      <div class="tb-logo"><span class="tb-mark"></span><span>Quilt IDE</span></div>
+      <div class="tb-menu">
+        <a href="index.html">Home</a>
+        <a href="showcase.html">Showcase</a>
+        <a href="synoptic.html">Synoptic</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="docs.html">Docs</a>
+      </div>
+    </div>
+    <div class="titlebar-r">
+      <span style="font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace;">v0.1.0 · 146 tests</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="weather">
+      <span class="dot value"></span>
+      <span>weather.yaml</span>
+      <span class="x">✕</span>
+    </div>
+    <div class="tab" data-tab="budget">
+      <span class="dot value"></span>
+      <span>budget.yaml</span>
+      <span class="x">✕</span>
+    </div>
+    <div class="tab" data-tab="agent">
+      <span class="dot value"></span>
+      <span>agent.yaml</span>
+      <span class="x">✕</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- SIDEBAR LEFT -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">
+          <span>explorer</span>
+          <div class="actions">
+            <button title="New file">+</button>
+            <button title="Refresh">⟳</button>
+          </div>
+        </div>
+        <div class="file-tree" id="file-tree">
+          <div class="file-item active" data-file="weather"><span class="ico">📄</span><span>weather.yaml</span><span class="meta">8 cells</span></div>
+          <div class="file-item" data-file="budget"><span class="ico">📄</span><span>budget.yaml</span><span class="meta">10 cells</span></div>
+          <div class="file-item" data-file="agent"><span class="ico">📄</span><span>agent.yaml</span><span class="meta">8 cells</span></div>
+          <div class="file-item" data-file="recipe-scaler"><span class="ico">📄</span><span>recipe-scaler.yaml</span><span class="meta">6 cells</span></div>
+          <div class="file-item" data-file="morse-decoder"><span class="ico">📄</span><span>morse-decoder.yaml</span><span class="meta">5 cells</span></div>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title"><span>cells</span></div>
+        <div id="cells-list" style="padding: 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;"></div>
+      </div>
+    </aside>
+
+    <!-- EDITOR + GRAPH -->
+    <div class="editor-area">
+      <div class="pane-tabs">
+        <div class="pane-tab active" data-pane="editor">📝 source</div>
+        <div class="pane-tab" data-pane="graph">◯ graph</div>
+        <div class="pane-tab" data-pane="console">▶ console</div>
+        <div class="pane-tab" data-pane="time">⏱ time travel</div>
+      </div>
+      <div class="pane-content">
+        <div class="editor-pane" id="pane-editor">
+          <div class="editor-gutter" id="gutter"></div>
+          <textarea class="editor-textarea" id="editor" spellcheck="false"></textarea>
+        </div>
+        <div class="graph-pane" id="pane-graph" style="display: none;">
+          <canvas id="graph-canvas"></canvas>
+          <div class="graph-toolbar">
+            <button class="graph-btn active" data-layout="force">force</button>
+            <button class="graph-btn" data-layout="grid">grid</button>
+            <button class="graph-btn" data-layout="tree">tree</button>
+          </div>
+        </div>
+        <div class="console-pane" id="pane-console" style="display: none;">
+          <div class="console-out" id="console-out"></div>
+          <div class="console-prompt">
+            <span class="arrow">›</span>
+            <input id="console-input" placeholder="Type a command, e.g. cells.list, engine.get('heat_index')" />
+          </div>
+        </div>
+        <div class="timetravel-pane" id="pane-time" style="display: none;">
+          <div class="tt-controls">
+            <button id="tt-rewind">⏮ Rewind</button>
+            <button id="tt-back">⏪ Step</button>
+            <input type="range" class="tt-slider" id="tt-slider" min="0" max="100" value="100">
+            <button id="tt-fwd">Step ⏩</button>
+            <button id="tt-end">⏭ End</button>
+            <button id="tt-fork" style="background: var(--green); color: var(--bg); border-color: var(--green);">🌿 Fork</button>
+          </div>
+          <div class="tt-events" id="tt-events"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR RIGHT -->
+    <aside class="rightbar">
+      <div class="right-section">
+        <div class="right-title">Cell inspector</div>
+        <div id="inspector">
+          <div class="right-empty">Click a cell in the graph.</div>
+        </div>
+      </div>
+      <div class="right-section">
+        <div class="right-title">Properties</div>
+        <div id="properties">
+          <div class="prop"><span class="k">cells</span><span class="v" id="p-cells">8</span></div>
+          <div class="prop"><span class="k">edges</span><span class="v" id="p-edges">7</span></div>
+          <div class="prop"><span class="k">listeners</span><span class="v" id="p-listeners">1</span></div>
+          <div class="prop"><span class="k">evaluations</span><span class="v" id="p-evals">0</span></div>
+          <div class="prop"><span class="k">last eval</span><span class="v" id="p-last-eval">—</span></div>
+        </div>
+      </div>
+      <div class="right-section">
+        <div class="right-title">Run</div>
+        <button class="prop" style="background: var(--green); color: var(--bg); padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; border: none; width: 100%; justify-content: center; margin-bottom: 4px;" id="btn-run">▶ Evaluate sheet</button>
+        <button class="prop" style="background: var(--bg-elev-2); color: var(--text-dim); padding: 6px 12px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); width: 100%; justify-content: center;" id="btn-shuffle">🎲 Randomize sensors</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <div class="left">
+      <div class="item"><span class="icon">●</span><span>main</span></div>
+      <div class="item"><span class="icon">🌿</span><span>0 forks</span></div>
+      <div class="item"><span>UTF-8</span></div>
+      <div class="item"><span>YAML</span></div>
+    </div>
+    <div class="right">
+      <div class="item"><span class="icon">▦</span><span id="sb-cells">8 cells</span></div>
+      <div class="item"><span class="icon">⚡</span><span id="sb-evals">0 evals</span></div>
+      <div class="item"><span class="icon">🔒</span><span>plaintext</span></div>
+      <div class="item"><span class="icon">⏱</span><span>0 ms</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// QUILT IDE — full multi-pane workbench
+// =========================================================================
+
+const SHEETS = {
+  weather: {
+    yaml: `id: weather
+title: "Weather station"
+description: "Live sensor cells with reactive formulas."
+version: 0.1.0
+cells:
+  - id: sensor.temp
+    kind: sensor
+    source: dht22
+    default: 22
+  - id: sensor.humid
+    kind: sensor
+    source: dht22
+    default: 50
+  - id: fahrenheit
+    kind: formula
+    expr: "sensor.temp * 1.8 + 32"
+    description: "Convert Celsius to Fahrenheit"
+  - id: heat_index
+    kind: formula
+    expr: "sensor.temp + (sensor.humid / 100) * 5"
+    description: "Apparent temperature"
+  - id: comfort
+    kind: formula
+    expr: 'heat_index < 26 ? "cool" : (heat_index < 30 ? "comfortable" : "hot")'
+    description: "Comfort category"
+  - id: fan.speed
+    kind: formula
+    expr: 'heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)'
+    description: "Fan duty cycle"
+  - id: led.color
+    kind: io
+    port: "gpio2"
+    direction: out
+    description: "RGB LED indicator"
+  - id: alert
+    kind: listener
+    watch: comfort
+    condition: 'comfort === "hot"'
+    action: 'console.log("⚠️ It\\'s hot!")'
+    description: "Heat alert"`,
+    cells: 8, edges: 7,
+  },
+  budget: {
+    yaml: `id: budget
+title: "Monthly budget"
+version: 0.1.0
+cells:
+  - id: budget.total
+    kind: value
+    value: 5000
+  - id: spend.rent
+    kind: value
+    value: 1800
+  - id: spend.food
+    kind: value
+    value: 600
+  - id: spend.transit
+    kind: value
+    value: 120
+  - id: spend.fun
+    kind: value
+    value: 200
+  - id: spent
+    kind: formula
+    expr: "spend.rent + spend.food + spend.transit + spend.fun"
+  - id: remaining
+    kind: formula
+    expr: "budget.total - spent"
+  - id: percent
+    kind: formula
+    expr: "spent / budget.total"
+  - id: status
+    kind: formula
+    expr: 'percent > 0.9 ? "danger" : (percent > 0.7 ? "warning" : "ok")'
+  - id: alert
+    kind: listener
+    watch: status
+    condition: 'status === "danger"'
+    action: 'console.log("⚠️ Over budget!")'`,
+    cells: 10, edges: 9,
+  },
+  agent: {
+    yaml: `id: simple-agent
+title: "Simple research agent"
+version: 0.1.0
+cells:
+  - id: input.task
+    kind: value
+    value: "What is Quilt?"
+  - id: memory
+    kind: value
+    value: []
+  - id: tool.search
+    kind: api
+    endpoint: "https://api.search.example/query"
+    method: POST
+  - id: tool.llm
+    kind: api
+    endpoint: "https://api.openai.com/v1/chat/completions"
+    method: POST
+  - id: reasoning.prompt
+    kind: formula
+    expr: '"You are an agent. The user asked: " + input.task'
+  - id: reasoning.thought
+    kind: program
+    code: "return await runtime.call('tool.llm', { prompt: runtime.get('reasoning.prompt').data })"
+  - id: output
+    kind: formula
+    expr: "reasoning.thought"`,
+    cells: 7, edges: 5,
+  },
+};
+
+let state = {
+  activeTab: 'weather',
+  activePane: 'editor',
+  engine: null,
+  cells: [],
+  edges: [],
+  selectedId: null,
+  evals: 0,
+  history: [],
+  historyIdx: -1,
+};
+
+const editor = document.getElementById('editor');
+const gutter = document.getElementById('gutter');
+const consoleOut = document.getElementById('console-out');
+const consoleInput = document.getElementById('console-input');
+
+function loadTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.file-item').forEach(f => f.classList.toggle('active', f.dataset.file === name));
+  editor.value = SHEETS[name].yaml;
+  updateGutter();
+  parseCells(editor.value);
+  renderCellsList();
+  renderGraph();
+  if (state.engine === null) initEngine();
+  log('info', 'Loaded sheet: ' + name);
+  document.getElementById('p-cells').textContent = state.cells.length;
+  document.getElementById('p-edges').textContent = state.edges.length;
+  document.getElementById('p-listeners').textContent = state.cells.filter(c => c.kind === 'listener').length;
+  document.getElementById('sb-cells').textContent = state.cells.length + ' cells';
+}
+
+function updateGutter() {
+  const lines = editor.value.split('\n').length;
+  let html = '';
+  for (let i = 1; i <= lines; i++) {
+    html += `<div class="ln">${i}</div>`;
+  }
+  gutter.innerHTML = html;
+}
+
+editor.addEventListener('input', () => {
+  updateGutter();
+  parseCells(editor.value);
+  renderCellsList();
+  renderGraph();
+  // mark dirty
+  const t = document.querySelector(`.tab[data-tab="${state.activeTab}"] .dot`);
+  if (t) { t.classList.remove('value'); t.classList.add('dirty'); }
+});
+
+function parseCells(yaml) {
+  // Simple YAML parser
+  const cells = [];
+  const lines = yaml.split('\n');
+  let current = null;
+  for (const line of lines) {
+    const m = line.match(/^\s*-\s*id:\s*(.+)$/);
+    if (m) {
+      if (current) cells.push(current);
+      current = { id: m[1].trim(), kind: 'value', config: {} };
+    } else if (current) {
+      const fm = line.match(/^\s*-\s*kind:\s*(.+)$/);
+      if (fm) current.kind = fm[1].trim();
+      const km = line.match(/^\s*([a-z_.]+):\s*(.+?)\s*$/);
+      if (km && !['id', 'kind'].includes(km[1])) {
+        let v = km[2].replace(/^["']|["']$/g, '');
+        try { v = JSON.parse(km[2]); } catch (e) {}
+        current.config[km[1]] = v;
+      }
+    }
+  }
+  if (current) cells.push(current);
+  // Edges: parse formula dependencies (simple)
+  const edges = [];
+  for (const cell of cells) {
+    if (cell.config.expr) {
+      for (const other of cells) {
+        if (other.id === cell.id) continue;
+        if (cell.config.expr.includes(other.id)) {
+          edges.push([other.id, cell.id]);
+        }
+      }
+    }
+    if (cell.config.watch && cell.config.watch !== cell.id) {
+      edges.push([cell.config.watch, cell.id]);
+    }
+  }
+  state.cells = cells;
+  state.edges = edges;
+}
+
+function renderCellsList() {
+  const list = document.getElementById('cells-list');
+  const kindColors = { value: 'var(--green)', formula: 'var(--blue)', program: 'var(--purple)', sensor: 'var(--tan)', api: 'var(--red)', listener: 'var(--yellow)', router: 'var(--cyan)', io: 'var(--gray)' };
+  list.innerHTML = state.cells.map(c => {
+    return `<div class="prop" style="cursor: pointer;" data-cell="${c.id}">
+      <span class="k" style="color: ${kindColors[c.kind]};">${c.kind[0].toUpperCase()}</span>
+      <span class="v" style="text-align: left; flex: 1; margin-left: 6px;">${c.id}</span>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-cell]').forEach(el => el.addEventListener('click', () => {
+    state.selectedId = el.dataset.cell;
+    renderInspector();
+    renderGraph();
+  }));
+}
+
+function renderInspector() {
+  const ins = document.getElementById('inspector');
+  if (!state.selectedId) {
+    ins.innerHTML = '<div class="right-empty">Click a cell in the graph.</div>';
+    return;
+  }
+  const c = state.cells.find(x => x.id === state.selectedId);
+  if (!c) {
+    ins.innerHTML = '<div class="right-empty">Cell not found.</div>';
+    return;
+  }
+  const kindColors = { value: 'green', formula: 'blue', program: 'purple', sensor: 'tan', api: 'red', listener: 'yellow', router: 'cyan', io: 'gray' };
+  ins.innerHTML = `
+    <div class="prop"><span class="k">id</span><input value="${c.id}" readonly style="opacity: 0.6;" /></div>
+    <div class="prop"><span class="k">kind</span><span class="v ${kindColors[c.kind]}">${c.kind}</span></div>
+    ${c.config.expr ? `<div class="prop"><span class="k">expr</span><input value="${c.config.expr}" readonly style="opacity: 0.6;" /></div>` : ''}
+    ${c.config.value !== undefined ? `<div class="prop"><span class="k">value</span><input value="${c.config.value}" readonly style="opacity: 0.6;" /></div>` : ''}
+    ${c.config.endpoint ? `<div class="prop"><span class="k">endpoint</span><input value="${c.config.endpoint}" readonly style="opacity: 0.6;" /></div>` : ''}
+    <div style="padding-top: 8px; border-top: 1px solid var(--border); margin-top: 8px;">
+      <div class="prop"><span class="k">in-edges</span><span class="v">${state.edges.filter(e => e[1] === c.id).length}</span></div>
+      <div class="prop"><span class="k">out-edges</span><span class="v">${state.edges.filter(e => e[0] === c.id).length}</span></div>
+    </div>
+  `;
+}
+
+// ============================ GRAPH PANE ============================
+
+const graphCanvas = document.getElementById('graph-canvas');
+const graphCtx = graphCanvas.getContext('2d');
+let graphLayout = 'force';
+let graphPositions = new Map();
+
+function resizeGraph() {
+  const dpr = window.devicePixelRatio || 1;
+  graphCanvas.width = graphCanvas.offsetWidth * dpr;
+  graphCanvas.height = graphCanvas.offsetHeight * dpr;
+  graphCtx.scale(dpr, dpr);
+}
+window.addEventListener('resize', () => { if (state.activePane === 'graph') { resizeGraph(); renderGraph(); } });
+
+function layoutGraph() {
+  const w = graphCanvas.offsetWidth, h = graphCanvas.offsetHeight;
+  const cells = state.cells;
+  if (graphLayout === 'grid') {
+    const cols = Math.ceil(Math.sqrt(cells.length));
+    cells.forEach((c, i) => {
+      graphPositions.set(c.id, { x: 80 + (i % cols) * 200, y: 60 + Math.floor(i / cols) * 100 });
+    });
+  } else if (graphLayout === 'tree') {
+    // Simple topological layout
+    const layers = new Map();
+    const visited = new Set();
+    const roots = cells.filter(c => !state.edges.some(e => e[1] === c.id));
+    function depth(id) {
+      if (layers.has(id)) return layers.get(id);
+      const ins = state.edges.filter(e => e[1] === id);
+      if (ins.length === 0) { layers.set(id, 0); return 0; }
+      const d = Math.max(...ins.map(e => depth(e[0]) + 1));
+      layers.set(id, d); return d;
+    }
+    cells.forEach(c => depth(c.id));
+    const maxD = Math.max(0, ...[...layers.values()]);
+    cells.forEach(c => {
+      const d = layers.get(c.id) || 0;
+      const layerCells = cells.filter(x => (layers.get(x.id) || 0) === d);
+      const idx = layerCells.indexOf(c);
+      graphPositions.set(c.id, {
+        x: 100 + (d / Math.max(1, maxD)) * (w - 200),
+        y: 60 + (idx / Math.max(1, layerCells.length)) * (h - 120),
+      });
+    });
+  } else {
+    // Force-directed initial
+    if (graphPositions.size === 0) {
+      cells.forEach((c, i) => {
+        const angle = (i / cells.length) * Math.PI * 2;
+        graphPositions.set(c.id, {
+          x: w/2 + Math.cos(angle) * Math.min(w, h) * 0.3,
+          y: h/2 + Math.sin(angle) * Math.min(w, h) * 0.3,
+        });
+      });
+    }
+  }
+}
+
+function updateForces() {
+  if (graphLayout !== 'force') return;
+  const w = graphCanvas.offsetWidth, h = graphCanvas.offsetHeight;
+  // Repulsion
+  for (const a of state.cells) {
+    const pa = graphPositions.get(a.id);
+    if (!pa) continue;
+    pa.vx = (pa.vx || 0) * 0.7;
+    pa.vy = (pa.vy || 0) * 0.7;
+    for (const b of state.cells) {
+      if (a.id === b.id) continue;
+      const pb = graphPositions.get(b.id);
+      if (!pb) continue;
+      const dx = pa.x - pb.x, dy = pa.y - pb.y;
+      const d2 = dx*dx + dy*dy + 0.01;
+      const f = 8000 / d2;
+      pa.vx += (dx / Math.sqrt(d2)) * f;
+      pa.vy += (dy / Math.sqrt(d2)) * f;
+    }
+  }
+  // Attraction along edges
+  for (const [from, to] of state.edges) {
+    const pf = graphPositions.get(from), pt = graphPositions.get(to);
+    if (!pf || !pt) continue;
+    const dx = pt.x - pf.x, dy = pt.y - pf.y;
+    const d = Math.sqrt(dx*dx + dy*dy) + 0.01;
+    const f = (d - 150) * 0.04;
+    pf.vx += (dx/d) * f;
+    pf.vy += (dy/d) * f;
+    pt.vx -= (dx/d) * f;
+    pt.vy -= (dy/d) * f;
+  }
+  // Apply
+  for (const c of state.cells) {
+    const p = graphPositions.get(c.id);
+    if (!p) continue;
+    p.x += (p.vx || 0) * 0.015;
+    p.y += (p.vy || 0) * 0.015;
+    p.x = Math.max(40, Math.min(w - 40, p.x));
+    p.y = Math.max(40, Math.min(h - 40, p.y));
+  }
+}
+
+function renderGraph() {
+  if (state.activePane !== 'graph') return;
+  const w = graphCanvas.offsetWidth, h = graphCanvas.offsetHeight;
+  graphCtx.fillStyle = '#0a0a0a';
+  graphCtx.fillRect(0, 0, w, h);
+  if (graphPositions.size !== state.cells.length) {
+    graphPositions.clear();
+    layoutGraph();
+  }
+  updateForces();
+  const COLORS = { value: '#7ec699', formula: '#5fa8d3', program: '#bb7ec6', sensor: '#c6a87e', api: '#c67e7e', listener: '#c6c67e', router: '#7ec6c6', io: '#888888' };
+  const ICONS = { value: '📦', formula: 'ƒ', program: '▶', sensor: '👁', api: '🌐', listener: '🔔', router: '↪', io: '🔌' };
+  // Edges
+  for (const [fromId, toId] of state.edges) {
+    const from = graphPositions.get(fromId), to = graphPositions.get(toId);
+    if (!from || !to) continue;
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const cx = (from.x + to.x) / 2 + (-dy / Math.sqrt(dx*dx+dy*dy)) * 30;
+    const cy = (from.y + to.y) / 2 + (dx / Math.sqrt(dx*dx+dy*dy)) * 30;
+    graphCtx.beginPath();
+    graphCtx.moveTo(from.x, from.y);
+    graphCtx.quadraticCurveTo(cx, cy, to.x, to.y);
+    graphCtx.strokeStyle = 'rgba(255,255,255,0.12)';
+    graphCtx.lineWidth = 1.5;
+    graphCtx.stroke();
+    // Pulse
+    const t = (Date.now() * 0.0005) % 1;
+    const px = (1-t)*(1-t)*from.x + 2*(1-t)*t*cx + t*t*to.x;
+    const py = (1-t)*(1-t)*from.y + 2*(1-t)*t*cy + t*t*to.y;
+    graphCtx.beginPath();
+    graphCtx.arc(px, py, 3, 0, Math.PI * 2);
+    graphCtx.fillStyle = (COLORS[state.cells.find(c => c.id === fromId)?.kind] || '#fff') + 'cc';
+    graphCtx.fill();
+  }
+  // Cells
+  for (const c of state.cells) {
+    const p = graphPositions.get(c.id);
+    const color = COLORS[c.kind] || '#fff';
+    const r = state.selectedId === c.id ? 24 : 18;
+    if (state.selectedId === c.id) {
+      graphCtx.beginPath();
+      graphCtx.arc(p.x, p.y, r + 6, 0, Math.PI * 2);
+      graphCtx.fillStyle = color + '44';
+      graphCtx.fill();
+    }
+    graphCtx.beginPath();
+    graphCtx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    graphCtx.fillStyle = color + '22';
+    graphCtx.fill();
+    graphCtx.lineWidth = 2;
+    graphCtx.strokeStyle = color;
+    graphCtx.stroke();
+    graphCtx.font = '14px sans-serif';
+    graphCtx.textAlign = 'center';
+    graphCtx.textBaseline = 'middle';
+    graphCtx.fillText(ICONS[c.kind] || '?', p.x, p.y);
+    graphCtx.font = '10px JetBrains Mono';
+    graphCtx.fillStyle = '#a0a0a0';
+    graphCtx.textBaseline = 'top';
+    graphCtx.fillText(c.id.length > 12 ? c.id.slice(0, 11) + '…' : c.id, p.x, p.y + r + 4);
+  }
+  requestAnimationFrame(renderGraph);
+}
+
+graphCanvas.addEventListener('click', e => {
+  const rect = graphCanvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  for (const c of state.cells) {
+    const p = graphPositions.get(c.id);
+    if (!p) continue;
+    const dx = x - p.x, dy = y - p.y;
+    if (dx*dx + dy*dy < 24*24) {
+      state.selectedId = c.id;
+      renderInspector();
+      return;
+    }
+  }
+  state.selectedId = null;
+  renderInspector();
+});
+
+document.querySelectorAll('[data-layout]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-layout]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  graphLayout = b.dataset.layout;
+  graphPositions.clear();
+  layoutGraph();
+}));
+
+// ============================ CONSOLE ============================
+
+function log(level, msg) {
+  const t = new Date().toLocaleTimeString();
+  const line = document.createElement('div');
+  line.className = 'console-line ' + level;
+  line.innerHTML = `<span class="ts">${t}</span><span class="lvl">${level.toUpperCase()}</span><span class="msg">${escapeHtml(msg)}</span>`;
+  consoleOut.appendChild(line);
+  consoleOut.scrollTop = consoleOut.scrollHeight;
+}
+
+consoleInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const cmd = consoleInput.value.trim();
+    if (!cmd) return;
+    log('info', '> ' + cmd);
+    // Simple command parser
+    try {
+      if (cmd === 'cells.list') {
+        log('success', state.cells.map(c => c.id + ' (' + c.kind + ')').join(', '));
+      } else if (cmd === 'help') {
+        log('info', 'commands: cells.list, edges.list, eval, get <id>, set <id> <value>, history');
+      } else if (cmd === 'edges.list') {
+        log('success', state.edges.map(e => e[0] + ' → ' + e[1]).join(', '));
+      } else if (cmd === 'eval') {
+        runEvaluation();
+      } else if (cmd.startsWith('get ')) {
+        const id = cmd.slice(4);
+        const c = state.cells.find(x => x.id === id);
+        if (c) log('success', id + ' = ' + JSON.stringify(c.config.value !== undefined ? c.config.value : '(formula)'));
+        else log('error', 'cell not found: ' + id);
+      } else if (cmd.startsWith('set ')) {
+        const m = cmd.match(/^set (\S+) (.+)$/);
+        if (m) {
+          const id = m[1], val = isNaN(m[2]) ? m[2] : Number(m[2]);
+          const c = state.cells.find(x => x.id === id);
+          if (c) { c.config.value = val; log('success', 'set ' + id + ' = ' + val); addHistory(id, val); }
+          else log('error', 'cell not found: ' + id);
+        }
+      } else if (cmd === 'history') {
+        log('info', state.history.length + ' changes:');
+        state.history.forEach((h, i) => log('info', '  ' + (i+1) + '. ' + h.id + ' = ' + JSON.stringify(h.value)));
+      } else {
+        log('error', 'unknown command: ' + cmd);
+      }
+    } catch (e) {
+      log('error', e.message);
+    }
+    consoleInput.value = '';
+  }
+});
+
+function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ============================ TIME TRAVEL ============================
+
+function addHistory(id, value) {
+  state.history.push({ id, value, t: Date.now() });
+  document.getElementById('tt-events').innerHTML = state.history.slice(-30).reverse().map(h =>
+    `<div class="tt-event"><span class="ts">${new Date(h.t).toLocaleTimeString()}</span><span class="id">${escapeHtml(h.id)}</span><span class="v">${escapeHtml(JSON.stringify(h.value))}</span></div>`
+  ).join('');
+}
+
+document.getElementById('tt-rewind').addEventListener('click', () => {
+  state.history = [];
+  document.getElementById('tt-events').innerHTML = '<div style="color: var(--text-faint); padding: 16px;">No history yet. Make some changes.</div>';
+  log('info', 'History rewound.');
+});
+
+document.getElementById('tt-fork').addEventListener('click', () => {
+  log('success', '🌿 Forked at ' + new Date().toLocaleTimeString());
+});
+
+document.getElementById('tt-fwd').addEventListener('click', () => log('info', 'Stepped forward (no-op in sketch).'));
+document.getElementById('tt-back').addEventListener('click', () => log('info', 'Stepped back (no-op in sketch).'));
+document.getElementById('tt-end').addEventListener('click', () => log('info', 'At end.'));
+
+// ============================ RUN ============================
+
+function runEvaluation() {
+  const start = performance.now();
+  // Simple evaluation
+  for (const c of state.cells) {
+    if (c.kind === 'formula' && c.config.expr) {
+      try {
+        const env = {};
+        for (const e of state.edges) {
+          if (e[1] === c.id) {
+            const dep = state.cells.find(x => x.id === e[0]);
+            if (dep && dep.config.value !== undefined) {
+              const key = e[0].replace(/\./g, '_');
+              env[key] = dep.config.value;
+            }
+          }
+        }
+        const expr2 = c.config.expr.replace(/([a-zA-Z_][a-zA-Z0-9_.]*)/g, m => m.includes('.') ? m.replace(/\./g, '_') : m);
+        const fn = new Function('with(arguments[0]) return (' + expr2 + ')');
+        c.config.value = fn(env);
+      } catch (e) { /* */ }
+    }
+    // Listener firing
+    if (c.kind === 'listener' && c.config.condition) {
+      try {
+        const env = {};
+        const watchCell = state.cells.find(x => x.id === c.config.watch);
+        if (watchCell) env[c.config.watch.replace(/\./g, '_')] = watchCell.config.value;
+        const expr2 = c.config.condition.replace(/([a-zA-Z_][a-zA-Z0-9_.]*)/g, m => m.includes('.') ? m.replace(/\./g, '_') : m);
+        const fn = new Function('with(arguments[0]) return (' + expr2 + ')');
+        if (fn(env)) log('warn', '🔔 ' + c.id + ': ' + (c.config.action || '').replace(/console\.log\(["'](.+)["']\)/, '$1'));
+      } catch (e) {}
+    }
+  }
+  state.evals++;
+  const dt = (performance.now() - start).toFixed(1);
+  document.getElementById('p-evals').textContent = state.evals;
+  document.getElementById('p-last-eval').textContent = dt + 'ms';
+  document.getElementById('sb-evals').textContent = state.evals + ' evals';
+  log('success', `Evaluated ${state.cells.length} cells in ${dt}ms`);
+}
+
+document.getElementById('btn-run').addEventListener('click', runEvaluation);
+
+document.getElementById('btn-shuffle').addEventListener('click', () => {
+  for (const c of state.cells) {
+    if (c.kind === 'sensor' || c.kind === 'value') {
+      if (typeof c.config.value === 'number' || c.config.default !== undefined) {
+        const v = Math.random() * 100;
+        c.config.value = v;
+        addHistory(c.id, v);
+        if (c.config.default !== undefined) c.config.default = v;
+      }
+    }
+  }
+  log('info', '🎲 Sensors randomized');
+  runEvaluation();
+});
+
+function initEngine() {
+  state.engine = { initialized: true };
+  log('success', 'Engine initialized (sketch — full engine in production IDE)');
+}
+
+// ============================ PANE SWITCHING ============================
+
+document.querySelectorAll('.pane-tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.pane-tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  state.activePane = t.dataset.pane;
+  document.getElementById('pane-editor').style.display = state.activePane === 'editor' ? '' : 'none';
+  document.getElementById('pane-graph').style.display = state.activePane === 'graph' ? '' : 'none';
+  document.getElementById('pane-console').style.display = state.activePane === 'console' ? '' : 'none';
+  document.getElementById('pane-time').style.display = state.activePane === 'time' ? '' : 'none';
+  if (state.activePane === 'graph') { resizeGraph(); renderGraph(); }
+}));
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => loadTab(t.dataset.tab)));
+document.querySelectorAll('.file-item').forEach(f => f.addEventListener('click', () => loadTab(f.dataset.file)));
+
+// ============================ INIT ============================
+
+loadTab('weather');
+log('info', 'Quilt IDE ready. Try: cells.list, eval, set sensor.temp 38');
+</script>
+
+</body>
+</html>

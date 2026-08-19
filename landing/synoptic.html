@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Synoptic — see the cell graph live</title>
+<meta name="description" content="Watch the cell model in action. Three live views: cafeteria, mixer, graph. Real-time value propagation, causal chains, message passing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --gray: #888; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; overflow: hidden; height: 100%; }
+a { color: var(--text); text-decoration: none; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Layout */
+.app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.tabs { display: flex; gap: 4px; }
+.tab { padding: 6px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; transition: all 150ms var(--ease); }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+.tab:not(.active) { color: var(--text-dim); }
+
+.main { display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+.canvas-wrap { position: relative; overflow: hidden; background: var(--bg); }
+#canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.side { background: var(--bg-elev); border-left: 1px solid var(--border); overflow-y: auto; }
+.side-section { padding: 16px; border-bottom: 1px solid var(--border); }
+.side-section h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+
+.controls { display: flex; flex-direction: column; gap: 8px; }
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 150ms var(--ease); }
+.btn:hover { background: var(--bg-elev); border-color: var(--border-strong); }
+.btn.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+.btn.full { width: 100%; }
+
+.cell-info { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.cell-info .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.cell-info .row:last-child { border-bottom: none; }
+.cell-info .k { color: var(--text-faint); }
+.cell-info .v { color: var(--text); font-weight: 600; word-break: break-word; max-width: 60%; text-align: right; }
+.cell-info .v.green { color: var(--green); }
+.cell-info .v.blue { color: var(--blue); }
+.cell-info .v.purple { color: var(--purple); }
+
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.75rem; }
+.legend-item { display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 3px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+.event-log { max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+.event { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; }
+.event:last-child { border-bottom: none; }
+.event .ts { color: var(--text-faint); }
+.event .from { color: var(--green); font-weight: 600; width: 50px; }
+.event .to { color: var(--blue); }
+.event .arrow { color: var(--text-faint); }
+
+.profiler { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.prof-row { display: flex; justify-content: space-between; padding: 4px 0; }
+.prof-row .k { color: var(--text-dim); }
+.prof-row .v { color: var(--green); }
+.prof-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+.prof-bar-fill { height: 100%; background: var(--green); transition: width 200ms; }
+
+.toolbar-bottom { position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: rgba(19,19,19,0.9); border: 1px solid var(--border); border-radius: 999px; backdrop-filter: blur(20px); z-index: 10; }
+.toolbar-bottom .left, .toolbar-bottom .right { display: flex; gap: 6px; align-items: center; }
+.toolbar-bottom .spacer { flex: 1; }
+.tb-btn { padding: 4px 10px; background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.tb-btn:hover { color: var(--text); border-color: var(--border-strong); }
+.tb-btn.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+.tb-speed { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); padding: 0 8px; }
+
+.hover-tip { position: absolute; padding: 6px 10px; background: var(--bg-elev); border: 1px solid var(--border-strong); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text); pointer-events: none; z-index: 20; opacity: 0; transition: opacity 100ms; }
+.hover-tip.visible { opacity: 1; }
+.hover-tip .h-id { color: var(--green); font-weight: 600; }
+.hover-tip .h-v { color: var(--text); }
+
+.hero-tag { display: inline-block; padding: 2px 8px; background: rgba(126,198,153,0.15); color: var(--green); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Synoptic</span>
+    </div>
+    <div class="tabs" id="sheet-tabs">
+      <div class="tab active" data-sheet="weather">weather</div>
+      <div class="tab" data-sheet="budget">budget</div>
+      <div class="tab" data-sheet="agent">agent</div>
+      <div class="tab" data-sheet="home">home</div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="ide.html" style="padding: 6px 12px; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); font-size: 0.85rem;">Open in IDE</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div class="hover-tip" id="tip"></div>
+      <div class="toolbar-bottom">
+        <div class="left">
+          <button class="tb-btn active" data-mode="cafeteria">☕ Cafeteria</button>
+          <button class="tb-btn" data-mode="mixer">🎚️ Mixer</button>
+          <button class="tb-btn" data-mode="graph">◯ Graph</button>
+        </div>
+        <div class="spacer"></div>
+        <span class="tb-speed">speed</span>
+        <button class="tb-btn" data-speed="0.5">0.5×</button>
+        <button class="tb-btn active" data-speed="1">1×</button>
+        <button class="tb-btn" data-speed="2">2×</button>
+        <div class="right">
+          <button class="tb-btn" id="btn-shuffle">🎲 Shuffle</button>
+          <button class="tb-btn" id="btn-spike">🔥 Spike</button>
+          <button class="tb-btn" id="btn-pause">⏸ Pause</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="side-section">
+        <h3>Selected cell</h3>
+        <div class="cell-info" id="cell-info">
+          <div style="color: var(--text-faint); font-size: 0.8rem; padding: 8px 0;">Click a cell to inspect.</div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h3>Cell kinds</h3>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background: var(--green);"></div> value</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--blue);"></div> formula</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--purple);"></div> program</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--tan);"></div> sensor</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--red);"></div> api</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--yellow);"></div> listener</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--cyan);"></div> router</div>
+          <div class="legend-item"><div class="legend-dot" style="background: var(--gray);"></div> io</div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h3>Profiler</h3>
+        <div class="profiler" id="profiler">
+          <div class="prof-row"><span class="k">cells</span><span class="v" id="p-cells">0</span></div>
+          <div class="prof-row"><span class="k">edges</span><span class="v" id="p-edges">0</span></div>
+          <div class="prof-row"><span class="k">events/s</span><span class="v" id="p-eps">0</span></div>
+          <div class="prof-row"><span class="k">FPS</span><span class="v" id="p-fps">60</span></div>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <h3>Event stream</h3>
+        <div class="event-log" id="event-log">
+          <div style="color: var(--text-faint); font-size: 0.7rem; padding: 4px 0;">Edit a value to see events flow.</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// Quilt Synoptic — three live views of the cell graph
+// =========================================================================
+
+const SHEETS = {
+  weather: {
+    cells: [
+      { id: 'sensor.temp', kind: 'sensor', x: 0, y: 0, value: 22.0 },
+      { id: 'sensor.humid', kind: 'sensor', x: 0, y: 0, value: 50 },
+      { id: 'fahrenheit', kind: 'formula', x: 0, y: 0, value: 71.6, expr: 'sensor.temp * 1.8 + 32' },
+      { id: 'heat_index', kind: 'formula', x: 0, y: 0, value: 24.5, expr: 'sensor.temp + (sensor.humid / 100) * 5' },
+      { id: 'comfort', kind: 'formula', x: 0, y: 0, value: 'cool', expr: 'heat_index < 26 ? "cool" : (heat_index < 30 ? "warm" : "hot")' },
+      { id: 'fan.speed', kind: 'formula', x: 0, y: 0, value: 0, expr: 'heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)' },
+      { id: 'led.color', kind: 'io', x: 0, y: 0, value: '#5fa8d3' },
+      { id: 'alert.comfort', kind: 'listener', x: 0, y: 0, value: 'on' },
+    ],
+    edges: [
+      ['sensor.temp', 'fahrenheit'],
+      ['sensor.temp', 'heat_index'],
+      ['sensor.humid', 'heat_index'],
+      ['heat_index', 'comfort'],
+      ['heat_index', 'fan.speed'],
+      ['comfort', 'led.color'],
+      ['comfort', 'alert.comfort'],
+    ],
+  },
+  budget: {
+    cells: [
+      { id: 'budget.total', kind: 'value', x: 0, y: 0, value: 5000 },
+      { id: 'spend.rent', kind: 'value', x: 0, y: 0, value: 1800 },
+      { id: 'spend.food', kind: 'value', x: 0, y: 0, value: 600 },
+      { id: 'spend.transit', kind: 'value', x: 0, y: 0, value: 120 },
+      { id: 'spend.fun', kind: 'value', x: 0, y: 0, value: 200 },
+      { id: 'spent', kind: 'formula', x: 0, y: 0, value: 2720, expr: 'rent+food+transit+fun' },
+      { id: 'remaining', kind: 'formula', x: 0, y: 0, value: 2280, expr: 'budget.total - spent' },
+      { id: 'percent', kind: 'formula', x: 0, y: 0, value: 0.544, expr: 'spent / budget.total' },
+      { id: 'status', kind: 'formula', x: 0, y: 0, value: 'ok', expr: 'percent > 0.9 ? "danger" : (percent > 0.7 ? "warning" : "ok")' },
+      { id: 'alert', kind: 'listener', x: 0, y: 0, value: 'on' },
+    ],
+    edges: [
+      ['budget.total', 'remaining'],
+      ['spend.rent', 'spent'],
+      ['spend.food', 'spent'],
+      ['spend.transit', 'spent'],
+      ['spend.fun', 'spent'],
+      ['spent', 'remaining'],
+      ['spent', 'percent'],
+      ['percent', 'status'],
+      ['status', 'alert'],
+    ],
+  },
+  agent: {
+    cells: [
+      { id: 'input.task', kind: 'value', x: 0, y: 0, value: 'What is Quilt?' },
+      { id: 'memory', kind: 'value', x: 0, y: 0, value: [] },
+      { id: 'tool.search', kind: 'api', x: 0, y: 0, value: 'search' },
+      { id: 'tool.llm', kind: 'api', x: 0, y: 0, value: 'openai' },
+      { id: 'reasoning.prompt', kind: 'formula', x: 0, y: 0, value: '...', expr: '"You are an agent. The user asked: " + input.task' },
+      { id: 'reasoning.thought', kind: 'program', x: 0, y: 0, value: '...' },
+      { id: 'reasoning.action', kind: 'program', x: 0, y: 0, value: '...' },
+      { id: 'output', kind: 'formula', x: 0, y: 0, value: 'final response' },
+    ],
+    edges: [
+      ['input.task', 'reasoning.prompt'],
+      ['reasoning.prompt', 'reasoning.thought'],
+      ['reasoning.thought', 'reasoning.action'],
+      ['tool.search', 'reasoning.thought'],
+      ['tool.llm', 'reasoning.thought'],
+      ['reasoning.action', 'output'],
+    ],
+  },
+  home: {
+    cells: [
+      { id: 'bed.occupied', kind: 'sensor', x: 0, y: 0, value: true },
+      { id: 'bed.temp', kind: 'sensor', x: 0, y: 0, value: 24.0 },
+      { id: 'room.temp', kind: 'sensor', x: 0, y: 0, value: 22.5 },
+      { id: 'room.lux', kind: 'sensor', x: 0, y: 0, value: 50 },
+      { id: 'sleep.score', kind: 'formula', x: 0, y: 0, value: 0, expr: 'bed.occupied ? 100 - 50 : 0' },
+      { id: 'hvac.mode', kind: 'formula', x: 0, y: 0, value: 'auto', expr: 'room.temp > 24 ? "cool" : (room.temp < 20 ? "heat" : "off")' },
+      { id: 'lights.bedroom', kind: 'io', x: 0, y: 0, value: 'off' },
+      { id: 'hvac.fan', kind: 'io', x: 0, y: 0, value: 'low' },
+    ],
+    edges: [
+      ['bed.occupied', 'sleep.score'],
+      ['bed.temp', 'sleep.score'],
+      ['room.temp', 'hvac.mode'],
+      ['hvac.mode', 'hvac.fan'],
+      ['room.lux', 'lights.bedroom'],
+    ],
+  },
+};
+
+const COLORS = {
+  value: '#7ec699', formula: '#5fa8d3', program: '#bb7ec6',
+  sensor: '#c6a87e', api: '#c67e7e', listener: '#c6c67e',
+  router: '#7ec6c6', io: '#888888',
+};
+
+const KINDS_ICONS = {
+  value: '📦', formula: 'ƒ', program: '▶', sensor: '👁',
+  api: '🌐', listener: '🔔', router: '↪', io: '🔌',
+};
+
+let state = {
+  sheet: null,
+  mode: 'cafeteria',
+  selectedId: null,
+  hoverId: null,
+  speed: 1,
+  paused: false,
+  time: 0,
+  particles: [],
+  cells: new Map(),
+  positions: new Map(),
+  velocities: new Map(),
+  fps: 60,
+  lastFrame: 0,
+  eventCount: 0,
+  lastEventCount: 0,
+  evalTimes: new Map(),
+};
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const tip = document.getElementById('tip');
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  ctx.scale(dpr, dpr);
+}
+window.addEventListener('resize', resize);
+
+function loadSheet(name) {
+  const def = SHEETS[name];
+  state.cells = new Map();
+  state.positions = new Map();
+  state.velocities = new Map();
+  def.cells.forEach(c => {
+    state.cells.set(c.id, c);
+    state.positions.set(c.id, { x: 0, y: 0, vx: 0, vy: 0 });
+    state.velocities.set(c.id, { x: 0, y: 0 });
+  });
+  state.edges = def.edges;
+  state.eventCount = 0;
+  state.evalTimes = new Map();
+  // Initial layout
+  layoutInitial();
+  recompute();
+  updateProfiler();
+}
+
+function layoutInitial() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  const cells = [...state.cells.values()];
+  if (state.mode === 'graph') {
+    // Force-directed: simple circular initial
+    cells.forEach((c, i) => {
+      const angle = (i / cells.length) * Math.PI * 2;
+      const r = Math.min(w, h) * 0.3;
+      state.positions.get(c.id).x = w/2 + Math.cos(angle) * r;
+      state.positions.get(c.id).y = h/2 + Math.sin(angle) * r;
+    });
+  } else if (state.mode === 'mixer') {
+    // Vertical fader columns
+    const colW = w / Math.max(cells.length, 1);
+    cells.forEach((c, i) => {
+      state.positions.get(c.id).x = colW * i + colW/2;
+      state.positions.get(c.id).y = h/2;
+    });
+  } else {
+    // Cafeteria: random but inside bounds
+    cells.forEach((c, i) => {
+      const seed = i * 137;
+      const r1 = (Math.sin(seed) * 10000) % 1;
+      const r2 = (Math.cos(seed * 1.7) * 10000) % 1;
+      state.positions.get(c.id).x = w * 0.2 + r1 * w * 0.6;
+      state.positions.get(c.id).y = h * 0.2 + r2 * h * 0.6;
+    });
+  }
+}
+
+function recompute() {
+  // For each cell, evaluate based on dependencies
+  const evalStart = performance.now();
+  const c = state.cells;
+  for (const [id, cell] of c) {
+    if (cell.kind === 'formula' && cell.expr) {
+      try {
+        const fn = new Function('with(arguments[0]) return (' + cell.expr + ')');
+        // Build env from deps
+        const env = {};
+        for (const e of state.edges) {
+          if (e[1] === id) {
+            const dep = c.get(e[0]);
+            if (dep) env[e[0].replace(/\./g, '_')] = dep.value;
+          }
+        }
+        // Hmm, "with" needs identifier names. Replace dots in expr too.
+        const expr2 = cell.expr.replace(/([a-zA-Z_][a-zA-Z0-9_.]*)/g, m => m.includes('.') ? m.replace(/\./g, '_') : m);
+        const fn2 = new Function('with(arguments[0]) return (' + expr2 + ')');
+        cell.value = fn2(env);
+      } catch (e) {
+        cell.value = '?';
+      }
+    }
+  }
+  state.evalTimes.set('recompute', performance.now() - evalStart);
+  // After computing, notify dependents (spawn particles)
+  for (const [id, cell] of c) {
+    if (cell.kind !== 'formula' && cell.kind !== 'value') continue;
+    // Find dependents
+    for (const e of state.edges) {
+      if (e[0] === id) {
+        const target = c.get(e[1]);
+        if (target) {
+          spawnParticle(id, e[1], cell.value);
+          addEvent(id, e[1], cell.value);
+        }
+      }
+    }
+  }
+}
+
+function spawnParticle(fromId, toId, value) {
+  const from = state.positions.get(fromId);
+  const to = state.positions.get(toId);
+  if (!from || !to) return;
+  const fromCell = state.cells.get(fromId);
+  state.particles.push({
+    x: from.x, y: from.y, tx: to.x, ty: to.y,
+    color: COLORS[fromCell.kind] || '#fff',
+    value: typeof value === 'number' ? value.toFixed(1) : String(value).slice(0, 8),
+    progress: 0,
+    life: 1,
+  });
+}
+
+function addEvent(from, to, value) {
+  state.eventCount++;
+  const log = document.getElementById('event-log');
+  const t = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'event';
+  entry.innerHTML = `<span class="ts">${t}</span><span class="from">${escapeHtml(from)}</span><span class="arrow">→</span><span class="to">${escapeHtml(to)}</span>: <span style="color: var(--text-faint);">${escapeHtml(typeof value === 'number' ? value.toFixed(2) : String(value).slice(0, 12))}</span>`;
+  log.insertBefore(entry, log.firstChild);
+  while (log.children.length > 30) log.removeChild(log.lastChild);
+}
+
+function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function setCellValue(id, value) {
+  const cell = state.cells.get(id);
+  if (!cell) return;
+  cell.value = value;
+  recompute();
+}
+
+function updateProfiler() {
+  document.getElementById('p-cells').textContent = state.cells.size;
+  document.getElementById('p-edges').textContent = state.edges.length;
+}
+
+let lastEpsUpdate = 0;
+function updateProfilerLive(now) {
+  if (now - lastEpsUpdate > 1000) {
+    const eps = state.eventCount - state.lastEventCount;
+    document.getElementById('p-eps').textContent = eps;
+    state.lastEventCount = state.eventCount;
+    document.getElementById('p-fps').textContent = state.fps;
+    lastEpsUpdate = now;
+  }
+}
+
+// ============================ RENDERING ============================
+
+function render(now) {
+  if (!state.sheet) return;
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  // Clear
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, w, h);
+  // Update particles
+  if (!state.paused) {
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const p = state.particles[i];
+      p.progress += 0.02 * state.speed;
+      if (p.progress >= 1) {
+        state.particles.splice(i, 1);
+      }
+    }
+  }
+  // Draw based on mode
+  if (state.mode === 'cafeteria') renderCafeteria(w, h);
+  else if (state.mode === 'mixer') renderMixer(w, h);
+  else if (state.mode === 'graph') renderGraph(w, h);
+  // Draw particles (always on top)
+  for (const p of state.particles) {
+    const t = p.progress;
+    const x = p.x + (p.tx - p.x) * t;
+    const y = p.y + (p.ty - p.y) * t;
+    // Particle trail
+    for (let i = 0; i < 5; i++) {
+      const t2 = Math.max(0, t - i * 0.04);
+      const x2 = p.x + (p.tx - p.x) * t2;
+      const y2 = p.y + (p.ty - p.y) * t2;
+      ctx.beginPath();
+      ctx.arc(x2, y2, 4 - i * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + (i === 0 ? 'ff' : '88');
+      ctx.fill();
+    }
+    // Particle value label
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.value, x, y - 8);
+  }
+  // FPS
+  const dt = now - state.lastFrame;
+  if (dt > 0) state.fps = Math.round(1000 / dt);
+  state.lastFrame = now;
+  state.time = now;
+  updateProfilerLive(now);
+}
+
+function renderCafeteria(w, h) {
+  // Edges
+  for (const [fromId, toId] of state.edges) {
+    const from = state.positions.get(fromId);
+    const to = state.positions.get(toId);
+    if (!from || !to) continue;
+    // Wavy connection
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const steps = Math.floor(dist / 20);
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const wave = Math.sin(state.time * 0.001 + t * 6) * 4;
+      const perpX = -dy / dist * wave;
+      const perpY = dx / dist * wave;
+      ctx.lineTo(from.x + dx * t + perpX, from.y + dy * t + perpY);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Arrow
+    if (dist > 60) {
+      const t = 0.85;
+      const ax = from.x + dx * t, ay = from.y + dy * t;
+      const ang = Math.atan2(dy, dx);
+      ctx.save();
+      ctx.translate(ax, ay);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-6, -3);
+      ctx.lineTo(-6, 3);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  // Cells
+  for (const [id, cell] of state.cells) {
+    const pos = state.positions.get(id);
+    const color = COLORS[cell.kind];
+    // Subtle motion (breathing)
+    const breathe = Math.sin(state.time * 0.0015 + id.length) * 2;
+    const x = pos.x, y = pos.y + breathe;
+    const r = state.selectedId === id ? 36 : (state.hoverId === id ? 33 : 28);
+    // Glow
+    if (state.selectedId === id || state.hoverId === id) {
+      ctx.beginPath();
+      ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(x, y, r, x, y, r + 8);
+      grad.addColorStop(0, color + '66');
+      grad.addColorStop(1, color + '00');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+    // Body
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color + '33';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    // Icon
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(KINDS_ICONS[cell.kind] || '?', x, y);
+    // Label
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = '#a0a0a0';
+    ctx.textBaseline = 'top';
+    ctx.fillText(id, x, y + r + 6);
+    // Value
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px JetBrains Mono';
+    const valStr = typeof cell.value === 'number' ? cell.value.toFixed(1) : String(cell.value).slice(0, 12);
+    ctx.fillText(valStr, x, y + r + 22);
+  }
+}
+
+function renderMixer(w, h) {
+  // Vertical fader columns
+  const cells = [...state.cells.values()];
+  const colW = w / Math.max(cells.length, 1);
+  // Draw lanes
+  for (let i = 0; i < cells.length; i++) {
+    const x = colW * i + colW/2;
+    const cell = cells[i];
+    const color = COLORS[cell.kind];
+    // Lane
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(x - 30, 60, 60, h - 180);
+    // Track
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(x - 2, 60, 4, h - 180);
+    // Value position
+    let v = 0;
+    if (typeof cell.value === 'number') v = cell.value;
+    if (typeof cell.value === 'boolean') v = cell.value ? 1 : 0;
+    const norm = Math.min(1, Math.max(0, v / 100));
+    const yPos = (h - 120) - norm * (h - 240);
+    // Fader cap
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+    ctx.fillRect(x - 14, yPos - 4, 28, 8);
+    ctx.shadowBlur = 0;
+    // Meter
+    const meterH = (state.time * 0.001 % 1) * (h - 240);
+    ctx.fillStyle = color + '44';
+    ctx.fillRect(x - 30, (h - 120) - meterH, 6, meterH);
+    // Label
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    const label = id.length > 12 ? id.slice(0, 11) + '…' : id;
+    ctx.fillText(label, x, h - 100);
+    // Value
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px JetBrains Mono';
+    const valStr = typeof cell.value === 'number' ? cell.value.toFixed(1) : String(cell.value).slice(0, 8);
+    ctx.fillText(valStr, x, h - 80);
+    // Kind icon
+    ctx.font = '16px sans-serif';
+    ctx.fillText(KINDS_ICONS[cell.kind] || '?', x, h - 50);
+  }
+  // Draw connections at bottom as horizontal bars
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  for (const [from, to] of state.edges) {
+    const fromIdx = cells.findIndex(c => c.id === from);
+    const toIdx = cells.findIndex(c => c.id === to);
+    if (fromIdx < 0 || toIdx < 0) continue;
+    const x1 = colW * fromIdx + colW/2;
+    const x2 = colW * toIdx + colW/2;
+    const y = h - 30;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+  }
+}
+
+function renderGraph(w, h) {
+  // Force-directed update
+  if (!state.paused) {
+    updateForces();
+  }
+  // Edges with arrows
+  for (const [fromId, toId] of state.edges) {
+    const from = state.positions.get(fromId);
+    const to = state.positions.get(toId);
+    if (!from || !to) continue;
+    // Curved bezier
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const cx = (from.x + to.x) / 2 + (-dy/dist) * 30;
+    const cy = (from.y + to.y) / 2 + (dx/dist) * 30;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(cx, cy, to.x, to.y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Animated flow indicator
+    const t = (state.time * 0.0005) % 1;
+    const px = (1-t)*(1-t)*from.x + 2*(1-t)*t*cx + t*t*to.x;
+    const py = (1-t)*(1-t)*from.y + 2*(1-t)*t*cy + t*t*to.y;
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS[state.cells.get(fromId).kind] + 'aa';
+    ctx.fill();
+  }
+  // Cells
+  for (const [id, cell] of state.cells) {
+    const pos = state.positions.get(id);
+    const color = COLORS[cell.kind];
+    const r = state.selectedId === id ? 22 : (state.hoverId === id ? 20 : 16);
+    if (state.selectedId === id) {
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r + 6, 0, Math.PI * 2);
+      ctx.fillStyle = color + '44';
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color + '22';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(KINDS_ICONS[cell.kind] || '?', pos.x, pos.y);
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = '#a0a0a0';
+    ctx.textBaseline = 'top';
+    ctx.fillText(id.length > 10 ? id.slice(0, 9) + '…' : id, pos.x, pos.y + r + 4);
+  }
+}
+
+function updateForces() {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  // Repulsion between cells
+  const cells = [...state.cells.values()];
+  for (const a of cells) {
+    const pa = state.positions.get(a.id);
+    pa.vx = 0; pa.vy = 0;
+    for (const b of cells) {
+      if (a.id === b.id) continue;
+      const pb = state.positions.get(b.id);
+      const dx = pa.x - pb.x, dy = pa.y - pb.y;
+      const d2 = dx*dx + dy*dy + 0.01;
+      const d = Math.sqrt(d2);
+      const f = 4000 / d2;
+      pa.vx += (dx/d) * f;
+      pa.vy += (dy/d) * f;
+    }
+  }
+  // Attraction along edges
+  for (const [from, to] of state.edges) {
+    const pf = state.positions.get(from);
+    const pt = state.positions.get(to);
+    if (!pf || !pt) continue;
+    const dx = pt.x - pf.x, dy = pt.y - pf.y;
+    const d = Math.sqrt(dx*dx + dy*dy) + 0.01;
+    const f = (d - 150) * 0.02;
+    pf.vx += (dx/d) * f;
+    pf.vy += (dy/d) * f;
+    pt.vx -= (dx/d) * f;
+    pt.vy -= (dy/d) * f;
+  }
+  // Apply
+  for (const cell of cells) {
+    const p = state.positions.get(cell.id);
+    p.x += p.vx * 0.02;
+    p.y += p.vy * 0.02;
+    // Clamp
+    p.x = Math.max(40, Math.min(w - 40, p.x));
+    p.y = Math.max(40, Math.min(h - 40, p.y));
+  }
+}
+
+// ============================ INTERACTION ============================
+
+function findCellAt(x, y) {
+  if (state.mode === 'mixer') return null;  // mixer uses columns, not points
+  for (const [id, cell] of state.cells) {
+    const pos = state.positions.get(id);
+    if (!pos) continue;
+    const dx = x - pos.x, dy = y - pos.y;
+    const r = state.mode === 'graph' ? 18 : 32;
+    if (dx*dx + dy*dy < r*r) return id;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const id = findCellAt(x, y);
+  state.hoverId = id;
+  if (id) {
+    const cell = state.cells.get(id);
+    const valStr = typeof cell.value === 'number' ? cell.value.toFixed(2) : String(cell.value);
+    tip.innerHTML = `<div class="h-id">${escapeHtml(id)}</div><div>kind: ${cell.kind}</div><div>value: <span class="h-v">${escapeHtml(valStr)}</span></div>`;
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+    tip.classList.add('visible');
+  } else {
+    tip.classList.remove('visible');
+  }
+});
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const id = findCellAt(x, y);
+  if (id) {
+    state.selectedId = id;
+    showCellInfo(id);
+  } else {
+    state.selectedId = null;
+    document.getElementById('cell-info').innerHTML = '<div style="color: var(--text-faint); font-size: 0.8rem; padding: 8px 0;">Click a cell to inspect.</div>';
+  }
+});
+
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  const id = findCellAt(x, y);
+  if (id) {
+    const cell = state.cells.get(id);
+    if (cell.kind === 'value' || cell.kind === 'sensor') {
+      // Randomize value
+      if (typeof cell.value === 'number') {
+        const newVal = Math.max(0, Math.min(100, cell.value + (Math.random() - 0.5) * 30));
+        setCellValue(id, newVal);
+      } else if (typeof cell.value === 'boolean') {
+        setCellValue(id, !cell.value);
+      } else {
+        setCellValue(id, Math.random() * 100);
+      }
+    }
+  }
+});
+
+function showCellInfo(id) {
+  const cell = state.cells.get(id);
+  if (!cell) return;
+  const env = `env-${cell.kind}`;
+  const valStr = typeof cell.value === 'number' ? cell.value.toFixed(2) : String(cell.value);
+  document.getElementById('cell-info').innerHTML = `
+    <div class="row"><span class="k">id</span><span class="v">${escapeHtml(id)}</span></div>
+    <div class="row"><span class="k">kind</span><span class="v ${cell.kind}">${cell.kind}</span></div>
+    <div class="row"><span class="k">value</span><span class="v">${escapeHtml(valStr)}</span></div>
+    <div class="row"><span class="k">in-edges</span><span class="v">${state.edges.filter(e => e[1] === id).length}</span></div>
+    <div class="row"><span class="k">out-edges</span><span class="v">${state.edges.filter(e => e[0] === id).length}</span></div>
+    <div style="padding-top: 8px; color: var(--text-faint); font-size: 0.7rem;">Double-click to randomize.</div>
+  `;
+}
+
+// ============================ UI ============================
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  state.sheet = t.dataset.sheet;
+  loadSheet(state.sheet);
+  layoutInitial();
+}));
+
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-mode]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  state.mode = b.dataset.mode;
+  layoutInitial();
+}));
+
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-speed]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  state.speed = parseFloat(b.dataset.speed);
+}));
+
+document.getElementById('btn-shuffle').addEventListener('click', () => {
+  for (const [id, cell] of state.cells) {
+    if (cell.kind === 'value' || cell.kind === 'sensor') {
+      if (typeof cell.value === 'number') {
+        cell.value = Math.random() * 100;
+      }
+    }
+  }
+  recompute();
+});
+
+document.getElementById('btn-spike').addEventListener('click', () => {
+  for (const [id, cell] of state.cells) {
+    if (cell.kind === 'value' || cell.kind === 'sensor') {
+      if (typeof cell.value === 'number') {
+        cell.value = Math.random() * 100;
+      }
+    }
+  }
+  // Big spike
+  if (state.sheet === 'weather') {
+    setCellValue('sensor.temp', 50);
+    setCellValue('sensor.humid', 90);
+  } else if (state.sheet === 'budget') {
+    setCellValue('spend.fun', 5000);
+  } else if (state.sheet === 'home') {
+    setCellValue('room.temp', 30);
+  } else if (state.sheet === 'agent') {
+    setCellValue('input.task', 'Re-evaluate all assumptions.');
+  }
+});
+
+document.getElementById('btn-pause').addEventListener('click', (e) => {
+  state.paused = !state.paused;
+  e.target.textContent = state.paused ? '▶ Play' : '⏸ Pause';
+});
+
+// ============================ START ============================
+
+resize();
+state.sheet = 'weather';
+loadSheet('weather');
+
+// Render loop
+function loop(now) {
+  render(now);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Auto-shuffle every 4 seconds
+setInterval(() => {
+  if (state.paused) return;
+  for (const [id, cell] of state.cells) {
+    if (cell.kind === 'value' || cell.kind === 'sensor') {
+      if (typeof cell.value === 'number' && Math.random() < 0.4) {
+        const drift = (Math.random() - 0.5) * 8;
+        cell.value = Math.max(0, Math.min(100, cell.value + drift));
+        recompute();
+      }
+    }
+  }
+}, 4000);
+</script>
+
+</body>
+</html>
