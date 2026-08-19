@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Mesh — peer-to-peer cell sync</title>
+<meta name="description" content="Two peers, no server, no internet. Cells sync in real time. A live demo of the Quilt Mesh protocol.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+
+/* Nav */
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* Hero */
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+/* Two peers */
+.peers-wrap { display: grid; grid-template-columns: 1fr 100px 1fr; gap: 16px; margin: 32px 0; }
+.peer { background: var(--bg-elev); border: 1.5px solid var(--border-strong); border-radius: 12px; overflow: hidden; transition: border-color 200ms var(--ease); }
+.peer.flash { border-color: var(--green); }
+.peer-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.peer-name { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.peer-name .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-faint); }
+.peer.online .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.peer-meta { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.peer-body { padding: 16px; }
+.peer-cell { padding: 10px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; transition: border-color 200ms var(--ease); }
+.peer-cell.flash { border-color: var(--green); animation: cell-flash 800ms var(--ease); }
+@keyframes cell-flash { 0% { background: rgba(126,198,153,0.1); } 100% { background: var(--bg-elev-2); } }
+.peer-cell .cell-id { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.peer-cell .cell-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.peer-cell .cell-value { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600; color: var(--text); }
+.peer-cell .cell-input { background: transparent; border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 4px 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; width: 110px; text-align: right; outline: none; }
+.peer-cell .cell-input:focus { border-color: var(--green); }
+
+/* The channel in the middle */
+.channel { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.channel-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.channel-line { stroke: var(--text-faint); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0.4; }
+.channel-line.flowing { stroke: var(--green); stroke-dasharray: 8 4; opacity: 1; animation: dash 1s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -24; } }
+.channel-label { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 0.75rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; z-index: 1; }
+.channel-packet { position: absolute; width: 12px; height: 12px; background: var(--green); border-radius: 50%; box-shadow: 0 0 12px var(--green); pointer-events: none; }
+@keyframes packet-right { 0% { left: 10%; top: 50%; } 100% { left: 90%; top: 50%; } }
+@keyframes packet-left { 0% { left: 90%; top: 50%; } 100% { left: 10%; top: 50%; } }
+
+/* Controls */
+.controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 24px 0; }
+
+/* Event log */
+.log-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 32px; }
+.log-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.log-body { padding: 8px; max-height: 280px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.log-entry { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .ts { color: var(--text-faint); width: 60px; flex-shrink: 0; }
+.log-entry .who { font-weight: 600; width: 70px; flex-shrink: 0; }
+.log-entry.alice .who { color: var(--green); }
+.log-entry.bob .who { color: var(--blue); }
+.log-entry .msg { color: var(--text-dim); }
+.log-entry.set .msg { color: var(--text); }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin: 16px 0 0; }
+.stat { background: var(--bg-elev); padding: 12px; text-align: center; }
+.stat-num { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--green); }
+.stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* Feature sections */
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row h3 { margin-bottom: 8px; }
+.feature-row p { color: var(--text-dim); }
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+
+@media (max-width: 900px) {
+  .peers-wrap { grid-template-columns: 1fr; }
+  .channel { display: none; }
+  .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Mesh</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="docs.html">Docs</a>
+      <a href="quilt-mesh.html" class="active">Mesh</a>
+      <a href="https://github.com/SuperInstance/quilt-mesh" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 3 tests</div>
+  <h1>Two peers. <span class="grad-text">No server.</span></h1>
+  <p class="lead">The Quilt Mesh protocol. CRDT-based, broker-less, end-to-end. Watch two devices sync cells in real time — in this browser, in this tab, no internet required.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="peers-wrap">
+      <div class="peer online" id="peer-alice">
+        <div class="peer-head">
+          <div class="peer-name"><span class="dot"></span> alice <span style="color: var(--text-faint); font-weight: 400;">@home</span></div>
+          <div class="peer-meta" id="alice-meta">t=0 · 3 cells</div>
+        </div>
+        <div class="peer-body" id="alice-body"></div>
+      </div>
+      <div class="channel">
+        <svg class="channel-svg" id="channel-svg"></svg>
+        <div class="channel-label" id="channel-label">OFFLINE</div>
+      </div>
+      <div class="peer online" id="peer-bob">
+        <div class="peer-head">
+          <div class="peer-name"><span class="dot"></span> bob <span style="color: var(--text-faint); font-weight: 400;">@office</span></div>
+          <div class="peer-meta" id="bob-meta">t=0 · 3 cells</div>
+        </div>
+        <div class="peer-body" id="bob-body"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="btn-conn">Connect peers</button>
+      <button class="btn" id="btn-conn-bidir">Disconnect</button>
+      <button class="btn" id="btn-reset-all">Reset both</button>
+    </div>
+
+    <div class="log-card">
+      <div class="log-head">
+        <div style="font-weight: 600; font-size: 0.9rem;">Event log</div>
+        <div class="stats" style="margin: 0; flex-shrink: 0; grid-template-columns: repeat(3, 120px);">
+          <div class="stat"><div class="stat-num" id="stat-sent">0</div><div class="stat-label">events sent</div></div>
+          <div class="stat"><div class="stat-num" id="stat-received">0</div><div class="stat-label">events received</div></div>
+          <div class="stat"><div class="stat-num" id="stat-lamport">0</div><div class="stat-label">max lamport</div></div>
+        </div>
+      </div>
+      <div class="log-body" id="log-body"></div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 48px;">
+      <div class="eyebrow">The protocol</div>
+      <h2>How the mesh works</h2>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3>Lamport clocks</h3>
+        <p>Every event has a Lamport timestamp. Each peer ticks its clock on every send and observes the remote clock on every receive. This gives total causal order across the mesh — even with no central server and no synchronized clocks.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">struct</span> Lamport { <span class="c-kw">pub</span> t: <span class="c-num">u64</span> }
+
+<span class="c-kw">impl</span> Lamport {
+  <span class="c-kw">pub fn</span> <span class="c-fn">tick</span>(&<span class="c-kw">mut self</span>) {
+    self.t += <span class="c-num">1</span>;
+  }
+  <span class="c-kw">pub fn</span> <span class="c-fn">observe</span>(&<span class="c-kw">mut self</span>, other: Lamport) {
+    self.t = self.t.<span class="c-fn">max</span>(other.t) + <span class="c-num">1</span>;
+  }
+}
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div>
+        <h3>Per-peer version vectors</h3>
+        <p>Each peer keeps a map from peer id to the highest Lamport it has seen from that peer. This lets a peer tell another peer exactly which events it needs — no diffing, no scan.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">fn</span> <span class="c-fn">pending_for</span>(&self, room, peer) -> Vec<Event> {
+  <span class="c-kw">let</span> their_clock = self.versions.<span class="c-fn">get</span>(peer);
+  self.events.<span class="c-fn">iter</span>()
+    .<span class="c-fn">filter</span>(|e| e.lamport > their_clock)
+    .<span class="c-fn">cloned</span>()
+    .<span class="c-fn">collect</span>()
+}
+      </div>
+    </div>
+
+    <div class="feature-row">
+      <div>
+        <h3>CRDT merge</h3>
+        <p>Each peer's history is a CRDT. Concurrent edits don't lose data — both writes survive, ordered by Lamport. Same-cell-same-time conflicts resolve deterministically by tiebreaker.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">fn</span> <span class="c-fn">apply</span>(&<span class="c-kw">mut self</span>, ev: Event) -> ApplyResult {
+  <span class="c-kw">if</span> self.events.<span class="c-fn">iter</span>().<span class="c-fn">any</span>(|e|
+    e.lamport == ev.lamport &&
+    e.author == ev.author) {
+    <span class="c-kw">return</span> ApplyResult::Duplicate;
+  }
+  self.events.<span class="c-fn">push</span>(ev);
+  ApplyResult::Applied
+}
+      </div>
+    </div>
+
+    <div class="feature-row reverse">
+      <div>
+        <h3>Transports</h3>
+        <p>WebSocket for online, BLE for proximity, LoRa for long-range, hardwired for fixed. The wire format is the same; the transport is pluggable. Pick what fits.</p>
+      </div>
+      <div class="code">
+<span class="c-kw">trait</span> Transport {
+  <span class="c-kw">async fn</span> <span class="c-fn">send</span>(&<span class="c-kw">mut self</span>, ev: Event);
+  <span class="c-kw">async fn</span> <span class="c-fn">recv</span>(&<span class="c-kw">mut self</span>) -> Event;
+}
+
+<span class="c-com">// WebSocket, BLE, LoRa, anything else.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <h2>It's the same model, distributed.</h2>
+    <p class="lead" style="margin: 16px auto 32px;">A cell is a value, with a history, with an access policy, with formulas. The mesh just spreads the cell graph across many devices.</p>
+    <a href="https://github.com/SuperInstance/quilt-mesh" target="_blank" class="btn primary">View source on GitHub →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Mesh — part of the Quilt ecosystem. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="showcase.html">All 11 repos</a> · <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a></div>
+</footer>
+
+<script>
+// =========================================================================
+// Two-peer mesh demo. Both peers are in the same browser tab, communicating
+// via BroadcastChannel (which is the same abstraction as WebRTC data channels).
+// =========================================================================
+
+const Mesh = {
+  connected: false,
+  sentCount: 0,
+  receivedCount: 0,
+  lamport: 0,
+  events: [],
+  cells: {
+    alice: { id: 'alice', name: 'alice', color: 'var(--green)', cells: {} },
+    bob:   { id: 'bob',   name: 'bob',   color: 'var(--blue)',  cells: {} },
+  },
+};
+
+const CELL_IDS = [
+  { id: 'home.temp', label: 'home.temp', initial: 22 },
+  { id: 'home.lights', label: 'home.lights', initial: 'off' },
+  { id: 'task.note', label: 'task.note', initial: 'Buy milk' },
+];
+
+const channel = new BroadcastChannel('quilt-mesh-demo');
+
+function init() {
+  // Set up initial cells
+  for (const peer of [Mesh.cells.alice, Mesh.cells.bob]) {
+    for (const def of CELL_IDS) {
+      peer.cells[def.id] = { value: def.initial, version: 0, author: peer.id, lamport: 0 };
+    }
+  }
+  render();
+}
+
+function render() {
+  for (const peer of [Mesh.cells.alice, Mesh.cells.bob]) {
+    const body = document.getElementById(peer.id + '-body');
+    body.innerHTML = CELL_IDS.map(def => {
+      const c = peer.cells[def.id];
+      const isLong = typeof c.value === 'string' && c.value.length > 6;
+      return `<div class="peer-cell" data-id="${def.id}" data-peer="${peer.id}">
+        <div class="cell-id">${def.id}</div>
+        <div class="cell-row">
+          <span style="color: var(--text-faint); font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;">v${c.version} · t=${c.lamport}</span>
+          ${isLong
+            ? `<input class="cell-input" data-id="${def.id}" data-peer="${peer.id}" value="${escapeAttr(String(c.value))}" style="width: 160px;" />`
+            : `<input class="cell-input" data-id="${def.id}" data-peer="${peer.id}" value="${escapeAttr(String(c.value))}" />`}
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById(peer.id + '-meta').textContent = `t=${peer.cells[Object.keys(peer.cells)[0]].lamport} · ${Object.keys(peer.cells).length} cells`;
+
+    body.querySelectorAll('input.cell-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const id = inp.dataset.id;
+        const peerId = inp.dataset.peer;
+        const value = inp.value;
+        setCell(peerId, id, value, true);
+      });
+    });
+  }
+}
+
+function escapeAttr(s) { return s.replace(/"/g, '&quot;'); }
+function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function setCell(peerId, cellId, value, broadcast) {
+  const peer = Mesh.cells[peerId];
+  if (!peer) return;
+  if (peer.cells[cellId].value === value) return;
+  // Increment local Lamport
+  Mesh.lamport += 1;
+  const lamport = Mesh.lamport;
+  peer.cells[cellId] = { value, version: peer.cells[cellId].version + 1, author: peerId, lamport };
+  Mesh.events.push({ peer: peerId, cell: cellId, value, lamport, type: 'set' });
+  Mesh.sentCount += 1;
+  // Flash
+  document.getElementById('peer-' + peerId).classList.add('flash');
+  setTimeout(() => document.getElementById('peer-' + peerId).classList.remove('flash'), 400);
+  const cellEl = document.querySelector(`.peer-cell[data-id="${cellId}"][data-peer="${peerId}"]`);
+  if (cellEl) { cellEl.classList.add('flash'); setTimeout(() => cellEl.classList.remove('flash'), 800); }
+  // Render
+  render();
+  updateStats();
+  addLog(peerId, 'set', `${cellId} = ${value} (t=${lamport})`);
+  // Broadcast
+  if (broadcast && Mesh.connected) {
+    showPacket('right');
+    channel.postMessage({ type: 'set', from: peerId, cell: cellId, value, lamport });
+  }
+}
+
+function receiveEvent(ev) {
+  if (ev.from === 'alice' || ev.from === 'bob') {
+    const other = ev.from === 'alice' ? 'bob' : 'alice';
+    // Observe clock
+    if (ev.lamport >= Mesh.lamport) Mesh.lamport = ev.lamport + 1;
+    // Apply
+    const peer = Mesh.cells[other];
+    if (peer.cells[ev.cell]) {
+      // Check duplicate
+      if (peer.cells[ev.cell].value === ev.value) return;
+      peer.cells[ev.cell] = { value: ev.value, version: peer.cells[ev.cell].version + 1, author: ev.from, lamport: ev.lamport };
+      Mesh.events.push({ peer: other, cell: ev.cell, value: ev.value, lamport: ev.lamport, type: 'recv' });
+      Mesh.receivedCount += 1;
+      document.getElementById('peer-' + other).classList.add('flash');
+      setTimeout(() => document.getElementById('peer-' + other).classList.remove('flash'), 400);
+      const cellEl = document.querySelector(`.peer-cell[data-id="${ev.cell}"][data-peer="${other}"]`);
+      if (cellEl) { cellEl.classList.add('flash'); setTimeout(() => cellEl.classList.remove('flash'), 800); }
+      render();
+      updateStats();
+      addLog(other, 'recv', `${ev.cell} = ${ev.value} (t=${ev.lamport}) from ${ev.from}`);
+    }
+  }
+}
+
+channel.addEventListener('message', e => receiveEvent(e.data));
+
+function addLog(peer, type, msg) {
+  const log = document.getElementById('log-body');
+  const ts = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + peer + ' ' + type;
+  entry.innerHTML = `<span class="ts">${ts}</span><span class="who">${peer}</span><span class="msg">${escapeHtml(msg)}</span>`;
+  log.insertBefore(entry, log.firstChild);
+  // Trim to 50
+  while (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+function updateStats() {
+  document.getElementById('stat-sent').textContent = Mesh.sentCount;
+  document.getElementById('stat-received').textContent = Mesh.receivedCount;
+  document.getElementById('stat-lamport').textContent = Mesh.lamport;
+}
+
+function showPacket(dir) {
+  const packets = document.getElementById('channel-svg');
+  const packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  packet.setAttribute('r', '6');
+  packet.setAttribute('fill', 'var(--green)');
+  packet.style.filter = 'drop-shadow(0 0 8px var(--green))';
+  packet.style.animation = (dir === 'right' ? 'packet-right' : 'packet-left') + ' 600ms ease-out forwards';
+  packets.appendChild(packet);
+  setTimeout(() => packet.remove(), 700);
+}
+
+// Channel lines
+const svg = document.getElementById('channel-svg');
+function drawChannel() {
+  svg.innerHTML = '';
+  for (let i = 1; i <= 3; i++) {
+    const y = (i * 100 / 4) + '%';
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', '0%'); line.setAttribute('y1', y);
+    line.setAttribute('x2', '100%'); line.setAttribute('y2', y);
+    line.setAttribute('class', 'channel-line' + (Mesh.connected ? ' flowing' : ''));
+    svg.appendChild(line);
+  }
+}
+drawChannel();
+window.addEventListener('resize', drawChannel);
+
+// Connect/disconnect
+document.getElementById('btn-conn').addEventListener('click', () => {
+  Mesh.connected = true;
+  document.getElementById('channel-label').textContent = 'ONLINE';
+  document.getElementById('channel-label').style.color = 'var(--green)';
+  document.getElementById('btn-conn').disabled = true;
+  document.getElementById('btn-conn-bidir').disabled = false;
+  drawChannel();
+  addLog('alice', 'recv', '🔌 connection opened');
+});
+document.getElementById('btn-conn-bidir').addEventListener('click', () => {
+  Mesh.connected = false;
+  document.getElementById('channel-label').textContent = 'OFFLINE';
+  document.getElementById('channel-label').style.color = 'var(--text-faint)';
+  document.getElementById('btn-conn').disabled = false;
+  document.getElementById('btn-conn-bidir').disabled = true;
+  drawChannel();
+});
+document.getElementById('btn-reset-all').addEventListener('click', () => {
+  if (!confirm('Reset both peers?')) return;
+  Mesh.lamport = 0;
+  Mesh.events = [];
+  Mesh.sentCount = 0;
+  Mesh.receivedCount = 0;
+  init();
+  document.getElementById('log-body').innerHTML = '';
+  updateStats();
+});
+
+init();
+updateStats();
+
+// Auto-connect after a moment for instant demo
+setTimeout(() => document.getElementById('btn-conn').click(), 1000);
+</script>
+</body>
+</html>

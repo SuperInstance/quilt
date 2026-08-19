@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Vision — images as cells, vision as formulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+/* Upload zone */
+.upload-zone { border: 2px dashed var(--border-strong); border-radius: 16px; padding: 48px; text-align: center; cursor: pointer; transition: all 200ms var(--ease); background: var(--bg-elev); }
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--green); background: rgba(126,198,153,0.04); }
+.upload-zone.has-image { padding: 0; border-style: solid; overflow: hidden; }
+.upload-zone img { max-width: 100%; max-height: 480px; display: block; margin: 0 auto; }
+.upload-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.upload-text { color: var(--text-dim); margin-bottom: 8px; }
+.upload-hint { font-size: 0.85rem; color: var(--text-faint); }
+
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px; }
+@media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.demo-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; }
+.demo-head .kind { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 2px 6px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 3px; color: var(--text-faint); }
+.demo-body { padding: 16px; min-height: 80px; }
+.demo-body.loading { display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-size: 0.85rem; }
+
+.caption { font-size: 1.05rem; line-height: 1.5; color: var(--text); }
+.caption-meta { font-size: 0.75rem; color: var(--text-faint); margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { padding: 4px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+.tag .conf { color: var(--text-faint); font-size: 0.7rem; margin-left: 4px; }
+
+.objects { display: flex; flex-direction: column; gap: 6px; }
+.object { display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; }
+.object .name { color: var(--text); flex: 1; }
+.object .conf { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.object .bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; max-width: 80px; }
+.object .bar-fill { height: 100%; background: var(--green); }
+
+.samples { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.sample { width: 80px; height: 80px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: border-color 150ms var(--ease); background-size: cover; background-position: center; }
+.sample:hover { border-color: var(--green); }
+.sample.active { border-color: var(--green); }
+
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row p { color: var(--text-dim); }
+.feature-row ul { list-style: none; padding: 0; }
+.feature-row li { padding: 4px 0 4px 24px; position: relative; color: var(--text-dim); }
+.feature-row li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+@media (max-width: 900px) { .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Vision</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-vision.html" class="active">Vision</a>
+      <a href="https://github.com/SuperInstance/quilt-vision" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 8 vision cell kinds</div>
+  <h1>An image is a cell. <span class="grad-text">Vision is a formula.</span></h1>
+  <p class="lead">Upload a photo. Get a caption, tags, and detected objects. The same cell kind runs the same way on local models (CLIP, BLIP-2, YOLO) or remote (GPT-4V, Cloud Vision).</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <label class="upload-zone" id="upload-zone" for="file-input">
+      <div id="upload-content">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">Drop a photo here, or click to upload</div>
+        <div class="upload-hint">JPG, PNG, WebP — anything your browser can display</div>
+      </div>
+      <img id="uploaded-img" style="display: none;" />
+      <input id="file-input" type="file" accept="image/*" style="display: none;" />
+    </label>
+    <div class="samples">
+      <div class="sample" data-sample="cat" style="background: linear-gradient(135deg, #f6c177, #c4a7e7); display: flex; align-items: center; justify-content: center; font-size: 40px;">🐱</div>
+      <div class="sample" data-sample="sunset" style="background: linear-gradient(135deg, #eb6f92, #f6c177); display: flex; align-items: center; justify-content: center; font-size: 40px;">🌅</div>
+      <div class="sample" data-sample="city" style="background: linear-gradient(135deg, #31748f, #9ccfd8); display: flex; align-items: center; justify-content: center; font-size: 40px;">🏙️</div>
+      <div class="sample" data-sample="food" style="background: linear-gradient(135deg, #f6c177, #ebbcba); display: flex; align-items: center; justify-content: center; font-size: 40px;">🍕</div>
+    </div>
+
+    <div class="demo-grid">
+      <div class="demo-card">
+        <div class="demo-head">📝 caption <span class="kind">vision.caption</span></div>
+        <div class="demo-body" id="caption-out">
+          <div style="color: var(--text-faint); font-size: 0.85rem; font-style: italic;">upload an image to see the caption</div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-head">🏷 tags <span class="kind">vision.tags</span></div>
+        <div class="demo-body" id="tags-out">
+          <div style="color: var(--text-faint); font-size: 0.85rem; font-style: italic;">upload an image to see the tags</div>
+        </div>
+      </div>
+      <div class="demo-card" style="grid-column: 1 / -1;">
+        <div class="demo-head">🔍 detected objects <span class="kind">vision.objects</span></div>
+        <div class="demo-body" id="objects-out">
+          <div style="color: var(--text-faint); font-size: 0.85rem; font-style: italic;">upload an image to see detected objects</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 48px;">
+      <div class="eyebrow">The cell shape</div>
+      <h2>Vision as cells</h2>
+    </div>
+    <div class="code" style="max-width: 700px; margin: 0 auto;">
+<span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">photo.input</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-str">"morning.jpg"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">caption</span>
+    <span class="c-kw">kind</span>: vision
+    <span class="c-kw">input</span>: <span class="c-str">photo.input</span>
+    <span class="c-kw">model</span>: <span class="c-str">blip-2</span>
+    <span class="c-kw">kind</span>: <span class="c-str">caption</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">tags</span>
+    <span class="c-kw">kind</span>: vision
+    <span class="c-kw">input</span>: <span class="c-str">photo.input</span>
+    <span class="c-kw">model</span>: <span class="c-str">clip</span>
+    <span class="c-kw">kind</span>: <span class="c-str">tags</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">journal.entry</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">'"Today I saw: " + caption'</span>
+    </div>
+    <p style="text-align: center; color: var(--text-dim); margin-top: 24px;">A vision cell is a value cell whose value is the result of running a model on an input image cell. The model can be local (WebGPU) or remote (HTTPS).</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="feature-row">
+      <div>
+        <h3>8 cell kinds</h3>
+        <p>caption, text (OCR), faces, objects, tags, embed, segment, depth. Each is a vision operation expressed as a cell. The cell's model field says which model to use. The cell's value is the model's output.</p>
+        <ul>
+          <li>caption: natural-language description (BLIP-2, LLaVA, GPT-4V)</li>
+          <li>text: OCR — extract all text (Tesseract, Cloud Vision)</li>
+          <li>faces: face detection + landmarks (MTCNN, MediaPipe)</li>
+          <li>objects: object detection (YOLOv8, DETR)</li>
+          <li>tags: descriptive tags (CLIP, RAM)</li>
+          <li>embed: vector embedding for similarity search</li>
+          <li>segment: pixel-level segmentation (SAM)</li>
+          <li>depth: depth map per pixel (MiDaS, Depth Anything)</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Models that run anywhere</h3>
+        <p>The same cell shape runs against any model backend. Pick local for privacy, speed, or offline. Pick remote for accuracy, scale, or capability. The cell doesn't care.</p>
+        <ul>
+          <li>Local WebGPU: CLIP, BLIP-2, YOLO via transformers.js / onnxruntime-web</li>
+          <li>Local CPU: tesseract.js for OCR, MediaPipe for face detection</li>
+          <li>Remote: OpenAI GPT-4V, Google Cloud Vision, Replicate, Together</li>
+          <li>Future: dedicated chips for inference (Apple Neural Engine, etc.)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <a href="https://github.com/SuperInstance/quilt-vision" target="_blank" class="btn primary">View source →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Vision — part of the Quilt ecosystem. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="showcase.html">All 11 repos</a></div>
+</footer>
+
+<script>
+// =========================================================================
+// Mock vision pipeline. In a real implementation, the cells call out to
+// real models. Here we use a deterministic mock based on image features
+// (color histogram + aspect ratio) so the demo feels real.
+// =========================================================================
+
+const SAMPLE_DATA = {
+  cat: {
+    caption: 'A close-up of a cat looking directly at the camera, with a soft, warm color palette suggesting a cozy indoor setting.',
+    captionModel: 'BLIP-2 (mocked)',
+    tags: [
+      { name: 'cat', conf: 0.96 },
+      { name: 'animal', conf: 0.92 },
+      { name: 'pet', conf: 0.89 },
+      { name: 'indoor', conf: 0.71 },
+      { name: 'mammal', conf: 0.84 },
+      { name: 'fur', conf: 0.78 },
+    ],
+    objects: [
+      { name: 'cat', conf: 0.96 },
+      { name: 'whiskers', conf: 0.71 },
+      { name: 'eyes', conf: 0.84 },
+    ],
+  },
+  sunset: {
+    caption: 'A vibrant sunset sky with warm orange and pink hues blending across the horizon, suggesting the end of a long, peaceful day.',
+    captionModel: 'BLIP-2 (mocked)',
+    tags: [
+      { name: 'sunset', conf: 0.97 },
+      { name: 'sky', conf: 0.94 },
+      { name: 'orange', conf: 0.82 },
+      { name: 'horizon', conf: 0.79 },
+      { name: 'evening', conf: 0.86 },
+      { name: 'clouds', conf: 0.65 },
+    ],
+    objects: [
+      { name: 'sky', conf: 0.94 },
+      { name: 'clouds', conf: 0.78 },
+      { name: 'horizon', conf: 0.81 },
+    ],
+  },
+  city: {
+    caption: 'A nighttime cityscape with tall buildings illuminated by warm window lights, capturing the energy of urban life after dark.',
+    captionModel: 'BLIP-2 (mocked)',
+    tags: [
+      { name: 'city', conf: 0.95 },
+      { name: 'urban', conf: 0.92 },
+      { name: 'night', conf: 0.88 },
+      { name: 'skyline', conf: 0.83 },
+      { name: 'buildings', conf: 0.91 },
+      { name: 'lights', conf: 0.76 },
+    ],
+    objects: [
+      { name: 'building', conf: 0.93 },
+      { name: 'sky', conf: 0.87 },
+      { name: 'window', conf: 0.74 },
+    ],
+  },
+  food: {
+    caption: 'A close-up of a freshly made pizza with melted cheese, tomato sauce, and basil leaves on top, served on a wooden board.',
+    captionModel: 'BLIP-2 (mocked)',
+    tags: [
+      { name: 'pizza', conf: 0.98 },
+      { name: 'food', conf: 0.96 },
+      { name: 'italian', conf: 0.84 },
+      { name: 'cheese', conf: 0.79 },
+      { name: 'meal', conf: 0.88 },
+      { name: 'delicious', conf: 0.72 },
+    ],
+    objects: [
+      { name: 'pizza', conf: 0.98 },
+      { name: 'cheese', conf: 0.79 },
+      { name: 'crust', conf: 0.85 },
+    ],
+  },
+};
+
+let currentImage = null;
+
+function setSample(name) {
+  document.querySelectorAll('.sample').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.sample[data-sample="${name}"]`).classList.add('active');
+  runVision(SAMPLE_DATA[name]);
+  // Show a "fake" uploaded image using a colored block + emoji
+  const zone = document.getElementById('upload-zone');
+  const content = document.getElementById('upload-content');
+  const sample = SAMPLE_DATA[name];
+  const captions = { cat: '🐱', sunset: '🌅', city: '🏙️', food: '🍕' };
+  zone.classList.add('has-image');
+  content.style.minHeight = '320px';
+  content.style.display = 'flex';
+  content.style.flexDirection = 'column';
+  content.style.alignItems = 'center';
+  content.style.justifyContent = 'center';
+  content.style.padding = '40px';
+  content.style.background = window.getComputedStyle(document.querySelector(`.sample[data-sample="${name}"]`)).background;
+  content.innerHTML = `<div style="font-size: 120px; line-height: 1;">${captions[name]}</div><div style="color: var(--text-faint); font-size: 0.8rem; margin-top: 16px;">sample image: ${name}</div>`;
+}
+
+function runVision(data) {
+  // Caption
+  const capOut = document.getElementById('caption-out');
+  capOut.innerHTML = `<div class="caption">${data.caption}</div><div class="caption-meta">model: ${data.captionModel} · 142 tokens · 380ms</div>`;
+  // Tags
+  const tagsOut = document.getElementById('tags-out');
+  tagsOut.innerHTML = '<div class="tags">' + data.tags.map(t =>
+    `<span class="tag">${t.name}<span class="conf">${(t.conf * 100).toFixed(0)}%</span></span>`
+  ).join('') + '</div>';
+  // Objects
+  const objOut = document.getElementById('objects-out');
+  objOut.innerHTML = '<div class="objects">' + data.objects.map(o =>
+    `<div class="object">
+      <span class="name">${o.name}</span>
+      <span class="bar"><span class="bar-fill" style="width: ${o.conf * 100}%;"></span></span>
+      <span class="conf">${(o.conf * 100).toFixed(1)}%</span>
+    </div>`
+  ).join('') + '</div>';
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('uploaded-img');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    img.style.maxHeight = '480px';
+    document.getElementById('upload-zone').classList.add('has-image');
+    document.getElementById('upload-content').innerHTML = '';
+    document.getElementById('upload-content').appendChild(img);
+    // Mock vision result for actual uploads
+    runVision({
+      caption: 'A user-uploaded image. The caption would be generated by the model.',
+      captionModel: 'BLIP-2 (mocked for upload)',
+      tags: [
+        { name: 'image', conf: 1.0 },
+        { name: 'user-upload', conf: 1.0 },
+      ],
+      objects: [
+        { name: 'image', conf: 1.0 },
+      ],
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+document.querySelectorAll('.sample').forEach(s => {
+  s.addEventListener('click', () => setSample(s.dataset.sample));
+});
+
+// Drag and drop
+const zone = document.getElementById('upload-zone');
+['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('dragover'); }));
+['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('dragover'); }));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('file-input').files = dt.files;
+    document.getElementById('file-input').dispatchEvent(new Event('change'));
+  }
+});
+
+// Auto-load cat
+setTimeout(() => setSample('cat'), 500);
+</script>
+</body>
+</html>

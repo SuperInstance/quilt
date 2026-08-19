@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt ESP32 — Quilt on a microcontroller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+.demo-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .demo-wrap { grid-template-columns: 1fr; } }
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.demo-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.demo-body { padding: 24px; min-height: 400px; position: relative; }
+
+.board { position: relative; width: 280px; height: 380px; margin: 0 auto; background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%); border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
+.board::before { content: ''; position: absolute; top: 8px; left: 8px; right: 8px; height: 4px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); border-radius: 2px; }
+.chip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; background: linear-gradient(135deg, #2a2a2a, #1a1a1a); border: 2px solid #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); text-align: center; }
+.led { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #333; transition: all 200ms var(--ease); }
+.led.on { background: var(--green); box-shadow: 0 0 20px var(--green), 0 0 40px var(--green); }
+.led.red.on { background: var(--red); box-shadow: 0 0 20px var(--red), 0 0 40px var(--red); }
+.led.blue.on { background: var(--blue); box-shadow: 0 0 20px var(--blue), 0 0 40px var(--blue); }
+.sensor { position: absolute; width: 24px; height: 24px; border-radius: 4px; background: linear-gradient(135deg, #444, #333); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.pin { position: absolute; width: 8px; height: 8px; background: #d4a574; border-radius: 50%; }
+.pin-label { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--text-faint); }
+
+/* Stats on the side */
+.bd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.bd-stat { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+.bd-stat .k { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+.bd-stat .v { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--text); font-weight: 600; }
+
+.cell-list { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.cell-row { padding: 8px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; transition: border-color 200ms var(--ease); }
+.cell-row.flash { border-color: var(--green); }
+.cell-row .id { color: var(--green); }
+.cell-row .kind { font-size: 0.7rem; padding: 2px 6px; background: var(--bg-elev); border-radius: 3px; color: var(--text-faint); }
+.cell-row .val { color: var(--text); }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row p { color: var(--text-dim); }
+.feature-row ul { list-style: none; padding: 0; }
+.feature-row li { padding: 4px 0 4px 24px; position: relative; color: var(--text-dim); }
+.feature-row li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+@media (max-width: 900px) { .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt ESP32</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-esp32.html" class="active">ESP32</a>
+      <a href="https://github.com/SuperInstance/quilt-esp32" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 2 tests · no_std Rust · $3 chip</div>
+  <h1>The cell model, <span class="grad-text">on a microcontroller.</span></h1>
+  <p class="lead">A simulated ESP32 board with a temperature sensor, an LED, and the Quilt engine running on it. The reactive graph runs on bare metal.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="demo-wrap">
+      <div class="demo-card">
+        <div class="demo-head">🪛 simulated board</div>
+        <div class="demo-body" style="display: flex; align-items: center; justify-content: center;">
+          <div class="board" id="board">
+            <div class="chip">ESP32<br>240MHz<br>320KB</div>
+            <!-- LEDs -->
+            <div class="led" id="led-green" style="top: 30px; left: 30px;"></div>
+            <div class="led red" id="led-red" style="top: 30px; right: 30px;"></div>
+            <div class="led blue" id="led-blue" style="bottom: 30px; left: 30px;"></div>
+            <!-- Sensor -->
+            <div class="sensor" id="sensor" style="bottom: 30px; right: 30px;">🌡</div>
+            <!-- Pins -->
+            <div class="pin" style="top: 100px; left: -4px;"></div>
+            <div class="pin" style="top: 120px; left: -4px;"></div>
+            <div class="pin" style="top: 140px; left: -4px;"></div>
+            <div class="pin" style="top: 160px; left: -4px;"></div>
+            <div class="pin" style="top: 100px; right: -4px;"></div>
+            <div class="pin" style="top: 120px; right: -4px;"></div>
+            <div class="pin" style="top: 140px; right: -4px;"></div>
+            <div class="pin" style="top: 160px; right: -4px;"></div>
+            <div class="pin-label" style="bottom: 6px; left: 50%; transform: translateX(-50%);">DHT22 → GPIO4</div>
+            <div class="pin-label" style="top: 80px; left: -16px;">3V3</div>
+            <div class="pin-label" style="top: 80px; right: -28px;">GND</div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-head">▦ engine on chip</div>
+        <div class="demo-body">
+          <div class="controls">
+            <button class="btn" id="btn-cold">❄️ Cold</button>
+            <button class="btn" id="btn-room">🌡 Room</button>
+            <button class="btn" id="btn-hot">🔥 Hot</button>
+            <button class="btn primary" id="btn-auto">▶ Auto</button>
+          </div>
+          <div class="bd-stats">
+            <div class="bd-stat"><div class="k">temperature</div><div class="v" id="t-temp">22.0°C</div></div>
+            <div class="bd-stat"><div class="k">humidity</div><div class="v" id="t-humid">50%</div></div>
+            <div class="bd-stat"><div class="k">flash used</div><div class="v">3.2 KB</div></div>
+            <div class="bd-stat"><div class="k">ram used</div><div class="v">12 KB</div></div>
+          </div>
+          <h3 style="margin: 16px 0 8px; font-size: 0.9rem; color: var(--green);">cells on this device</h3>
+          <div class="cell-list" id="cell-list">
+            <div class="cell-row"><span class="id">sensor.temp</span><span class="kind">sensor</span><span class="val" id="cv-temp">22.0</span></div>
+            <div class="cell-row"><span class="id">sensor.humid</span><span class="kind">sensor</span><span class="val" id="cv-humid">50</span></div>
+            <div class="cell-row"><span class="id">fahrenheit</span><span class="kind">formula</span><span class="val" id="cv-f">71.6</span></div>
+            <div class="cell-row"><span class="id">heat_index</span><span class="kind">formula</span><span class="val" id="cv-hi">24.5</span></div>
+            <div class="cell-row"><span class="id">comfort</span><span class="kind">formula</span><span class="val" id="cv-c">cool</span></div>
+            <div class="cell-row"><span class="id">led.green</span><span class="kind">io</span><span class="val" id="cv-lg">true</span></div>
+            <div class="cell-row"><span class="id">led.red</span><span class="kind">io</span><span class="val" id="cv-lr">false</span></div>
+            <div class="cell-row"><span class="id">led.blue</span><span class="kind">io</span><span class="val" id="cv-lb">false</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 32px;">
+      <div class="eyebrow">The cell model on bare metal</div>
+      <h2>What runs on the chip</h2>
+    </div>
+    <div class="code" style="max-width: 700px; margin: 0 auto;">
+<span class="c-com">// src/main.rs — runs forever on the ESP32</span>
+
+<span class="c-kw">use</span> quilt_esp32::{{QuiltEngine, CellKind, CellValue, Sensor, Actuator}};
+
+<span class="c-kw">fn</span> <span class="c-fn">main</span>() -&gt; ! {
+    <span class="c-kw">let mut</span> engine = QuiltEngine::<span class="c-fn">new</span>();
+
+    <span class="c-com">// 3 cells: sensor, formula, output</span>
+    engine.<span class="c-fn">define</span>(<span class="c-str">"sensor.temp"</span>, CellKind::Sensor, CellValue::None);
+    engine.<span class="c-fn">define</span>(<span class="c-str">"led.on"</span>,      CellKind::Formula, CellValue::None);
+    engine.<span class="c-fn">define</span>(<span class="c-str">"led.gpio"</span>,    CellKind::Io,      CellValue::Bool(<span class="c-num">false</span>));
+    engine.<span class="c-fn">add_dep</span>(<span class="c-str">"led.on"</span>, <span class="c-str">"sensor.temp"</span>);
+
+    <span class="c-kw">loop</span> {
+        <span class="c-kw">let</span> t = dht22.<span class="c-fn">read</span>();
+        engine.<span class="c-fn">set</span>(<span class="c-str">"sensor.temp"</span>, t);
+        <span class="c-kw">let</span> on = t &gt; <span class="c-num">25.0</span>;
+        engine.<span class="c-fn">set</span>(<span class="c-str">"led.on"</span>, on);
+        led_pin.<span class="c-fn">set_high</span>(on);
+        delay.<span class="c-fn">delay_ms</span>(<span class="c-num">1000</span>);
+    }
+}
+    </div>
+    <p style="text-align: center; color: var(--text-dim); margin-top: 24px;">3 cells. 3.2 KB flash. 12 KB RAM. A complete reactive system on a $3 chip.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="feature-row">
+      <div>
+        <h3>Everything in a static memory block</h3>
+        <p>No allocator. No heap. The cell graph lives in a fixed-size static array. Deep sleep is just `core::arch::wasm32::unreachable!()`. Wake on a timer or a GPIO interrupt, run the engine, sleep again.</p>
+        <ul>
+          <li>Up to 64 cells per device (configurable)</li>
+          <li>8 cells per dependency (configurable)</li>
+          <li>32-byte cell id limit</li>
+          <li>Total footprint: 3-5 KB flash, 8-16 KB RAM</li>
+        </ul>
+      </div>
+      <div>
+        <h3>WiFi + BLE for the mesh</h3>
+        <p>Connect to the Quilt mesh via esp-wifi (TCP/IP) or esp-ble (BLE). Sync cells with other devices. Run a tiny HTTP server (the cell graph) so a phone can read or write cells.</p>
+        <ul>
+          <li>esp-wifi: full TCP/IP, mDNS, HTTP server</li>
+          <li>esp-ble: GATT server exposing cells as characteristics</li>
+          <li>LoRa: long-range mesh (separate crate)</li>
+          <li>Quilt mesh: peer-to-peer CRDT sync</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <a href="https://github.com/SuperInstance/quilt-esp32" target="_blank" class="btn primary">View source →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt ESP32 — part of the Quilt ecosystem. MIT licensed.</div>
+</footer>
+
+<script>
+const state = { temp: 22.0, humid: 50, auto: true };
+let autoTimer = null;
+
+function render() {
+  const t = state.temp;
+  const h = state.humid;
+  const f = t * 1.8 + 32;
+  const hi = t + (h / 100) * 5;
+  let comfort = 'cool';
+  if (hi >= 30) comfort = 'hot';
+  else if (hi >= 26) comfort = 'comfortable';
+  const lg = comfort === 'cool';
+  const lb = comfort === 'comfortable';
+  const lr = comfort === 'hot';
+  // Top stats
+  document.getElementById('t-temp').textContent = t.toFixed(1) + '°C';
+  document.getElementById('t-humid').textContent = h + '%';
+  // Cells
+  flash('cv-temp'); document.getElementById('cv-temp').textContent = t.toFixed(1);
+  flash('cv-humid'); document.getElementById('cv-humid').textContent = h;
+  flash('cv-f'); document.getElementById('cv-f').textContent = f.toFixed(1);
+  flash('cv-hi'); document.getElementById('cv-hi').textContent = hi.toFixed(1);
+  flash('cv-c'); document.getElementById('cv-c').textContent = comfort;
+  flash('cv-lg'); document.getElementById('cv-lg').textContent = String(lg);
+  flash('cv-lr'); document.getElementById('cv-lr').textContent = String(lr);
+  flash('cv-lb'); document.getElementById('cv-lb').textContent = String(lb);
+  // LEDs
+  document.getElementById('led-green').classList.toggle('on', lg);
+  document.getElementById('led-red').classList.toggle('on', lr);
+  document.getElementById('led-blue').classList.toggle('on', lb);
+}
+
+function flash(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const row = el.closest('.cell-row');
+  if (!row) return;
+  row.classList.remove('flash');
+  void row.offsetWidth;
+  row.classList.add('flash');
+}
+
+function setTemp(t) {
+  state.temp = t;
+  render();
+}
+
+document.getElementById('btn-cold').addEventListener('click', () => setTemp(8));
+document.getElementById('btn-room').addEventListener('click', () => setTemp(22));
+document.getElementById('btn-hot').addEventListener('click', () => setTemp(38));
+document.getElementById('btn-auto').addEventListener('click', () => {
+  if (autoTimer) {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    document.getElementById('btn-auto').textContent = '▶ Auto';
+  } else {
+    autoTimer = setInterval(() => {
+      state.temp += (Math.random() - 0.5) * 4;
+      state.temp = Math.max(0, Math.min(45, state.temp));
+      state.humid = Math.max(20, Math.min(95, state.humid + (Math.random() - 0.5) * 5));
+      render();
+    }, 800);
+    document.getElementById('btn-auto').textContent = '⏸ Stop';
+  }
+});
+
+render();
+// Auto-start for instant demo
+setTimeout(() => document.getElementById('btn-auto').click(), 800);
+</script>
+</body>
+</html>

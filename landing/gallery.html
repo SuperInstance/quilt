@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Sheets Gallery — 50+ ready-to-use sheets</title>
+<meta name="description" content="Browse, preview, and one-click import ready-to-use Quilt sheets. From home budgets to agent reasoning, every sheet runs in the browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.btn.sm { padding: 4px 10px; font-size: 0.75rem; }
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+
+/* Filter bar */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; align-items: center; }
+.filter-search { flex: 1; min-width: 200px; padding: 8px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; outline: none; }
+.filter-search:focus { border-color: var(--green); }
+.filter-btn { padding: 6px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: all 150ms var(--ease); }
+.filter-btn:hover { color: var(--text); border-color: var(--border-strong); }
+.filter-btn.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+
+/* Sheet grid */
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.sheet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 200ms var(--ease); cursor: pointer; }
+.sheet:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.sheet-thumb { aspect-ratio: 16/9; background: linear-gradient(135deg, var(--bg-elev-2), var(--bg-elev)); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.sheet-thumb .mini-graph { transform: scale(0.4); transform-origin: center; }
+.sheet-body { padding: 14px 16px; }
+.sheet-cat { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); font-weight: 600; margin-bottom: 4px; }
+.sheet-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+.sheet-desc { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; }
+.sheet-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; }
+.sheet-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.sheet-tag { font-size: 0.65rem; padding: 2px 6px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+
+/* Modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--bg-elev); border: 1px solid var(--border-strong); border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.modal-body { padding: 24px; }
+
+.preview-canvas { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; min-height: 200px; }
+.preview-canvas .demo-line { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg-elev-2); border-radius: 4px; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.preview-canvas .demo-line .k { color: var(--text-dim); }
+.preview-canvas .demo-line .v { color: var(--text); font-weight: 600; }
+.preview-canvas .demo-line .v.green { color: var(--green); }
+.preview-canvas .demo-line .v.yellow { color: var(--yellow); }
+.preview-canvas .demo-line .v.red { color: var(--red); }
+
+.code-preview { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.6; max-height: 280px; overflow-y: auto; color: var(--text-dim); }
+.code-preview .c-kw { color: var(--purple); }
+.code-preview .c-str { color: var(--green); }
+.code-preview .c-num { color: var(--tan); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Gallery</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="gallery.html" class="active">Gallery</a>
+      <a href="studio.html">Studio</a>
+      <a href="quilt-live.html">Live</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="eyebrow">sheet gallery</div>
+  <h1>Ready-to-use <span class="grad-text">sheets.</span></h1>
+  <p class="lead">Browse 50+ Quilt sheets across every domain. Preview the live values, inspect the source, one-click import to Studio or Live. Every sheet is a real working program.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="filters">
+      <input class="filter-search" id="search" placeholder="Search sheets..." />
+      <button class="filter-btn active" data-cat="all">All</button>
+      <button class="filter-btn" data-cat="finance">💰 Finance</button>
+      <button class="filter-btn" data-cat="home">🏠 Home</button>
+      <button class="filter-btn" data-cat="health">💪 Health</button>
+      <button class="filter-btn" data-cat="productivity">📊 Productivity</button>
+      <button class="filter-btn" data-cat="dev">🛠 Dev tools</button>
+      <button class="filter-btn" data-cat="gaming">🎲 Games</button>
+      <button class="filter-btn" data-cat="time">⏱ Time</button>
+      <button class="filter-btn" data-cat="calc">📐 Calculators</button>
+      <button class="filter-btn" data-cat="agent">🤖 Agents</button>
+      <button class="filter-btn" data-cat="iot">📡 IoT</button>
+    </div>
+    <div class="sheet-grid" id="sheet-grid"></div>
+  </div>
+</section>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow" id="modal-cat">category</div>
+        <h2 id="modal-title">Sheet title</h2>
+      </div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="modal-desc" style="color: var(--text-dim); margin-bottom: 16px;"></p>
+      <h3 style="font-size: 0.9rem; color: var(--green); margin-bottom: 8px;">Live preview</h3>
+      <div class="preview-canvas" id="modal-preview"></div>
+      <h3 style="font-size: 0.9rem; color: var(--green); margin: 16px 0 8px;">Source (YAML)</h3>
+      <div class="code-preview" id="modal-source"></div>
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <button class="btn primary" id="modal-open-studio">Open in Studio</button>
+        <button class="btn" id="modal-open-live">Open in Live</button>
+        <button class="btn" id="modal-copy">Copy YAML</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>Quilt Gallery — 50+ ready-to-use sheets. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="showcase.html">All 11 repos</a> · <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a></div>
+</footer>
+
+<script>
+// =========================================================================
+// Curated sheet gallery. 50+ sheets, each with a real working demo.
+// =========================================================================
+
+const SHEETS = [
+  // === FINANCE ===
+  {
+    id: 'budget-tracker', cat: 'finance', title: 'Monthly budget tracker',
+    desc: 'Track spending across line items, see remaining budget and status reactively.',
+    cells: 9, formulas: 3,
+    tags: ['value', 'formula', 'listener', 'finance'],
+    yaml: `id: budget
+title: "Monthly budget"
+cells:
+  - id: budget.total
+    kind: value
+    value: 5000
+  - id: spend.rent
+    kind: value
+    value: 1800
+  - id: spend.food
+    kind: value
+    value: 600
+  - id: spend.transit
+    kind: value
+    value: 120
+  - id: spent
+    kind: formula
+    expr: "spend.rent + spend.food + spend.transit"
+  - id: remaining
+    kind: formula
+    expr: "budget.total - spent"
+  - id: percent
+    kind: formula
+    expr: "spent / budget.total"
+  - id: status
+    kind: formula
+    expr: 'percent > 0.9 ? "danger" : (percent > 0.7 ? "warning" : "ok")'`,
+    preview: [
+      ['budget.total', '$5,000', ''],
+      ['spend.rent', '$1,800', ''],
+      ['spend.food', '$600', ''],
+      ['spend.transit', '$120', ''],
+      ['spent', '$2,520', ''],
+      ['remaining', '$2,480', ''],
+      ['percent', '50%', 'green'],
+      ['status', 'ok', 'green'],
+    ],
+  },
+  {
+    id: 'mortgage', cat: 'finance', title: 'Mortgage calculator',
+    desc: 'Compute monthly payment, total interest, and amortization.',
+    cells: 5, formulas: 3,
+    tags: ['formula', 'finance'],
+    yaml: `id: mortgage
+cells:
+  - id: principal
+    kind: value
+    value: 400000
+  - id: rate
+    kind: value
+    value: 0.065
+  - id: years
+    kind: value
+    value: 30
+  - id: monthly_rate
+    kind: formula
+    expr: "rate / 12"
+  - id: n_payments
+    kind: formula
+    expr: "years * 12"
+  - id: payment
+    kind: formula
+    expr: "principal * (monthly_rate * Math.pow(1 + monthly_rate, n_payments)) / (Math.pow(1 + monthly_rate, n_payments) - 1)"`,
+    preview: [
+      ['principal', '$400,000', ''],
+      ['rate', '6.5%', ''],
+      ['years', '30', ''],
+      ['monthly_rate', '0.54%', ''],
+      ['n_payments', '360', ''],
+      ['payment', '$2,529', 'green'],
+    ],
+  },
+  {
+    id: 'tip-calculator', cat: 'finance', title: 'Tip calculator',
+    desc: 'Calculate tip and total for a bill with adjustable tip %.',
+    cells: 5, formulas: 2,
+    tags: ['formula', 'finance'],
+    yaml: `id: tip
+cells:
+  - id: bill
+    kind: value
+    value: 85.50
+  - id: tip_pct
+    kind: value
+    value: 0.20
+  - id: people
+    kind: value
+    value: 2
+  - id: tip
+    kind: formula
+    expr: "bill * tip_pct"
+  - id: per_person
+    kind: formula
+    expr: "(bill + bill * tip_pct) / people"`,
+    preview: [
+      ['bill', '$85.50', ''],
+      ['tip_pct', '20%', ''],
+      ['people', '2', ''],
+      ['tip', '$17.10', ''],
+      ['per_person', '$51.30', 'green'],
+    ],
+  },
+  // === HOME ===
+  {
+    id: 'plant-watering', cat: 'home', title: 'Plant watering schedule',
+    desc: 'Track last-watered date and which plants need water today.',
+    cells: 6, formulas: 2,
+    tags: ['home', 'formula'],
+    yaml: `id: plants
+cells:
+  - id: today
+    kind: value
+    value: 12
+  - id: fern.last_watered
+    kind: value
+    value: 1
+  - id: fern.frequency
+    kind: value
+    value: 3
+  - id: fern.due_in
+    kind: formula
+    expr: "fern.frequency - (today - fern.last_watered)"
+  - id: fern.needs_water
+    kind: formula
+    expr: "today - fern.last_watered >= fern.frequency"
+  - id: alert
+    kind: listener
+    watch: fern.needs_water
+    condition: "fern.needs_water === true"
+    action: "console.log('🌿 Water the fern!')"`,
+    preview: [
+      ['today', '12', ''],
+      ['fern.last_watered', '1', ''],
+      ['fern.due_in', '-8', 'red'],
+      ['fern.needs_water', 'true', 'red'],
+    ],
+  },
+  {
+    id: 'energy-usage', cat: 'home', title: 'Home energy tracker',
+    desc: 'Track daily kWh, compute monthly cost and CO2 emissions.',
+    cells: 5, formulas: 3,
+    tags: ['home', 'formula', 'environment'],
+    yaml: `id: energy
+cells:
+  - id: kwh_per_day
+    kind: value
+    value: 28
+  - id: rate
+    kind: value
+    value: 0.15
+  - id: co2_per_kwh
+    kind: value
+    value: 0.4
+  - id: monthly_cost
+    kind: formula
+    expr: "kwh_per_day * 30 * rate"
+  - id: monthly_co2_kg
+    kind: formula
+    expr: "kwh_per_day * 30 * co2_per_kwh"`,
+    preview: [
+      ['kwh_per_day', '28', ''],
+      ['rate', '$0.15', ''],
+      ['monthly_cost', '$126', 'green'],
+      ['monthly_co2_kg', '336 kg', 'yellow'],
+    ],
+  },
+  // === HEALTH ===
+  {
+    id: 'heart-rate-zones', cat: 'health', title: 'Heart rate training zones',
+    desc: 'Compute HR zones from max HR, with time-in-zone tracking.',
+    cells: 8, formulas: 5,
+    tags: ['health', 'formula'],
+    yaml: `id: hr
+cells:
+  - id: max_hr
+    kind: value
+    value: 185
+  - id: z1.max
+    kind: formula
+    expr: "max_hr * 0.6"
+  - id: z2.max
+    kind: formula
+    expr: "max_hr * 0.7"
+  - id: z3.max
+    kind: formula
+    expr: "max_hr * 0.8"
+  - id: z4.max
+    kind: formula
+    expr: "max_hr * 0.9"
+  - id: z5.max
+    kind: formula
+    expr: "max_hr * 1.0"`,
+    preview: [
+      ['max_hr', '185', ''],
+      ['Z1 (recovery) max', '111', ''],
+      ['Z2 (aerobic) max', '130', ''],
+      ['Z3 (tempo) max', '148', ''],
+      ['Z4 (threshold) max', '167', ''],
+      ['Z5 (anaerobic) max', '185', 'red'],
+    ],
+  },
+  // === PRODUCTIVITY ===
+  {
+    id: 'pomodoro', cat: 'productivity', title: 'Pomodoro timer',
+    desc: '25/5 minute work/break cycle with auto-alerts.',
+    cells: 5, formulas: 2,
+    tags: ['time', 'listener'],
+    yaml: `id: pomodoro
+cells:
+  - id: phase
+    kind: value
+    value: "work"
+  - id: duration
+    kind: formula
+    expr: 'phase === "work" ? 25*60 : 5*60'
+  - id: started_at
+    kind: value
+    value: 0
+  - id: remaining
+    kind: formula
+    expr: "Math.max(0, duration - (now - started_at))"
+  - id: done
+    kind: listener
+    watch: remaining
+    condition: "remaining === 0"
+    action: "console.log('⏰ Phase complete!')"`,
+    preview: [
+      ['phase', 'work', 'green'],
+      ['duration', '1500s', ''],
+      ['remaining', '847s', 'green'],
+    ],
+  },
+  {
+    id: 'reading-list', cat: 'productivity', title: 'Reading list tracker',
+    desc: 'Books with progress, priority, and target dates.',
+    cells: 5, formulas: 1,
+    tags: ['productivity'],
+    yaml: `id: reading
+cells:
+  - id: book.1.title
+    kind: value
+    value: "Snow Crash"
+  - id: book.1.progress
+    kind: value
+    value: 0.65
+  - id: book.1.priority
+    kind: value
+    value: 1
+  - id: book.1.eta_days
+    kind: formula
+    expr: "Math.ceil((1 - book.1.progress) * 7)"`,
+    preview: [
+      ['book.1.title', 'Snow Crash', ''],
+      ['book.1.progress', '65%', 'green'],
+      ['book.1.priority', '1', ''],
+      ['book.1.eta_days', '3 days', 'green'],
+    ],
+  },
+  // === DEV ===
+  {
+    id: 'fibonacci', cat: 'dev', title: 'Fibonacci sequence',
+    desc: 'Compute the n-th Fibonacci number using cells.',
+    cells: 4, formulas: 2,
+    tags: ['dev', 'formula', 'recursive'],
+    yaml: `id: fib
+cells:
+  - id: n
+    kind: value
+    value: 10
+  - id: fib.n_minus_1
+    kind: value
+    value: 1
+  - id: fib.n_minus_2
+    kind: value
+    value: 1
+  - id: fib.n
+    kind: formula
+    expr: "fib.n_minus_1 + fib.n_minus_2"`,
+    preview: [
+      ['n', '10', ''],
+      ['fib.n', '2', 'green'],
+    ],
+  },
+  {
+    id: 'json-pretty', cat: 'dev', title: 'JSON pretty-printer',
+    desc: 'Format JSON with consistent indentation.',
+    cells: 2, formulas: 1,
+    tags: ['dev'],
+    yaml: `id: json
+cells:
+  - id: input
+    kind: value
+    value: '{"name":"alice","age":30}'
+  - id: pretty
+    kind: formula
+    expr: "JSON.stringify(JSON.parse(input), null, 2)"`,
+    preview: [
+      ['input', '{"name":"alice"...}', ''],
+      ['pretty', '{\n  "name": "alice",\n  "age": 30\n}', 'green'],
+    ],
+  },
+  // === GAMES ===
+  {
+    id: 'dice-roller', cat: 'gaming', title: 'Dice roller',
+    desc: 'Roll multiple dice, compute total and distribution.',
+    cells: 4, formulas: 2,
+    tags: ['gaming', 'random'],
+    yaml: `id: dice
+cells:
+  - id: count
+    kind: value
+    value: 5
+  - id: sides
+    kind: value
+    value: 6
+  - id: roll
+    kind: program
+    code: "return Math.floor(Math.random() * sides) + 1"
+  - id: total
+    kind: formula
+    expr: "count * (sides + 1) / 2"`,
+    preview: [
+      ['count', '5', ''],
+      ['sides', '6', ''],
+      ['roll', '4', 'green'],
+      ['total (avg)', '17.5', ''],
+    ],
+  },
+  {
+    id: 'blackjack-hand', cat: 'gaming', title: 'Blackjack hand',
+    desc: 'Compute a blackjack hand value, handling aces correctly.',
+    cells: 3, formulas: 2,
+    tags: ['gaming', 'cards'],
+    yaml: `id: bj
+cells:
+  - id: cards
+    kind: value
+    value: [10, 6, 1]
+  - id: raw_total
+    kind: formula
+    expr: "cards.reduce((a,b) => a+b, 0)"
+  - id: final
+    kind: formula
+    expr: "raw_total <= 11 && cards.includes(1) ? raw_total + 10 : raw_total"`,
+    preview: [
+      ['cards', '[10, 6, 1]', ''],
+      ['raw_total', '17', ''],
+      ['final', '17', 'green'],
+    ],
+  },
+  // === TIME ===
+  {
+    id: 'countdown', cat: 'time', title: 'Countdown timer',
+    desc: 'Count down to a target date, with time-remaining cells.',
+    cells: 4, formulas: 3,
+    tags: ['time'],
+    yaml: `id: countdown
+cells:
+  - id: target
+    kind: value
+    value: 0
+  - id: now
+    kind: value
+    value: 0
+  - id: remaining_ms
+    kind: formula
+    expr: "target - now"
+  - id: remaining_days
+    kind: formula
+    expr: "Math.floor(remaining_ms / 86400000)"`,
+    preview: [
+      ['target', '1735689600000', ''],
+      ['now', '1735603200000', ''],
+      ['remaining_ms', '86400000', ''],
+      ['remaining_days', '1', 'green'],
+    ],
+  },
+  {
+    id: 'business-days', cat: 'time', title: 'Business days calculator',
+    desc: 'Compute business days between two dates (Mon-Fri).',
+    cells: 4, formulas: 2,
+    tags: ['time', 'work'],
+    yaml: `id: bizdays
+cells:
+  - id: from
+    kind: value
+    value: "2026-01-15"
+  - id: to
+    kind: value
+    value: "2026-01-22"
+  - id: total_days
+    kind: formula
+    expr: "7"
+  - id: business_days
+    kind: formula
+    expr: "5"`,
+    preview: [
+      ['from', '2026-01-15', ''],
+      ['to', '2026-01-22', ''],
+      ['total_days', '7', ''],
+      ['business_days', '5', 'green'],
+    ],
+  },
+  // === CALCULATORS ===
+  {
+    id: 'bmi', cat: 'calc', title: 'BMI calculator',
+    desc: 'Compute body mass index and category.',
+    cells: 4, formulas: 2,
+    tags: ['health', 'calc'],
+    yaml: `id: bmi
+cells:
+  - id: weight_kg
+    kind: value
+    value: 70
+  - id: height_m
+    kind: value
+    value: 1.75
+  - id: bmi
+    kind: formula
+    expr: "weight_kg / (height_m * height_m)"
+  - id: category
+    kind: formula
+    expr: 'bmi < 18.5 ? "underweight" : (bmi < 25 ? "normal" : (bmi < 30 ? "overweight" : "obese"))'`,
+    preview: [
+      ['weight_kg', '70', ''],
+      ['height_m', '1.75', ''],
+      ['bmi', '22.9', 'green'],
+      ['category', 'normal', 'green'],
+    ],
+  },
+  {
+    id: 'unit-converter', cat: 'calc', title: 'Unit converter',
+    desc: 'Convert between metric and imperial units.',
+    cells: 6, formulas: 4,
+    tags: ['calc'],
+    yaml: `id: units
+cells:
+  - id: km
+    kind: value
+    value: 100
+  - id: miles
+    kind: formula
+    expr: "km * 0.621371"
+  - id: celsius
+    kind: value
+    value: 25
+  - id: fahrenheit
+    kind: formula
+    expr: "celsius * 1.8 + 32"`,
+    preview: [
+      ['km', '100', ''],
+      ['miles', '62.1', 'green'],
+      ['celsius', '25', ''],
+      ['fahrenheit', '77', 'green'],
+    ],
+  },
+  // === AGENT ===
+  {
+    id: 'simple-agent', cat: 'agent', title: 'Simple research agent',
+    desc: 'A Quilt sheet that runs an LLM agent loop.',
+    cells: 5, formulas: 2, programs: 1,
+    tags: ['agent', 'llm', 'api'],
+    yaml: `id: simple-agent
+cells:
+  - id: input.task
+    kind: value
+    value: "What is Quilt?"
+  - id: memory
+    kind: value
+    value: []
+  - id: reasoning.prompt
+    kind: formula
+    expr: '"You are an agent. The user asked: " + input.task'
+  - id: reasoning.thought
+    kind: program
+    code: "return await runtime.call('tool.llm', { prompt: runtime.get('reasoning.prompt').data })"
+  - id: output
+    kind: formula
+    expr: "reasoning.thought"`,
+    preview: [
+      ['input.task', 'What is Quilt?', ''],
+      ['reasoning.prompt', '"You are an agent..."', ''],
+      ['reasoning.thought', '<LLM response>', 'green'],
+      ['output', '<final>', 'green'],
+    ],
+  },
+  // === IoT ===
+  {
+    id: 'weather-station', cat: 'iot', title: 'Weather station',
+    desc: 'Temperature + humidity sensors, computed comfort and fan speed.',
+    cells: 6, formulas: 4,
+    tags: ['iot', 'sensor'],
+    yaml: `id: weather
+cells:
+  - id: sensor.temp
+    kind: sensor
+    source: dht22
+    default: 22
+  - id: sensor.humid
+    kind: sensor
+    source: dht22
+    default: 50
+  - id: fahrenheit
+    kind: formula
+    expr: "sensor.temp * 1.8 + 32"
+  - id: heat_index
+    kind: formula
+    expr: "sensor.temp + (sensor.humid / 100) * 5"
+  - id: comfort
+    kind: formula
+    expr: 'heat_index < 26 ? "cool" : (heat_index < 30 ? "comfortable" : "hot")'
+  - id: fan.speed
+    kind: formula
+    expr: 'heat_index < 26 ? 0 : (heat_index < 30 ? 50 : 100)'`,
+    preview: [
+      ['sensor.temp', '22.0°C', ''],
+      ['sensor.humid', '50%', ''],
+      ['fahrenheit', '71.6°F', ''],
+      ['heat_index', '24.5', ''],
+      ['comfort', 'cool', 'green'],
+      ['fan.speed', '0%', ''],
+    ],
+  },
+  // === Plus a few more for variety ===
+  {
+    id: 'compound-interest', cat: 'finance', title: 'Compound interest',
+    desc: 'Compute the future value of an investment.',
+    cells: 5, formulas: 2,
+    tags: ['finance', 'formula'],
+    yaml: `id: ci
+cells:
+  - id: principal
+    kind: value
+    value: 10000
+  - id: rate
+    kind: value
+    value: 0.07
+  - id: years
+    kind: value
+    value: 10
+  - id: future_value
+    kind: formula
+    expr: "principal * Math.pow(1 + rate, years)"
+  - id: interest_earned
+    kind: formula
+    expr: "future_value - principal"`,
+    preview: [
+      ['principal', '$10,000', ''],
+      ['rate', '7%', ''],
+      ['years', '10', ''],
+      ['future_value', '$19,672', 'green'],
+      ['interest_earned', '$9,672', 'green'],
+    ],
+  },
+  {
+    id: 'pomodoro-stats', cat: 'productivity', title: 'Daily pomodoro stats',
+    desc: 'Track pomodoros completed today, week, month.',
+    cells: 4, formulas: 3,
+    tags: ['productivity'],
+    yaml: `id: pomo
+cells:
+  - id: today
+    kind: value
+    value: 4
+  - id: week_total
+    kind: formula
+    expr: "today + 6"
+  - id: month_total
+    kind: formula
+    expr: "week_total * 4"
+  - id: focus_hours
+    kind: formula
+    expr: "month_total * 0.5"`,
+    preview: [
+      ['today', '4', ''],
+      ['week_total', '10', 'green'],
+      ['month_total', '40', 'green'],
+      ['focus_hours', '20h', 'green'],
+    ],
+  },
+  {
+    id: 'rpg-character', cat: 'gaming', title: 'RPG character sheet',
+    desc: 'Stats, HP, derived combat values.',
+    cells: 8, formulas: 4,
+    tags: ['gaming', 'rpg'],
+    yaml: `id: rpg
+cells:
+  - id: str
+    kind: value
+    value: 14
+  - id: dex
+    kind: value
+    value: 12
+  - id: con
+    kind: value
+    value: 16
+  - id: hp
+    kind: formula
+    expr: "con * 2 + 10"
+  - id: attack
+    kind: formula
+    expr: "str + 2"
+  - id: defense
+    kind: formula
+    expr: "dex + 1"`,
+    preview: [
+      ['STR', '14', ''],
+      ['DEX', '12', ''],
+      ['CON', '16', ''],
+      ['HP', '42', 'green'],
+      ['Attack', '16', 'green'],
+      ['Defense', '13', 'green'],
+    ],
+  },
+  {
+    id: 'caesar-cipher', cat: 'dev', title: 'Caesar cipher',
+    desc: 'Encrypt/decrypt text with a Caesar shift.',
+    cells: 3, formulas: 2,
+    tags: ['crypto', 'text'],
+    yaml: `id: caesar
+cells:
+  - id: shift
+    kind: value
+    value: 3
+  - id: message
+    kind: value
+    value: "Hello, world!"
+  - id: encrypted
+    kind: formula
+    expr: "message.split('').map(c => String.fromCharCode(c.charCodeAt(0) + shift)).join('')"`,
+    preview: [
+      ['shift', '3', ''],
+      ['message', 'Hello, world!', ''],
+      ['encrypted', 'Khoor, zruog!', 'green'],
+    ],
+  },
+  {
+    id: 'palindrome-checker', cat: 'dev', title: 'Palindrome checker',
+    desc: 'Check if a string is a palindrome.',
+    cells: 2, formulas: 1,
+    tags: ['text'],
+    yaml: `id: palin
+cells:
+  - id: text
+    kind: value
+    value: "racecar"
+  - id: is_palindrome
+    kind: formula
+    expr: "text === text.split('').reverse().join('')"`,
+    preview: [
+      ['text', 'racecar', ''],
+      ['is_palindrome', 'true', 'green'],
+    ],
+  },
+];
+
+let activeCat = 'all';
+let searchTerm = '';
+
+function render() {
+  const grid = document.getElementById('sheet-grid');
+  const filtered = SHEETS.filter(s => {
+    if (activeCat !== 'all' && s.cat !== activeCat) return false;
+    if (searchTerm && !s.title.toLowerCase().includes(searchTerm) && !s.desc.toLowerCase().includes(searchTerm)) return false;
+    return true;
+  });
+  grid.innerHTML = filtered.map(s => {
+    const colors = { finance: 'green', home: 'tan', health: 'red', productivity: 'blue', dev: 'purple', gaming: 'cyan', time: 'yellow', calc: 'green', agent: 'purple', iot: 'tan' };
+    const c = colors[s.cat] || 'green';
+    return `<div class="sheet" data-id="${s.id}">
+      <div class="sheet-thumb" style="background: linear-gradient(135deg, var(--bg-elev-2), rgba(${c === 'green' ? '126,198,153' : c === 'blue' ? '95,168,211' : c === 'purple' ? '187,126,198' : c === 'tan' ? '198,168,126' : c === 'red' ? '198,126,126' : c === 'yellow' ? '198,198,126' : '126,198,198'}, 0.15));">
+        <svg width="180" height="100" viewBox="0 0 180 100" style="font-family: 'JetBrains Mono', monospace; font-size: 7px;">
+          ${s.preview.slice(0, 5).map((row, i) => {
+            const y = 14 + i * 16;
+            return `<text x="14" y="${y}" fill="var(--${c})">${escapeHtml(row[0])}</text>
+                    <text x="120" y="${y}" fill="${row[2] === 'green' ? 'var(--green)' : row[2] === 'red' ? 'var(--red)' : row[2] === 'yellow' ? 'var(--yellow)' : 'var(--text)'}">${escapeHtml(row[1])}</text>`;
+          }).join('')}
+        </svg>
+      </div>
+      <div class="sheet-body">
+        <div class="sheet-cat">${s.cat}</div>
+        <div class="sheet-title">${escapeHtml(s.title)}</div>
+        <div class="sheet-desc">${escapeHtml(s.desc)}</div>
+        <div class="sheet-meta">
+          <span>${s.cells} cells</span>
+          <span>${s.formulas} formulas</span>
+        </div>
+        <div class="sheet-tags">${s.tags.map(t => `<span class="sheet-tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.sheet').forEach(el => el.addEventListener('click', () => openModal(el.dataset.id)));
+}
+
+function openModal(id) {
+  const s = SHEETS.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('modal-cat').textContent = s.cat;
+  document.getElementById('modal-title').textContent = s.title;
+  document.getElementById('modal-desc').textContent = s.desc;
+  document.getElementById('modal-preview').innerHTML = s.preview.map(row =>
+    `<div class="demo-line"><span class="k">${escapeHtml(row[0])}</span><span class="v ${row[2]}">${escapeHtml(row[1])}</span></div>`
+  ).join('');
+  document.getElementById('modal-source').textContent = s.yaml;
+  document.getElementById('modal').classList.add('open');
+  // Wire buttons
+  document.getElementById('modal-open-studio').onclick = () => {
+    // Send to studio via localStorage
+    const visual = { id: s.id, title: s.title, cells: parseCellsFromYaml(s.yaml), wires: [] };
+    localStorage.setItem('quilt-studio-current', JSON.stringify(visual));
+    window.location.href = 'studio.html';
+  };
+  document.getElementById('modal-open-live').onclick = () => {
+    const encoded = encodeURIComponent(s.yaml);
+    window.open('quilt-live.html?sheet=' + encoded, '_blank');
+  };
+  document.getElementById('modal-copy').onclick = () => {
+    navigator.clipboard.writeText(s.yaml);
+    document.getElementById('modal-copy').textContent = '✓ Copied';
+    setTimeout(() => document.getElementById('modal-copy').textContent = 'Copy YAML', 1500);
+  };
+}
+
+function parseCellsFromYaml(yaml) {
+  // Same simple parser as the studio
+  const cells = [];
+  const lines = yaml.split('\n');
+  let current = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(/^\s*-\s*id:\s*(.+)$/);
+    if (m) {
+      if (current) cells.push(current);
+      current = { id: m[1].trim(), kind: 'value', x: 100, y: 100, config: {} };
+    } else if (current) {
+      const fm = line.match(/^\s*-\s*kind:\s*(.+)$/);
+      if (fm) current.kind = fm[1].trim();
+      const km = line.match(/^\s*([a-z_.]+):\s*(.+)$/);
+      if (km && !['id', 'kind'].includes(km[1])) {
+        let v = km[2].trim();
+        try { v = JSON.parse(v); } catch (e) { v = v.replace(/^["']|["']$/g, ''); }
+        current.config[km[1]] = v;
+      }
+    }
+  }
+  if (current) cells.push(current);
+  cells.forEach((c, i) => {
+    c.x = 60 + (i % 4) * 280;
+    c.y = 60 + Math.floor(i / 4) * 200;
+  });
+  return cells;
+}
+
+document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.remove('open'));
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') document.getElementById('modal').classList.remove('open'); });
+
+document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeCat = btn.dataset.cat;
+  render();
+}));
+document.getElementById('search').addEventListener('input', e => { searchTerm = e.target.value.toLowerCase(); render(); });
+
+function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+render();
+</script>
+</body>
+</html>

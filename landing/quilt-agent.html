@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Agent — LLM agents as sheets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+.demo-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .demo-wrap { grid-template-columns: 1fr; } }
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.demo-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.demo-head .ico { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.demo-head.input .ico { background: rgba(126,198,153,0.15); color: var(--green); }
+.demo-head.cells .ico { background: rgba(95,168,211,0.15); color: var(--blue); }
+.demo-head.output .ico { background: rgba(187,126,198,0.15); color: var(--purple); }
+.demo-body { padding: 18px; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; font-weight: 600; }
+.field input, .field textarea, .field select { width: 100%; padding: 8px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; }
+.field input:focus, .field textarea:focus { border-color: var(--green); }
+.field textarea { min-height: 60px; resize: vertical; }
+
+.cell { padding: 10px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+.cell.flash { animation: cell-flash 600ms var(--ease); }
+@keyframes cell-flash { 0% { background: rgba(126,198,153,0.15); border-color: var(--green); } 100% { background: var(--bg-elev-2); border-color: var(--border); } }
+.cell .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-bottom: 4px; font-weight: 600; }
+.cell .label.green { color: var(--green); }
+.cell .label.blue { color: var(--blue); }
+.cell .label.purple { color: var(--purple); }
+.cell .value { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text); word-break: break-word; }
+.cell .value.empty { color: var(--text-faint); font-style: italic; }
+.cell .value.long { font-size: 0.8rem; max-height: 100px; overflow-y: auto; }
+
+.trace { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; max-height: 280px; overflow-y: auto; }
+.trace-step { padding: 6px 0; border-bottom: 1px solid var(--border); }
+.trace-step:last-child { border-bottom: none; }
+.trace-step .ts { color: var(--text-faint); }
+.trace-step .action { color: var(--text); }
+.trace-step .action.b { color: var(--blue); }
+.trace-step .action.g { color: var(--green); }
+.trace-step .action.p { color: var(--purple); }
+
+.output-final { background: linear-gradient(135deg, rgba(126,198,153,0.05), rgba(95,168,211,0.05)); border: 1px solid rgba(126,198,153,0.3); border-radius: 8px; padding: 16px; margin-top: 12px; }
+.output-final .label { color: var(--green); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; font-weight: 600; }
+.output-final .value { font-size: 1rem; color: var(--text); line-height: 1.5; }
+
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row p { color: var(--text-dim); }
+.feature-row ul { list-style: none; padding: 0; }
+.feature-row li { padding: 4px 0 4px 24px; position: relative; color: var(--text-dim); }
+.feature-row li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+@media (max-width: 900px) { .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Agent</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-agent.html" class="active">Agent</a>
+      <a href="https://github.com/SuperInstance/quilt-agent" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · research-agent example</div>
+  <h1>The agent is a <span class="grad-text">sheet.</span></h1>
+  <p class="lead">Memory, tools, reasoning, goals — all cells. Multiple agents share cells. The graph is the team. Click "Run" to watch an agent work through a task, cell by cell.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="demo-wrap">
+      <div class="demo-card">
+        <div class="demo-head input"><span class="ico">→</span> input</div>
+        <div class="demo-body">
+          <div class="field">
+            <label>task</label>
+            <textarea id="task-input">What are the trade-offs between Rust and TypeScript for a new runtime?</textarea>
+          </div>
+          <div class="field">
+            <label>tools available</label>
+            <select multiple size="3" style="height: auto;">
+              <option selected>search (web)</option>
+              <option selected>code (sandbox)</option>
+              <option>image (generation)</option>
+            </select>
+          </div>
+          <button class="btn primary" id="run-btn" style="width: 100%;">▶ Run agent</button>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-head cells"><span class="ico">▦</span> live cell graph</div>
+        <div class="demo-body">
+          <div id="cells-view">
+            <div class="cell"><div class="label green">input.task</div><div class="value" id="cv-task">—</div></div>
+            <div class="cell"><div class="label blue">memory.recent</div><div class="value" id="cv-memory">[]</div></div>
+            <div class="cell"><div class="label purple">reasoning.thought</div><div class="value empty" id="cv-thought">— waiting —</div></div>
+            <div class="cell"><div class="label blue">tool.calls</div><div class="value empty" id="cv-tools">—</div></div>
+            <div class="cell"><div class="label purple">output.response</div><div class="value empty" id="cv-output">— waiting —</div></div>
+          </div>
+          <div class="output-final" id="final-out" style="display: none;">
+            <div class="label">final response</div>
+            <div class="value" id="final-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-card" style="margin-top: 24px;">
+      <div class="demo-head"><span class="ico" style="background: rgba(198,168,126,0.15); color: var(--tan);">⏱</span> reasoning trace</div>
+      <div class="demo-body">
+        <div class="trace" id="trace">
+          <div style="color: var(--text-faint); font-style: italic;">Click "Run agent" to see the reasoning chain</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 32px;">
+      <div class="eyebrow">The cell graph</div>
+      <h2>The agent, as YAML</h2>
+    </div>
+    <div class="code" style="max-width: 700px; margin: 0 auto;">
+<span class="c-kw">id</span>: research-agent
+<span class="c-kw">title</span>: <span class="c-str">"Research agent"</span>
+<span class="c-kw">cells</span>:
+  - <span class="c-kw">id</span>: <span class="c-str">input.task</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: <span class="c-str">"What is Quilt?"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">memory.recent</span>
+    <span class="c-kw">kind</span>: value
+    <span class="c-kw">value</span>: []
+
+  - <span class="c-kw">id</span>: <span class="c-str">tool.search</span>
+    <span class="c-kw">kind</span>: api
+    <span class="c-kw">endpoint</span>: <span class="c-str">"https://api.search.example/query"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">tool.llm</span>
+    <span class="c-kw">kind</span>: api
+    <span class="c-kw">endpoint</span>: <span class="c-str">"https://api.openai.com/v1/chat/completions"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">reasoning.prompt</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">'"You are a research agent. The user asked: " + input.task'</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">reasoning.thought</span>
+    <span class="c-kw">kind</span>: program
+    <span class="c-kw">code</span>: <span class="c-str">"return await runtime.call('tool.llm', { prompt: runtime.get('reasoning.prompt').data });"</span>
+
+  - <span class="c-kw">id</span>: <span class="c-str">output.response</span>
+    <span class="c-kw">kind</span>: formula
+    <span class="c-kw">expr</span>: <span class="c-str">"reasoning.thought"</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="feature-row">
+      <div>
+        <h3>Memory is values</h3>
+        <p>The agent's memory is a set of value cells. The history of every interaction is preserved. You can rewind, branch, and replay any agent session, just like git for your data.</p>
+      </div>
+      <div>
+        <h3>Tools are API cells</h3>
+        <p>Web search, code execution, image generation, file system — all are API cells. Add a new tool by adding a cell. Remove a tool by removing a cell. The schema is the same as a spreadsheet cell.</p>
+      </div>
+    </div>
+    <div class="feature-row reverse">
+      <div>
+        <h3>Reasoning is a chain of program cells</h3>
+        <p>The LLM call is a program cell. The output is a value. The next cell's input depends on this one. The graph is the reasoning chain. Step through it like a debugger.</p>
+      </div>
+      <div>
+        <h3>Multiple agents share cells</h3>
+        <p>Agent A writes to `findings`. Agent B reads from it. The graph is the team. No message bus, no coordination layer, no glue code. Just cells connected by wires.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <a href="https://github.com/SuperInstance/quilt-agent" target="_blank" class="btn primary">View source →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Agent — part of the Quilt ecosystem. MIT licensed.</div>
+</footer>
+
+<script>
+// Mock agent that walks through a "research" reasoning chain.
+const RESPONSES = {
+  'What are the trade-offs between Rust and TypeScript for a new runtime?': {
+    thoughts: [
+      { type: 'thought', text: 'The user wants a comparison of Rust vs TypeScript for a new runtime. I should consider: performance, ecosystem, distribution, type system, and developer velocity.' },
+      { type: 'tool', tool: 'search', query: 'Rust vs TypeScript runtime performance benchmarks 2025', result: 'Found 8 relevant results. Key takeaway: Rust is 2-5x faster in CPU-bound tasks, comparable in I/O-bound workloads.' },
+      { type: 'thought', text: 'Now I have concrete benchmarks. Let me organize this into a clear comparison with categories.' },
+      { type: 'thought', text: 'I should cover: performance, ecosystem, distribution (binary vs JS bundle), memory safety, async model, and developer experience.' },
+    ],
+    summary: '**Rust vs TypeScript for a new runtime**\n\n**Performance**: Rust wins 2-5x for CPU-bound work, but for I/O-bound runtimes the difference is minimal since both are bound by network/disk.\n\n**Distribution**: Rust ships as a single binary (~5MB); TypeScript needs a Node.js install (~50MB+) or a bundler.\n\n**Memory safety**: Rust is memory-safe by default. TypeScript has JS\'s runtime safety but the underlying memory is unsafe.\n\n**Async model**: Rust has a first-class async/await (Tokio); TypeScript has Promises. Both are excellent.\n\n**Ecosystem**: TypeScript has a far larger ecosystem (npm). Rust\'s is smaller but growing fast.\n\n**DX**: TypeScript is faster to iterate; Rust is harder to learn but catches more bugs at compile time.\n\n**Verdict**: For a runtime that needs to be tiny and fast (ESP32, browsers), Rust wins. For a runtime that\'s part of a larger app or needs rich ecosystem, TypeScript wins. Many projects ship both.',
+  },
+};
+
+let running = false;
+async function runAgent() {
+  if (running) return;
+  running = true;
+  document.getElementById('run-btn').disabled = true;
+  const task = document.getElementById('task-input').value;
+  const trace = document.getElementById('trace');
+  trace.innerHTML = '';
+  // Set input.task
+  flashCell('cv-task');
+  document.getElementById('cv-task').textContent = task;
+  addTrace('set', 'input.task', 'g');
+  await sleep(400);
+  // Reasoning steps
+  const response = RESPONSES[task] || {
+    thoughts: [
+      { type: 'thought', text: `I'll think about: "${task}". Let me approach this systematically.` },
+      { type: 'tool', tool: 'search', query: task, result: 'Found relevant context.' },
+      { type: 'thought', text: 'Synthesizing the findings into a clear response.' },
+    ],
+    summary: `Here's my analysis of "${task}":\n\nBased on the available context, this is a multifaceted question. The key considerations are scope, scale, and constraints. Without more specific information, I'd recommend starting with a clear definition of the problem, then iterating on small experiments before committing to a direction. The Quilt cell model is a good fit when the system is naturally composed of values that flow into computations — most real-world systems are.`,
+  };
+  for (const t of response.thoughts) {
+    if (t.type === 'thought') {
+      flashCell('cv-thought');
+      document.getElementById('cv-thought').classList.remove('empty');
+      document.getElementById('cv-thought').textContent = t.text;
+      addTrace('reasoning.thought: ' + t.text, null, 'p');
+    } else if (t.type === 'tool') {
+      flashCell('cv-tools');
+      const toolsEl = document.getElementById('cv-tools');
+      toolsEl.classList.remove('empty');
+      const calls = toolsEl.textContent === '—' ? [] : JSON.parse(toolsEl.textContent);
+      calls.push({ tool: t.tool, query: t.query });
+      toolsEl.textContent = JSON.stringify(calls, null, 2);
+      addTrace('tool.' + t.tool + '("' + t.query + '") → ' + t.result, null, 'b');
+    }
+    await sleep(700);
+  }
+  // Final output
+  flashCell('cv-output');
+  document.getElementById('cv-output').classList.remove('empty');
+  // Convert markdown-ish to HTML
+  const html = response.summary
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+  document.getElementById('cv-output').innerHTML = html;
+  // Show final card
+  document.getElementById('final-out').style.display = 'block';
+  document.getElementById('final-text').innerHTML = html;
+  addTrace('output.response updated', null, 'g');
+  running = false;
+  document.getElementById('run-btn').disabled = false;
+}
+
+function flashCell(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const cell = el.closest('.cell');
+  if (!cell) return;
+  cell.classList.remove('flash');
+  void cell.offsetWidth;
+  cell.classList.add('flash');
+}
+
+function addTrace(msg, ts, cls) {
+  const trace = document.getElementById('trace');
+  const step = document.createElement('div');
+  step.className = 'trace-step';
+  const t = new Date().toLocaleTimeString();
+  step.innerHTML = `<span class="ts">[${t}]</span> <span class="action ${cls || ''}">${msg}</span>`;
+  trace.appendChild(step);
+  trace.scrollTop = trace.scrollHeight;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+document.getElementById('run-btn').addEventListener('click', runAgent);
+// Auto-run after a moment
+setTimeout(runAgent, 1000);
+</script>
+</body>
+</html>

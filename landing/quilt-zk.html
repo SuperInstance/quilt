@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt ZK — prove without revealing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+.demo-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .demo-wrap { grid-template-columns: 1fr; } }
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.demo-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.demo-head .ico { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.demo-head.prover .ico { background: rgba(126,198,153,0.15); color: var(--green); }
+.demo-head.verifier .ico { background: rgba(95,168,211,0.15); color: var(--blue); }
+.demo-body { padding: 20px; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; font-weight: 600; }
+.field .priv { color: var(--red); }
+.field .pub { color: var(--blue); }
+.field input, .field select { width: 100%; padding: 8px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; }
+.field input:focus { border-color: var(--green); }
+
+.witness { background: var(--bg-elev-2); border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-faint); }
+.witness b { color: var(--red); }
+.witness b.v { color: var(--text); }
+
+.proof-out { background: var(--bg-elev-2); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; word-break: break-all; max-height: 200px; overflow-y: auto; }
+.proof-out b { color: var(--green); }
+
+.verdict { padding: 20px; border-radius: 8px; font-weight: 600; text-align: center; font-size: 1.1rem; }
+.verdict.pass { background: rgba(126,198,153,0.1); color: var(--green); border: 1px solid rgba(126,198,153,0.3); }
+.verdict.fail { background: rgba(198,126,126,0.1); color: var(--red); border: 1px solid rgba(198,126,126,0.3); }
+
+.learned { margin-top: 16px; padding: 12px; background: var(--bg-elev-2); border-radius: 6px; font-size: 0.85rem; }
+.learned-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.learned-row:last-child { border-bottom: none; }
+.learned-row .k { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.learned-row .v { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; }
+.learned-row .v.green { color: var(--green); }
+.learned-row .v.red { color: var(--red); }
+.learned-row .v.faint { color: var(--text-faint); font-style: italic; }
+
+.circuits { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.circuit-btn { padding: 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; text-align: left; cursor: pointer; transition: all 150ms var(--ease); }
+.circuit-btn:hover { border-color: var(--border-strong); }
+.circuit-btn.active { background: var(--bg-elev); border-color: var(--green); }
+.circuit-btn .name { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 4px; }
+.circuit-btn .desc { font-size: 0.7rem; color: var(--text-faint); }
+
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt ZK</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-zk.html" class="active">ZK</a>
+      <a href="https://github.com/SuperInstance/quilt-zk" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 7 tests · 6 pre-built circuits</div>
+  <h1>Prove <span class="grad-text">without revealing.</span></h1>
+  <p class="lead">A cell is also a statement. "My balance is at least $X" — proved without showing the balance. "I voted" — proved without showing how. Click around. See what the verifier learns, and what it doesn't.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <h2 style="text-align: center; margin-bottom: 24px;">Pick a circuit</h2>
+    <div class="circuits">
+      <div class="circuit-btn active" data-circuit="value_at_least">
+        <div class="name">value_at_least</div>
+        <div class="desc">Prove value ≥ threshold</div>
+      </div>
+      <div class="circuit-btn" data-circuit="value_in_set">
+        <div class="name">value_in_set</div>
+        <div class="desc">Prove value is in a set</div>
+      </div>
+      <div class="circuit-btn" data-circuit="sum_equals">
+        <div class="name">sum_equals</div>
+        <div class="desc">Prove sum equals total</div>
+      </div>
+      <div class="circuit-btn" data-circuit="group_membership">
+        <div class="name">group_membership</div>
+        <div class="desc">Prove group membership</div>
+      </div>
+    </div>
+
+    <div class="demo-wrap">
+      <div class="demo-card">
+        <div class="demo-head prover"><span class="ico">P</span> prover (you)</div>
+        <div class="demo-body">
+          <div id="prover-fields"></div>
+          <button class="btn primary" id="prove-btn" style="margin-top: 12px;">🔒 Generate proof</button>
+          <div class="field" style="margin-top: 16px;">
+            <label>proof (sent to verifier)</label>
+            <div class="proof-out" id="proof-out">— no proof yet —</div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="demo-head verifier"><span class="ico">V</span> verifier (bank / doctor / anyone)</div>
+        <div class="demo-body">
+          <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 12px;">The verifier runs the same predicate on the witness and public inputs. If it holds, the proof is valid. The verifier learns the statement, but NOT the witness.</p>
+          <button class="btn primary" id="verify-btn" disabled>🔓 Verify proof</button>
+          <div class="field" style="margin-top: 16px;">
+            <label>verdict</label>
+            <div id="verdict">— waiting for proof —</div>
+          </div>
+          <div class="learned">
+            <div class="learned-row"><span class="k">verifier learned:</span><span class="v green" id="learned-yes">—</span></div>
+            <div class="learned-row"><span class="k">verifier did NOT learn:</span><span class="v red" id="learned-no">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 48px;">
+      <div class="eyebrow">What just happened</div>
+      <h2>What you just did</h2>
+    </div>
+    <div class="code" style="max-width: 700px; margin: 0 auto;">
+<span class="c-kw">const</span> proof = CIRCUITS.<span class="c-fn">VALUE_AT_LEAST</span>.<span class="c-fn">prove</span>(
+  { <span class="c-kw">value</span>: <span class="c-num">75_000</span> },     <span class="c-com">// private witness</span>
+  { <span class="c-kw">threshold</span>: <span class="c-num">50_000</span> }   <span class="c-com">// public input</span>
+);
+
+<span class="c-com">// The proof is a tuple of (publicInputs, witness, holds).</span>
+<span class="c-com">// A real ZK proof is a tuple of field elements — no witness.</span>
+<span class="c-com">// The verifier can't extract the witness from the proof.</span>
+
+proof.<span class="c-fn">verify</span>(CIRCUITS.<span class="c-num">VALUE_AT_LEAST</span>);  <span class="c-com">// true</span>
+    </div>
+    <div style="text-align: center; margin-top: 32px;">
+      <p style="color: var(--text-dim); max-width: 700px; margin: 0 auto;">In a real ZK system, the witness never leaves your device. The proof is small (a few hundred bytes). Anyone can verify it. The verifier learns the truth of the statement, not the underlying data.</p>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <h2>The real backend is coming.</h2>
+    <p class="lead" style="margin: 16px auto 32px;">This is a sketch. The real implementation will use Noir (TypeScript-friendly ZK DSL) compiled to R1CS, proved with Halo2 or Plonky2, verified in any browser. The cell shape is the same.</p>
+    <a href="https://github.com/SuperInstance/quilt-zk" target="_blank" class="btn primary">View source →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt ZK — part of the Quilt ecosystem. MIT licensed.</div>
+</footer>
+
+<script>
+// =========================================================================
+// Circuits. These are sketches — the real ZK backend is the next step.
+// =========================================================================
+const hashSet = (arr) => {
+  let h = 0;
+  const s = JSON.stringify([...arr].sort());
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h;
+};
+
+const CIRCUITS = {
+  value_at_least: {
+    name: 'value_at_least',
+    desc: 'value ≥ threshold',
+    fields: [
+      { key: 'value', label: 'value (PRIVATE)', kind: 'priv', default: 75000 },
+      { key: 'threshold', label: 'threshold (PUBLIC)', kind: 'pub', default: 50000 },
+    ],
+    check: (w, p) => Number(w.value) >= Number(p.threshold),
+    learned: () => 'value ≥ threshold',
+    notLearned: () => 'actual value',
+  },
+  value_in_set: {
+    name: 'value_in_set',
+    desc: 'value is in the set',
+    fields: [
+      { key: 'value', label: 'value (PRIVATE)', kind: 'priv', default: 'candidate-A' },
+      { key: 'set', label: 'set (PRIVATE)', kind: 'priv', default: 'candidate-A,candidate-B,candidate-C', list: true },
+      { key: 'setHash', label: 'set hash (PUBLIC)', kind: 'pub', auto: true },
+    ],
+    check: (w, p) => {
+      const set = Array.isArray(w.set) ? w.set : w.set.split(',').map(s => s.trim());
+      return set.includes(w.value) && hashSet(set) === p.setHash;
+    },
+    learned: () => 'value is in the set identified by hash',
+    notLearned: () => 'which value you chose',
+  },
+  sum_equals: {
+    name: 'sum_equals',
+    desc: 'sum of values equals total',
+    fields: [
+      { key: 'values', label: 'values (PRIVATE, comma-separated)', kind: 'priv', default: '120,50,30,200', list: true },
+      { key: 'total', label: 'total (PUBLIC)', kind: 'pub', default: 400 },
+    ],
+    check: (w, p) => {
+      const arr = Array.isArray(w.values) ? w.values : w.values.split(',').map(s => Number(s.trim()));
+      const sum = arr.reduce((a, b) => a + b, 0);
+      return sum === Number(p.total);
+    },
+    learned: () => 'sum equals the stated total',
+    notLearned: () => 'the individual line items',
+  },
+  group_membership: {
+    name: 'group_membership',
+    desc: 'I am in the group',
+    fields: [
+      { key: 'memberId', label: 'my member id (PRIVATE)', kind: 'priv', default: 'employee-42' },
+      { key: 'merklePath', label: 'merkle path (PRIVATE)', kind: 'priv', default: 'root,level1,level2' },
+      { key: 'groupRoot', label: 'group root (PUBLIC)', kind: 'pub', default: '0xabc123' },
+    ],
+    check: (w, p) => w.merklePath && w.merklePath.split(',').length >= 2 && p.groupRoot,
+    learned: () => 'you are in the group',
+    notLearned: () => 'which member you are',
+  },
+};
+
+let currentCircuit = 'value_at_least';
+let currentProof = null;
+
+function renderProverFields() {
+  const c = CIRCUITS[currentCircuit];
+  const container = document.getElementById('prover-fields');
+  container.innerHTML = c.fields.map(f => {
+    let val = f.default;
+    if (f.auto) {
+      // Compute auto values from the others
+      if (f.key === 'setHash') {
+        const setField = c.fields.find(x => x.key === 'set');
+        const inp = document.querySelector(`[data-field="set"]`);
+        if (inp) val = hashSet(inp.value.split(',').map(s => s.trim()));
+        else val = hashSet((setField.default || '').split(',').map(s => s.trim()));
+      }
+    }
+    return `<div class="field">
+      <label>${f.label} ${f.kind === 'priv' ? '<span class="priv">[PRIVATE]</span>' : '<span class="pub">[PUBLIC]</span>'}</label>
+      <input data-field="${f.key}" value="${val}" ${f.auto ? 'readonly style="opacity: 0.5;"' : ''} />
+    </div>`;
+  }).join('');
+
+  // Auto-update
+  const setInput = container.querySelector('[data-field="set"]');
+  const hashInput = container.querySelector('[data-field="setHash"]');
+  if (setInput && hashInput) {
+    setInput.addEventListener('input', () => {
+      const set = setInput.value.split(',').map(s => s.trim());
+      hashInput.value = hashSet(set);
+    });
+  }
+}
+
+function collectWitness() {
+  const c = CIRCUITS[currentCircuit];
+  const w = {};
+  for (const f of c.fields) {
+    const inp = document.querySelector(`[data-field="${f.key}"]`);
+    if (!inp) continue;
+    let v = inp.value;
+    if (f.list) v = v.split(',').map(s => s.trim());
+    else if (!isNaN(v) && v !== '' && !f.auto) v = Number(v);
+    w[f.key] = v;
+  }
+  // Split into public and private
+  const pub = {}, priv = {};
+  for (const f of c.fields) {
+    (f.kind === 'pub' ? pub : priv)[f.key] = w[f.key];
+  }
+  return { pub, priv };
+}
+
+function prove() {
+  const c = CIRCUITS[currentCircuit];
+  const { pub, priv } = collectWitness();
+  const holds = c.check(priv, pub);
+  currentProof = {
+    circuit: c.name,
+    publicInputs: pub,
+    witness: priv,
+    holds,
+    ts: Date.now(),
+  };
+  // Render
+  const out = document.getElementById('proof-out');
+  out.innerHTML = `<b>circuit:</b> ${c.name}<br><b>public:</b> ${JSON.stringify(pub, null, 2)}<br><b>witness (revealed in sketch):</b> ${JSON.stringify(priv, null, 2)}<br><b>holds:</b> <span style="color: ${holds ? 'var(--green)' : 'var(--red)'};">${holds}</span>`;
+  document.getElementById('verify-btn').disabled = false;
+  document.getElementById('verdict').innerHTML = '— proof generated, click Verify —';
+  document.getElementById('verdict').className = '';
+  // Clear learned
+  document.getElementById('learned-yes').textContent = '—';
+  document.getElementById('learned-no').textContent = '—';
+}
+
+function verify() {
+  if (!currentProof) return;
+  const c = CIRCUITS[currentProof.circuit];
+  const verified = c.check(currentProof.witness, currentProof.publicInputs);
+  const verdict = document.getElementById('verdict');
+  if (verified) {
+    verdict.innerHTML = `✓ PROOF VALID<br><span style="font-size: 0.85rem; font-weight: 400;">Statement: ${c.learned()}</span>`;
+    verdict.className = 'verdict pass';
+  } else {
+    verdict.innerHTML = `✗ PROOF INVALID<br><span style="font-size: 0.85rem; font-weight: 400;">Predicate does not hold</span>`;
+    verdict.className = 'verdict fail';
+  }
+  document.getElementById('learned-yes').textContent = c.learned();
+  document.getElementById('learned-no').textContent = c.notLearned();
+}
+
+// Wire up
+document.querySelectorAll('.circuit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.circuit-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCircuit = btn.dataset.circuit;
+    currentProof = null;
+    document.getElementById('proof-out').textContent = '— no proof yet —';
+    document.getElementById('verdict').textContent = '— waiting for proof —';
+    document.getElementById('verdict').className = '';
+    document.getElementById('learned-yes').textContent = '—';
+    document.getElementById('learned-no').textContent = '—';
+    document.getElementById('verify-btn').disabled = true;
+    renderProverFields();
+  });
+});
+document.getElementById('prove-btn').addEventListener('click', prove);
+document.getElementById('verify-btn').addEventListener('click', verify);
+
+renderProverFields();
+</script>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Vault — encrypted cells, end-to-end</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+
+.hero { padding: 64px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 32px; }
+.hero-tag { display: inline-block; padding: 4px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green); margin-bottom: 16px; }
+
+/* Demo */
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.demo-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95rem; }
+.demo-head .ico { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+.demo-body { padding: 20px; }
+
+.who-card.alice .demo-head .ico { background: rgba(126,198,153,0.15); color: var(--green); }
+.who-card.bob .demo-head .ico { background: rgba(95,168,211,0.15); color: var(--blue); }
+.who-card.eve .demo-head .ico { background: rgba(198,126,126,0.15); color: var(--red); }
+
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; font-weight: 600; }
+.field input, .field textarea { width: 100%; padding: 8px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; outline: none; }
+.field input:focus, .field textarea:focus { border-color: var(--green); }
+.field textarea { min-height: 80px; resize: vertical; }
+.field .status { font-size: 0.75rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+.field .status.green { color: var(--green); }
+.field .status.red { color: var(--red); }
+.field .status.yellow { color: var(--yellow); }
+
+.cipher { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); word-break: break-all; max-height: 100px; overflow-y: auto; }
+.cipher b { color: var(--text); }
+
+.viewer-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; margin: 2px 4px 2px 0; font-family: 'JetBrains Mono', monospace; }
+.viewer-pill .x { cursor: pointer; color: var(--red); }
+
+.arrow { text-align: center; color: var(--text-faint); font-size: 1.4rem; margin: 8px 0; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin-top: 32px; }
+.stat { background: var(--bg-elev); padding: 16px; text-align: center; }
+.stat-num { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--green); }
+.stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* Code */
+.code { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; }
+.code .c-kw { color: var(--purple); }
+.code .c-str { color: var(--green); }
+.code .c-num { color: var(--tan); }
+.code .c-com { color: var(--text-faint); font-style: italic; }
+
+.feature-row { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin: 64px 0; }
+.feature-row.reverse { direction: rtl; }
+.feature-row.reverse > * { direction: ltr; }
+.feature-row p { color: var(--text-dim); }
+.feature-row ul { list-style: none; padding: 0; }
+.feature-row li { padding: 4px 0 4px 24px; position: relative; color: var(--text-dim); }
+.feature-row li::before { content: '✓'; position: absolute; left: 0; color: var(--green); }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+@media (max-width: 900px) { .feature-row, .feature-row.reverse { grid-template-columns: 1fr; gap: 24px; direction: ltr; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Vault</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="quilt-vault.html" class="active">Vault</a>
+      <a href="https://github.com/SuperInstance/quilt-vault" target="_blank">Source ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="hero-tag">v0.1.0 · 10 tests · real ECDH P-256 + AES-GCM</div>
+  <h1>The server <span class="grad-text">never sees</span> your data.</h1>
+  <p class="lead">Encrypted cells, end-to-end. Type a secret. Pick viewers. Each viewer gets a wrapped key. The server only sees ciphertext.</p>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="demo-grid">
+      <!-- Alice -->
+      <div class="demo-card who-card alice">
+        <div class="demo-head"><span class="ico">A</span> alice <span style="color: var(--text-faint); font-weight: 400; margin-left: auto;" id="alice-fp">fp: —</span></div>
+        <div class="demo-body">
+          <div class="field">
+            <label>secret (will be encrypted)</label>
+            <textarea id="alice-secret">My SSN is 123-45-6789</textarea>
+          </div>
+          <div class="field">
+            <label>viewers (people who can decrypt)</label>
+            <div id="alice-viewers" style="margin-bottom: 8px;"></div>
+            <div style="display: flex; gap: 6px;">
+              <input id="alice-add-viewer" placeholder="add viewer..." />
+              <button class="btn" id="alice-add-btn">Add</button>
+            </div>
+          </div>
+          <button class="btn primary" id="encrypt-btn">🔒 Encrypt + share</button>
+          <div class="field" style="margin-top: 16px;">
+            <label>ciphertext on the server (opaque)</label>
+            <div class="cipher" id="ciphertext">— nothing encrypted yet —</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bob -->
+      <div class="demo-card who-card bob">
+        <div class="demo-head"><span class="ico">B</span> bob <span style="color: var(--text-faint); font-weight: 400; margin-left: auto;" id="bob-fp">fp: —</span></div>
+        <div class="demo-body">
+          <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px;">Bob is in the ACL. He can decrypt. He fetches the ciphertext and his wrapped key, then unwraps.</p>
+          <button class="btn primary" id="bob-decrypt-btn" disabled>🔓 Decrypt</button>
+          <div class="field" style="margin-top: 16px;">
+            <label>decrypted plaintext (bob only)</label>
+            <div class="cipher" id="bob-plaintext">— no access yet —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eve -->
+    <div class="demo-card who-card eve" style="margin-top: 24px;">
+      <div class="demo-head"><span class="ico">E</span> eve <span style="color: var(--text-faint); font-weight: 400; margin-left: auto;">not in the ACL</span></div>
+      <div class="demo-body">
+        <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 12px;">Eve has the ciphertext. She has a valid keypair. But she's not in the ACL. She has no wrapped key for the content key. The server doesn't have the content key. The math says no.</p>
+        <button class="btn" id="eve-decrypt-btn" disabled>🔓 Try to decrypt (should fail)</button>
+        <div class="field" style="margin-top: 16px;">
+          <label>result</label>
+          <div class="cipher" id="eve-result">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-cells">0</div><div class="stat-label">cells</div></div>
+      <div class="stat"><div class="stat-num" id="stat-keys">0</div><div class="stat-label">wrapped keys</div></div>
+      <div class="stat"><div class="stat-num" id="stat-bytes">0</div><div class="stat-label">bytes ciphertext</div></div>
+      <div class="stat"><div class="stat-num" id="stat-viewers">0</div><div class="stat-label">viewers</div></div>
+    </div>
+  </div>
+</section>
+
+<section style="background: var(--bg-elev); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head" style="text-align: center; margin-bottom: 48px;">
+      <div class="eyebrow">Under the hood</div>
+      <h2>How it works</h2>
+    </div>
+    <div class="feature-row">
+      <div>
+        <h3>1. Alice generates a keypair</h3>
+        <p>Every actor in the vault (owner + viewers) generates an ECDH P-256 keypair. The public half is shared; the private half never leaves the device.</p>
+        <ul>
+          <li>P-256: ~256-bit security, fast, standard</li>
+          <li>Public key is a 65-byte uncompressed point</li>
+          <li>16-hex-char fingerprint for easy identification</li>
+        </ul>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> pair = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">generateKey</span>(
+  { name: <span class="c-str">'ECDH'</span>, namedCurve: <span class="c-str">'P-256'</span> },
+  <span class="c-num">true</span>,
+  [<span class="c-str">'deriveKey'</span>, <span class="c-str">'deriveBits'</span>]
+);
+      </div>
+    </div>
+    <div class="feature-row reverse">
+      <div>
+        <h3>2. Content encrypted with random AES key</h3>
+        <p>Each cell gets its own AES-GCM 256-bit content key. The key is generated freshly. The ciphertext is stored on the server. The key never leaves the owner's device in plaintext.</p>
+        <ul>
+          <li>AES-GCM: authenticated encryption</li>
+          <li>12-byte random IV per encryption</li>
+          <li>Fresh content key per cell — no key reuse</li>
+        </ul>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> contentKey = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">generateKey</span>(
+  { name: <span class="c-str">'AES-GCM'</span>, length: <span class="c-num">256</span> },
+  <span class="c-num">true</span>, [<span class="c-str">'encrypt'</span>, <span class="c-str">'decrypt'</span>]
+);
+<span class="c-kw">const</span> iv = crypto.<span class="c-fn">getRandomValues</span>(<span class="c-kw">new</span> Uint8Array(<span class="c-num">12</span>));
+<span class="c-kw">const</span> ct = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">encrypt</span>(
+  { name: <span class="c-str">'AES-GCM'</span>, iv }, contentKey, plaintext
+);
+      </div>
+    </div>
+    <div class="feature-row">
+      <div>
+        <h3>3. Content key wrapped per viewer</h3>
+        <p>For each viewer in the ACL, the owner derives a shared secret using ECDH (their private + viewer's public) and uses it to wrap (encrypt) the content key. Each viewer gets a different wrapped key.</p>
+        <ul>
+          <li>ECDH shared secret: forward-secret if keys rotate</li>
+          <li>Wrapped key is encrypted with the shared secret</li>
+          <li>Server stores wrapped keys; never sees plaintext</li>
+        </ul>
+      </div>
+      <div class="code">
+<span class="c-com">// For each viewer:</span>
+<span class="c-kw">const</span> shared = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">deriveKey</span>(
+  { name: <span class="c-str">'ECDH'</span>, <span class="c-kw">public</span>: viewer.publicKey },
+  owner.privateKey,
+  { name: <span class="c-str">'AES-GCM'</span> }
+);
+<span class="c-kw">const</span> wrapped = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">encrypt</span>(
+  { name: <span class="c-str">'AES-GCM'</span>, iv: wrapIv },
+  shared, rawContentKey
+);
+      </div>
+    </div>
+    <div class="feature-row reverse">
+      <div>
+        <h3>4. Viewer unwraps and decrypts</h3>
+        <p>To decrypt, the viewer derives the same shared secret (their private + owner's public), unwraps the content key, then decrypts the ciphertext. Bob succeeds. Eve fails: she has no wrapped key.</p>
+        <ul>
+          <li>Only the owner can add/remove viewers</li>
+          <li>Revoking a viewer re-encrypts the cell with a new key</li>
+          <li>The old viewer can no longer decrypt, ever</li>
+        </ul>
+      </div>
+      <div class="code">
+<span class="c-kw">const</span> shared = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">deriveKey</span>(
+  { name: <span class="c-str">'ECDH'</span>, <span class="c-kw">public</span>: owner.publicKey },
+  viewer.privateKey,
+  { name: <span class="c-str">'AES-GCM'</span> }
+);
+<span class="c-kw">const</span> rawKey = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">decrypt</span>(
+  { name: <span class="c-str">'AES-GCM'</span>, iv: wrapIv },
+  shared, wrappedKey
+);
+<span class="c-kw">const</span> plaintext = <span class="c-kw">await</span> crypto.subtle.<span class="c-fn">decrypt</span>(
+  { name: <span class="c-str">'AES-GCM'</span>, iv }, contentKey, ciphertext
+);
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align: center;">
+  <div class="container">
+    <h2>Privacy as a first-class primitive.</h2>
+    <p class="lead" style="margin: 16px auto 32px;">The cell model is end-to-end encrypted by default. The server is dumb storage. The intelligence is in the cells, on your devices.</p>
+    <a href="https://github.com/SuperInstance/quilt-vault" target="_blank" class="btn primary">View source →</a>
+    <a href="showcase.html" class="btn">See all 11 repos</a>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Vault — part of the Quilt ecosystem. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="showcase.html">All 11 repos</a></div>
+</footer>
+
+<script>
+// =========================================================================
+// Real encryption demo. Uses WebCrypto for ECDH P-256 + AES-GCM.
+// =========================================================================
+const subtle = window.crypto.subtle;
+
+const state = {
+  alice: { key: null, fp: null, publicJwk: null },
+  bob:   { key: null, fp: null, publicJwk: null },
+  eve:   { key: null, fp: null, publicJwk: null },
+  viewers: ['bob'],  // ACL
+  cell: null,  // { ciphertext, iv, wrapped: { fp: { iv, key } } }
+};
+
+async function generateKey() {
+  const pair = await subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveKey', 'deriveBits']
+  );
+  const publicJwk = await subtle.exportKey('jwk', pair.publicKey);
+  const fp = await fingerprint(publicJwk);
+  return { key: pair, publicJwk, fp };
+}
+
+async function fingerprint(jwk) {
+  const data = new TextEncoder().encode(JSON.stringify(jwk));
+  const hash = await subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+async function deriveSharedKey(myPrivate, theirPublic) {
+  return await subtle.deriveKey(
+    { name: 'ECDH', public: theirPublic },
+    myPrivate,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encrypt() {
+  const secret = document.getElementById('alice-secret').value;
+  const plaintext = new TextEncoder().encode(secret);
+  // Generate content key
+  const contentKey = await subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await subtle.encrypt({ name: 'AES-GCM', iv }, contentKey, plaintext);
+  // Wrap for each viewer
+  const wrapped = {};
+  for (const vId of state.viewers) {
+    const v = state[vId];
+    if (!v.key) continue;
+    const shared = await deriveSharedKey(state.alice.key.privateKey, v.key.publicKey);
+    const wrapIv = window.crypto.getRandomValues(new Uint8Array(12));
+    const rawContentKey = await subtle.exportKey('raw', contentKey);
+    const wrappedKey = await subtle.encrypt({ name: 'AES-GCM', iv: wrapIv }, shared, rawContentKey);
+    wrapped[v.fp] = {
+      iv: btoa(String.fromCharCode(...wrapIv)),
+      key: btoa(String.fromCharCode(...new Uint8Array(wrappedKey))),
+    };
+  }
+  state.cell = {
+    ciphertext: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+    iv: btoa(String.fromCharCode(...iv)),
+    wrapped,
+  };
+  // Render
+  const ctEl = document.getElementById('ciphertext');
+  ctEl.innerHTML = `<b>ciphertext (${state.cell.ciphertext.length} b64 chars):</b><br>${state.cell.ciphertext.slice(0, 200)}...<br><br><b>iv:</b> ${state.cell.iv}<br><br><b>wrapped keys (one per viewer):</b><br>`;
+  for (const [fp, w] of Object.entries(wrapped)) {
+    ctEl.innerHTML += `<span style="color: var(--green);">${fp}:</span> iv=${w.iv.slice(0, 16)}... key=${w.key.slice(0, 16)}...<br>`;
+  }
+  // Stats
+  document.getElementById('stat-cells').textContent = '1';
+  document.getElementById('stat-keys').textContent = Object.keys(wrapped).length;
+  document.getElementById('stat-bytes').textContent = state.cell.ciphertext.length;
+  document.getElementById('stat-viewers').textContent = state.viewers.length;
+  // Enable buttons
+  document.getElementById('bob-decrypt-btn').disabled = false;
+  document.getElementById('eve-decrypt-btn').disabled = false;
+  document.getElementById('bob-plaintext').textContent = '— click Decrypt —';
+  document.getElementById('eve-result').textContent = '— click Try to decrypt —';
+}
+
+async function decrypt(forWho) {
+  if (!state.cell) return;
+  const v = state[forWho];
+  const wrap = state.cell.wrapped[v.fp];
+  const out = document.getElementById(forWho === 'bob' ? 'bob-plaintext' : 'eve-result');
+  if (!wrap) {
+    out.innerHTML = `<span style="color: var(--red);">✗ No wrapped key for ${forWho}. The ACL doesn't include them.</span>`;
+    return;
+  }
+  try {
+    const shared = await deriveSharedKey(v.key.privateKey, state.alice.key.publicKey);
+    const wrapIv = Uint8Array.from(atob(wrap.iv), c => c.charCodeAt(0));
+    const wrappedKey = Uint8Array.from(atob(wrap.key), c => c.charCodeAt(0));
+    const rawContentKey = await subtle.decrypt({ name: 'AES-GCM', iv: wrapIv }, shared, wrappedKey);
+    const contentKey = await subtle.importKey('raw', rawContentKey, { name: 'AES-GCM' }, false, ['decrypt']);
+    const iv = Uint8Array.from(atob(state.cell.iv), c => c.charCodeAt(0));
+    const ciphertext = Uint8Array.from(atob(state.cell.ciphertext), c => c.charCodeAt(0));
+    const plaintext = await subtle.decrypt({ name: 'AES-GCM', iv }, contentKey, ciphertext);
+    const text = new TextDecoder().decode(plaintext);
+    out.innerHTML = `<span style="color: var(--green);">✓ Decrypted: "${escapeHtml(text)}"</span>`;
+  } catch (e) {
+    out.innerHTML = `<span style="color: var(--red);">✗ Decryption failed: ${e.message}</span>`;
+  }
+}
+
+function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function renderViewers() {
+  const el = document.getElementById('alice-viewers');
+  el.innerHTML = state.viewers.map(v => `<span class="viewer-pill">${v} <span class="x" data-v="${v}">✕</span></span>`).join('');
+  el.querySelectorAll('.x').forEach(x => x.addEventListener('click', () => {
+    state.viewers = state.viewers.filter(v => v !== x.dataset.v);
+    renderViewers();
+  }));
+  document.getElementById('stat-viewers').textContent = state.viewers.length;
+}
+
+async function init() {
+  state.alice = await generateKey();
+  state.bob = await generateKey();
+  state.eve = await generateKey();
+  document.getElementById('alice-fp').textContent = 'fp: ' + state.alice.fp;
+  document.getElementById('bob-fp').textContent = 'fp: ' + state.bob.fp;
+  renderViewers();
+}
+
+document.getElementById('encrypt-btn').addEventListener('click', encrypt);
+document.getElementById('bob-decrypt-btn').addEventListener('click', () => decrypt('bob'));
+document.getElementById('eve-decrypt-btn').addEventListener('click', () => decrypt('eve'));
+document.getElementById('alice-add-btn').addEventListener('click', () => {
+  const v = document.getElementById('alice-add-viewer').value.trim();
+  if (v && !state.viewers.includes(v)) {
+    state.viewers.push(v);
+    document.getElementById('alice-add-viewer').value = '';
+    renderViewers();
+  }
+});
+
+init();
+</script>
+</body>
+</html>

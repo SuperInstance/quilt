@@ -201,6 +201,7 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
     <a href="index.html" class="brand-link">← back to quilt</a>
   </div>
   <div class="topbar-tools">
+    <span id="collab-indicator" style="font-size: 0.7rem; padding: 4px 10px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 999px; color: var(--green); opacity: 0.3; transition: opacity 200ms;">👥 collab ready (open in 2 tabs)</span>
     <button class="tool-btn" id="btn-undo" title="Undo (Cmd/Ctrl+Z)">↶ Undo</button>
     <button class="tool-btn" id="btn-redo" title="Redo (Cmd/Ctrl+Y)">↷ Redo</button>
     <div class="divider"></div>
@@ -373,6 +374,7 @@ const Studio = {
   historyEnabled: false,
   encryptionEnabled: false,
   currentSheetName: 'untitled',
+  myId: 'user-' + Math.random().toString(36).slice(2, 10),
 };
 
 // Initialize engine
@@ -946,6 +948,9 @@ function addCell(kind, x, y) {
 // =========================================================================
 // Save / Load
 // =========================================================================
+const studioChannel = new BroadcastChannel('quilt-studio-collab');
+let isApplyingRemote = false;
+
 function saveToLocal() {
   const sheet = {
     id: Studio.currentSheetName,
@@ -961,6 +966,42 @@ function saveToLocal() {
   else saved.push({ ...sheet, savedAt: Date.now() });
   localStorage.setItem('quilt-studio-saved', JSON.stringify(saved.slice(-20)));
   renderSavedList();
+  // Broadcast to other tabs
+  if (!isApplyingRemote) {
+    studioChannel.postMessage({ type: 'sheet-update', sheet, from: Studio.myId });
+  }
+}
+
+// Listen for remote updates
+studioChannel.addEventListener('message', e => {
+  if (e.data.from === Studio.myId) return;
+  if (e.data.type === 'sheet-update') {
+    // Apply remote update
+    isApplyingRemote = true;
+    try {
+      Studio.currentSheetName = e.data.sheet.id;
+      Studio.cells = new Map(e.data.sheet.cells.map(c => [c.id, c]));
+      Studio.wires = e.data.sheet.wires.map(w => Array.isArray(w) ? { from: w[0], to: w[1] } : w);
+      Studio.engine = new QuiltEngine();
+      try { Studio.engine.loadSheet(parseSheet(cellsToYaml())); } catch (err) {}
+      document.getElementById('status-sheet').textContent = Studio.currentSheetName;
+      document.getElementById('inspector-content').innerHTML = '<div class="inspector-empty">Select a cell to inspect.</div>';
+      renderAll();
+      // Update collab indicator
+      updateCollabIndicator(e.data.from);
+    } finally {
+      isApplyingRemote = false;
+    }
+  }
+});
+
+function updateCollabIndicator(peerId) {
+  const el = document.getElementById('collab-indicator');
+  if (!el) return;
+  el.textContent = `👥 ${peerId.slice(0, 8)} editing`;
+  el.style.opacity = '1';
+  clearTimeout(window._collabTimeout);
+  window._collabTimeout = setTimeout(() => { el.style.opacity = '0.3'; }, 2000);
 }
 
 function renderSavedList() {

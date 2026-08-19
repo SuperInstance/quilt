@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Timeline — the 5-year roadmap, visualized</title>
+<meta name="description" content="An interactive 5-year timeline of the Quilt roadmap. Click any quarter to explore the repos. From browser to microcontroller to mesh.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --radius: 8px; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+body { overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.875em; }
+h1, h2, h3 { font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 12px; }
+.lead { font-size: 1.125rem; color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 64px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-strong); color: var(--text); transition: all 150ms var(--ease); background: transparent; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--bg-elev-2); }
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--green); border-color: var(--green); }
+.nav { padding: 14px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem; }
+.brand-mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; color: var(--text-dim); }
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,0.06); }
+.hero { padding: 64px 0 32px; text-align: center; }
+.hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 12px; }
+.hero p { margin: 0 auto 24px; }
+
+/* Timeline */
+.timeline-wrap { position: relative; padding: 64px 0; }
+.timeline-svg { width: 100%; height: 600px; display: block; }
+.tl-year-label { font-family: 'JetBrains Mono', monospace; font-size: 14px; fill: var(--text-faint); font-weight: 600; }
+.tl-quarter-label { font-family: 'JetBrains Mono', mon-size: 11px; fill: var(--text-dim); }
+.tl-line { stroke: var(--border); stroke-width: 2; }
+.tl-dot { transition: all 200ms var(--ease); }
+.tl-dot:hover { r: 8; }
+.tl-dot.done { fill: var(--green); }
+.tl-dot.active { fill: var(--blue); }
+.tl-dot.future { fill: var(--bg-elev-2); stroke: var(--text-faint); stroke-width: 2; }
+.tl-dot.now { fill: var(--yellow); }
+.tl-spine { fill: none; stroke: var(--border-strong); stroke-width: 3; }
+.tl-spine-done { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; }
+.tl-spine-future { fill: none; stroke: var(--text-faint); stroke-width: 2; stroke-dasharray: 4 4; }
+.tl-label { font-family: 'Inter', sans-serif; font-size: 11px; fill: var(--text-dim); }
+.tl-label-strong { font-family: 'Inter', sans-serif; font-size: 12px; fill: var(--text); font-weight: 600; }
+.tl-repo { transition: all 200ms var(--ease); cursor: pointer; }
+.tl-repo:hover { opacity: 0.8; }
+
+/* Quarter detail panel */
+.detail { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-top: 32px; min-height: 300px; }
+.detail-title { font-size: 1.5rem; margin-bottom: 8px; }
+.detail-subtitle { color: var(--text-dim); margin-bottom: 24px; }
+.detail-repos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.detail-repo { padding: 14px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 150ms var(--ease); }
+.detail-repo:hover { border-color: var(--border-strong); background: var(--bg-elev); transform: translateY(-2px); }
+.detail-repo .name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; margin-bottom: 4px; }
+.detail-repo .name.beta { color: var(--blue); }
+.detail-repo .name.alpha { color: var(--purple); }
+.detail-repo .desc { font-size: 0.8rem; color: var(--text-dim); line-height: 1.4; }
+.detail-repo .arrow { color: var(--text-faint); font-size: 0.7rem; margin-top: 6px; }
+
+/* Legend */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 24px; font-size: 0.8rem; color: var(--text-dim); }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+footer { padding: 48px 0 24px; border-top: 1px solid var(--border); text-align: center; color: var(--text-faint); font-size: 0.85rem; margin-top: 64px; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt Timeline</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="showcase.html">Showcase</a>
+      <a href="timeline.html" class="active">Timeline</a>
+      <a href="https://github.com/SuperInstance/quilt/blob/main/quilt-roadmap-2026.md" target="_blank">Roadmap ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero container">
+  <div class="eyebrow">5-year roadmap</div>
+  <h1>From <span class="grad-text">one file</span> to <span class="grad-text">a mesh of devices.</span></h1>
+  <p class="lead">Click any quarter on the timeline to see what shipped, what's in flight, and what's next.</p>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: var(--green);"></div> shipped</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--blue);"></div> in progress</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--yellow);"></div> current quarter</div>
+    <div class="legend-item"><div class="legend-dot" style="background: var(--bg-elev-2); border: 2px solid var(--text-faint);"></div> future</div>
+  </div>
+</header>
+
+<section style="padding-top: 16px;">
+  <div class="container">
+    <div class="timeline-wrap">
+      <svg class="timeline-svg" id="timeline-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="detail" id="detail">
+      <div class="eyebrow" id="detail-q">Q1 2026</div>
+      <h2 class="detail-title" id="detail-title">Foundations — time, vault, rooms</h2>
+      <p class="detail-subtitle" id="detail-subtitle">Every cell gets history. Every cell is encrypted. The room abstraction. The privacy story.</p>
+      <div class="detail-repos" id="detail-repos"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>Quilt Timeline — 5-year roadmap, visualized. MIT licensed.</div>
+  <div style="margin-top: 8px;"><a href="index.html">Home</a> · <a href="showcase.html">All 11 repos</a> · <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a></div>
+</footer>
+
+<script>
+const QUARTERS = [
+  {
+    id: 'q1-2026', label: 'Q1 2026', theme: 'Foundations',
+    desc: 'Every cell gets history. Every cell is encrypted. The room abstraction. The privacy story.',
+    spine: 'done',
+    repos: [
+      { name: 'quilt-time', status: 'shipped', desc: 'Time travel for cells. Every cell has history; fork, rewind, replay, merge.', link: 'https://github.com/SuperInstance/quilt-time' },
+      { name: 'quilt-vault', status: 'shipped', desc: 'Encrypted cells. Real ECDH P-256 + AES-GCM. Per-cell access control.', link: 'https://github.com/SuperInstance/quilt-vault' },
+      { name: 'quilt-rooms', status: 'planned', desc: 'Semantic grouping. Access/sync boundary.', link: '#' },
+    ],
+  },
+  {
+    id: 'q2-2026', label: 'Q2 2026', theme: 'Distribution',
+    desc: 'Cells sync across devices, run on $3 chips, and ship as packages. The cell model, scaled out and down.',
+    spine: 'active',
+    repos: [
+      { name: 'quilt-mesh', status: 'shipped', desc: 'Peer-to-peer cell sync. CRDT-based, broker-less.', link: 'https://github.com/SuperInstance/quilt-mesh' },
+      { name: 'quilt-esp32', status: 'shipped', desc: 'no_std port to microcontrollers. Sensors and actuators as cells.', link: 'https://github.com/SuperInstance/quilt-esp32' },
+      { name: 'quilt-packs', status: 'planned', desc: 'Distribution. Cell kinds as packages. Registry on GitHub Pages.', link: '#' },
+    ],
+  },
+  {
+    id: 'q3-2026', label: 'Q3 2026', theme: 'Intelligence',
+    desc: 'The cell model, scaled up. LLMs are cells. Images are cells. Proofs are cells. Compile to native, WASM, embedded.',
+    spine: 'future',
+    repos: [
+      { name: 'quilt-agent', status: 'shipped', desc: 'LLM agents as sheets. Memory, tools, reasoning, goals — all cells.', link: 'https://github.com/SuperInstance/quilt-agent' },
+      { name: 'quilt-vision', status: 'shipped', desc: 'Images as cells. Computer vision as formulas. 8 vision cell kinds.', link: 'https://github.com/SuperInstance/quilt-vision' },
+      { name: 'quilt-zk', status: 'shipped', desc: 'Zero-knowledge proofs over cells. 6 pre-built circuits.', link: 'https://github.com/SuperInstance/quilt-zk' },
+      { name: 'quilt-build', status: 'planned', desc: 'Compile cells to native, WASM, embedded.', link: '#' },
+    ],
+  },
+  {
+    id: 'q4-2026', label: 'Q4 2026', theme: 'Polish',
+    desc: 'Drag-and-drop editor. Print cells. Music cells. Distributed fabric. Public cells. Files as cells.',
+    spine: 'future',
+    repos: [
+      { name: 'quilt-flow', status: 'shipped', desc: 'Visual editor. Drag-and-drop cell wiring.', link: 'https://github.com/SuperInstance/quilt-flow' },
+      { name: 'quilt-print', status: 'planned', desc: 'Paper as a cell. PDF, QR, ZPL.', link: '#' },
+      { name: 'quilt-music', status: 'planned', desc: 'Audio as cells. Notes, chords, beats, tracks, songs.', link: '#' },
+      { name: 'quilt-fabric', status: 'planned', desc: 'Distributed cells across many devices.', link: '#' },
+      { name: 'quilt-civic', status: 'planned', desc: 'Public data cells. The cell model, for the public sector.', link: '#' },
+      { name: 'quilt-fs', status: 'planned', desc: 'Files as cells. Replaces the file system metaphor.', link: '#' },
+    ],
+  },
+  {
+    id: '2027', label: '2027+', theme: 'Long arc',
+    desc: 'A Linux image where every file is a sheet. A public mesh anyone can read. Cells in the browser, in the OS, in silicon.',
+    spine: 'future',
+    repos: [
+      { name: 'quilt-os', status: 'planned', desc: 'A Linux-based OS image where every file is a sheet.', link: '#' },
+      { name: 'public mesh', status: 'planned', desc: 'Anyone can publish a public cell. Anyone can read it. No central authority.', link: '#' },
+      { name: 'cells in browser', status: 'planned', desc: 'Every browser has a built-in Quilt runtime. Cells are part of the web platform.', link: '#' },
+      { name: 'cells in OS', status: 'planned', desc: 'Every OS has a built-in Quilt runtime. Cells are part of the OS.', link: '#' },
+      { name: 'cells in silicon', status: 'planned', desc: 'Quilt is in firmware. The cell graph runs on bare metal.', link: '#' },
+    ],
+  },
+];
+
+function drawTimeline() {
+  const svg = document.getElementById('timeline-svg');
+  const w = 1200, h = 600;
+  const padding = 80;
+  const timelineY = h / 2;
+  const qCount = QUARTERS.length;
+  const qWidth = (w - padding * 2) / qCount;
+  let svgContent = '';
+  // Year labels (Q1-Q4 = 2026, then 2027+)
+  svgContent += `<text class="tl-year-label" x="${padding + qWidth * 2}" y="40" text-anchor="middle">2026</text>`;
+  svgContent += `<text class="tl-year-label" x="${padding + qWidth * 4}" y="40" text-anchor="middle">2027+</text>`;
+  // Quarter labels
+  for (let i = 0; i < QUARTERS.length; i++) {
+    const x = padding + qWidth * i + qWidth / 2;
+    svgContent += `<text class="tl-quarter-label" x="${x}" y="${h - 30}" text-anchor="middle">${QUARTERS[i].label}</text>`;
+  }
+  // Timeline spine
+  svgContent += `<line class="tl-spine" x1="${padding}" y1="${timelineY}" x2="${w - padding}" y2="${timelineY}" />`;
+  // Highlight done section
+  const doneEnd = padding + qWidth * 1.5;
+  svgContent += `<line class="tl-spine-done" x1="${padding}" y1="${timelineY}" x2="${doneEnd}" y2="${timelineY}" />`;
+  // Future dashed
+  svgContent += `<line class="tl-spine-future" x1="${doneEnd + qWidth * 0.3}" y1="${timelineY}" x2="${w - padding}" y2="${timelineY}" />`;
+  // Now indicator
+  const nowX = padding + qWidth * 1.5;
+  svgContent += `<circle cx="${nowX}" cy="${timelineY}" r="8" fill="var(--yellow)" opacity="0.3">
+    <animate attributeName="r" values="8;14;8" dur="2s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
+  </circle>`;
+  svgContent += `<text x="${nowX}" y="${timelineY - 20}" text-anchor="middle" fill="var(--yellow)" font-family="JetBrains Mono, monospace" font-size="10">now</text>`;
+  // Quarter dots
+  for (let i = 0; i < QUARTERS.length; i++) {
+    const x = padding + qWidth * i + qWidth / 2;
+    const q = QUARTERS[i];
+    let cls = 'tl-dot future';
+    if (q.spine === 'done') cls = 'tl-dot done';
+    else if (q.spine === 'active') cls = 'tl-dot active';
+    // Dot
+    svgContent += `<circle class="${cls}" cx="${x}" cy="${timelineY}" r="6" style="cursor: pointer;" data-q="${q.id}">
+      <title>${q.label} — ${q.theme}</title>
+    </circle>`;
+    // Theme label above the dot
+    svgContent += `<text class="tl-label-strong" x="${x}" y="${timelineY - 50}" text-anchor="middle" style="cursor: pointer;" data-q="${q.id}">${q.theme}</text>`;
+    // Repo count
+    const shipped = q.repos.filter(r => r.status === 'shipped').length;
+    const total = q.repos.length;
+    svgContent += `<text class="tl-label" x="${x}" y="${timelineY + 30}" text-anchor="middle" style="cursor: pointer;" data-q="${q.id}">${shipped}/${total} shipped</text>`;
+    // Draw repos above/below alternating
+    const reposAbove = i % 2 === 0;
+    const yBase = reposAbove ? timelineY - 100 : timelineY + 60;
+    q.repos.forEach((repo, ri) => {
+      const y = yBase + ri * 16;
+      const c = repo.status === 'shipped' ? 'var(--green)' : (repo.status === 'planned' ? 'var(--text-faint)' : 'var(--blue)');
+      const dotC = repo.status === 'shipped' ? 'var(--green)' : 'var(--text-faint)';
+      svgContent += `<line x1="${x}" y1="${timelineY - (reposAbove ? 16 : -16)}" x2="${x}" y2="${y + 4}" stroke="var(--text-faint)" stroke-width="1" opacity="0.3" />`;
+      svgContent += `<g class="tl-repo" data-repo-link="${repo.link}">
+        <circle cx="${x}" cy="${y + 4}" r="2" fill="${dotC}" />
+        <text x="${x + 8}" y="${y + 7}" font-family="JetBrains Mono, monospace" font-size="10" fill="${c}">${repo.name}</text>
+      </g>`;
+    });
+  }
+  svg.innerHTML = svgContent;
+  // Wire up clicks
+  svg.querySelectorAll('[data-q]').forEach(el => {
+    el.addEventListener('click', () => showQuarter(el.dataset.q));
+  });
+  svg.querySelectorAll('.tl-repo').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const link = el.dataset.repoLink;
+      if (link && link !== '#') window.open(link, '_blank');
+    });
+  });
+  // Show first quarter by default
+  showQuarter('q1-2026');
+}
+
+function showQuarter(id) {
+  const q = QUARTERS.find(x => x.id === id);
+  if (!q) return;
+  document.getElementById('detail-q').textContent = q.label;
+  document.getElementById('detail-title').textContent = `${q.theme} — ${q.desc.split('.')[0]}`;
+  document.getElementById('detail-subtitle').textContent = q.desc;
+  const reposEl = document.getElementById('detail-repos');
+  reposEl.innerHTML = q.repos.map(r => {
+    const cls = r.status === 'shipped' ? '' : (r.status === 'planned' ? 'alpha' : 'beta');
+    const statusBadge = r.status === 'shipped' ? '<span style="color: var(--green);">✓ shipped</span>' : (r.status === 'planned' ? '<span style="color: var(--text-faint);">○ planned</span>' : '<span style="color: var(--blue);">→ in flight</span>');
+    return `<div class="detail-repo" data-link="${r.link}">
+      <div class="name ${cls}">${r.name}</div>
+      <div class="desc">${r.desc}</div>
+      <div class="arrow">${statusBadge} ${r.link !== '#' ? '→' : ''}</div>
+    </div>`;
+  }).join('');
+  reposEl.querySelectorAll('.detail-repo').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.dataset.link && el.dataset.link !== '#') window.open(el.dataset.link, '_blank');
+    });
+  });
+  // Highlight the dot
+  document.querySelectorAll('.tl-dot').forEach(d => d.setAttribute('r', '6'));
+  const activeDot = document.querySelector(`[data-q="${id}"]`);
+  if (activeDot) activeDot.setAttribute('r', '9');
+}
+
+drawTimeline();
+</script>
+</body>
+</html>
