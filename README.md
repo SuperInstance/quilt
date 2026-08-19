@@ -11,44 +11,97 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-native-purple)](https://modelcontextprotocol.io)
 [![Rust port](https://img.shields.io/badge/Rust-1.0-blue)](https://github.com/superinstance/quilt-rust)
-[![Status](https://img.shields.io/badge/status-v0.2.0-brightgreen)](https://github.com/superinstance/quilt)
-[![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen)](https://github.com/superinstance/quilt)
+[![Status](https://img.shields.io/badge/status-v0.5.0-brightgreen)](https://github.com/superinstance/quilt)
+[![Tests](https://img.shields.io/badge/tests-82%2F82-brightgreen)](https://github.com/superinstance/quilt)
+[![Federation](https://img.shields.io/badge/federation-15%20repos-emerald)](https://superinstance.github.io/quilt/landing/federation.html)
+[![Agent Substrate](https://img.shields.io/badge/agent%20substrate-8%20primitives-purple)](https://superinstance.github.io/quilt/landing/agent-substrate.html)
 
-**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Playground ▶](https://superinstance.github.io/quilt/landing/playground.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[IDE 🛠](https://superinstance.github.io/quilt/landing/ide.html)** · **[Synoptic 🎬](https://superinstance.github.io/quilt/landing/synoptic.html)** · **[3D View](https://superinstance.github.io/quilt/landing/synoptic3d.html)** · **[Patterns 📚](https://superinstance.github.io/quilt/landing/patterns.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Compare ⚖](https://superinstance.github.io/quilt/landing/compare.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
-
----
-
-## 🤔 TypeScript or Rust?
-
-Both are production-grade. Same engine, same sheet format, different tradeoffs.
-
-| Need                                              | Use **TypeScript** | Use **Rust** |
-| ------------------------------------------------- | :----------------: | :----------: |
-| **Browser simulator** / web UI                    | ✅                  | ✅ (axum)     |
-| **TUI** for the terminal                          | ✅                  | ✅ (crossterm)|
-| **MCP server** for Claude Code / Cursor / agents  | ✅                  | ✅            |
-| **Single static binary**, no Node.js              | ❌                  | ✅            |
-| **Embedded / IoT / edge** (RPi, ESP32, no_std)     | ❌                  | ✅            |
-| **Strict memory guarantees** in a sandboxed cell  | ❌                  | ✅ (rhai)     |
-| **High-throughput** cell evaluation               | ⚠️ (~50k ops/s)     | ✅ (compiled) |
-| Embed in a **web app** or **Node service**        | ✅                  | ✅ (axum)     |
-| **Static cross-compilation** to any platform      | ❌                  | ✅            |
-| **WASM target** for the browser                   | 🔜 (planned)        | ✅ (planned)  |
-
-> The two repos share the **same sheet format (YAML)** and the **same conceptual model**. A sheet that runs on one runs on the other (with a few language-specific quirks documented in `docs/harness-guide.md`).
+**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Playground ▶](https://superinstance.github.io/quilt/landing/playground.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[IDE 🛠](https://superinstance.github.io/quilt/landing/ide.html)** · **[Synoptic 🎬](https://superinstance.github.io/quilt/landing/synoptic.html)** · **[3D View](https://superinstance.github.io/quilt/landing/synoptic3d.html)** · **[Patterns 📚](https://superinstance.github.io/quilt/landing/patterns.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Compare ⚖](https://superinstance.github.io/quilt/landing/compare.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Federation 🌐](https://superinstance.github.io/quilt/landing/federation.html)** · **[Agent Substrate 🧬](https://superinstance.github.io/quilt/landing/agent-substrate.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
 
 ---
 
-## What it is
+## What is this?
 
-Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control plane. The cell is the universal IO primitive.
+**Quilt is a reactive, typed, cellular runtime** — a spreadsheet where every cell is a live, addressable capability. The grid is the runtime, the cell is the universal IO primitive, and the sheet is the program. A cell can be a value, a formula, an HTTP call, a sensor reading, a program, a listener, a router, an AI model, or any combination. Cells reference each other by stable address (not by coordinate), and the whole graph re-evaluates reactively when anything changes.
 
-- A cell can be a **value**, **formula**, **api**, **program**, **sensor**, **listener**, **router**, or **io**.
-- A cell reference is a stable **address**, not a coordinate.
-- A cell can **route** based on who called it (`caller.row > 10` → use Model A).
-- The whole sheet is an **MCP server**. Every named cell is an MCP tool.
-- It's **reactive** by default. Change one cell, every dependent rewires.
-- **Per-context memoization**: same cell called from different callers can return different cached values.
+## Why is it useful?
+
+Because the world's most-used programming interface — the spreadsheet — has been lying to us for 40 years. **A cell is not a value. A cell is a live, typed, addressable capability.** Once you see that, the spreadsheet stops being a document and becomes a runtime. You can wire a camera to a formula to a notification. You can wire a knob on a boat to a PID controller to a motor. You can wire a user prompt to a router to a model to a response. You can wire any engine (Isaac, Cosmos, Minecraft, a Jupyter kernel, a paper-trading app) as a cell. And because cells are reactive, the wiring is the program: change one cell, every dependent rewires automatically. **No callbacks, no event loops, no state machines** — just cells.
+
+## How does it work?
+
+You write a `sheet.yaml` that declares cells and their dependencies. The Quilt engine loads it, evaluates every cell, and propagates changes as upstream values shift. There are 9 cell kinds (`value`, `formula`, `api`, `program`, `sensor`, `listener`, `router`, `io`, `ai`), each with its own evaluator. The same engine runs in TypeScript, Rust, a single 70KB HTML file, a Cloudflare Worker, an ESP32 (no_std), and now a GitHub Codespace. **All 15 repos share the same sheet format (YAML) and the same conceptual model.** A sheet that runs on one runs on all of them. Cells can be addressed across instances: `quilt://jetson-lab/perception#vision.scene` is a live, subscribable cell on a Jetson, and you can subscribe to it from a Codespace. The cell model is the substrate; everything else is a deployment target.
+
+## Where does Quilt run?
+
+15 repos, 5 deployment tiers, 3 languages, 8 SDK primitives, 82 tests. Pick the surface that matches your hardware, your latency budget, and your threat model.
+
+| Need                                                              | Repo                        | Tier         | Stack                           |
+| ----------------------------------------------------------------- | --------------------------- | ------------ | ------------------------------- |
+| **Browser** simulator, web UI, or web app embed                   | [`quilt`][quilt]            | browser      | TS, no deps                     |
+| **Node service** / agent backend / CLI / TUI                      | [`quilt`][quilt]            | server       | TS, ESM, ~1.5k lines            |
+| **MCP server** for Claude Code, Cursor, or any agent              | [`quilt`][quilt]            | server       | stdio MCP, 1 file               |
+| **Single static binary**, no Node.js                              | [`quilt-rust`][quilt-rust]  | server       | Rust, axum, crossterm           |
+| **Embedded / IoT** (RPi, ESP32, no_std, sensors + actuators)      | [`quilt-esp32`][quilt-esp32] | esp32        | no_std Rust                     |
+| **Single 70KB HTML file** that runs anywhere (offline, in a tab)   | [`quilt-live`][quilt-live]  | browser      | Zero deps, 146 verified checks  |
+| **Cloudflare Workers** (D1, KV, R2, Vectorize, Workers AI)        | [`quilt-cloudflare`][quilt-cloudflare] | edge | V8 isolates, Workers AI         |
+| **GitHub Codespace** as a live runtime (TUI + HTTP + dashboard)   | [`quilt-codespace`][quilt-codespace] | codespace | ttyd, Node, HTTP+SSE            |
+| **AI cells** — LLM, embed, classify, image, OCR across 4 providers | [`quilt-ai`][quilt-ai]      | server       | 4 providers, cost tracking      |
+| **Self-improvement loops** — RLAIF, evolution, plateau detection   | [`quilt-evolve`][quilt-evolve] | server    | 4 components, 5 scopes          |
+| **CRDT-backed mesh** for cross-tab / cross-device sync            | [`quilt-mesh`][quilt-mesh]  | browser      | BroadcastChannel, Yjs-style CRDT |
+| **LLM agent as a sheet** (memory, tools, reasoning, goals)        | [`quilt-agent`][quilt-agent] | server      | prompt chains, function calling  |
+| **Time-series** cells with rolling windows and aggregations        | [`quilt-time`][quilt-time]  | server       | TS, 17 tests                     |
+| **Secrets** cells with per-cell ACLs and rotation                  | [`quilt-vault`][quilt-vault] | server      | TS, 10 tests                     |
+| **Computer vision** cells (camera → scene → caption)               | [`quilt-vision`][quilt-vision] | browser  | Web APIs, getUserMedia           |
+| **Zero-knowledge** cell verification (planner primitives)         | [`quilt-zk`][quilt-zk]      | server       | TS, 7 tests                      |
+| **Workflow** cells (DAG execution, retry, rollback)               | [`quilt-flow`][quilt-flow]  | server       | TS, 8 tests                      |
+| **Agent substrate** primitives (resolve, validate, publish, trace) | [`@quilt/sdk`][quilt]       | anywhere     | 8 functions, 61 tests            |
+| **Federation** — quilts that link to other quilts                 | [`@quilt/sdk`][quilt]       | anywhere     | `resolveCell`, `subscribeCell`   |
+| **High-throughput** cell evaluation (compiled, no GC)             | [`quilt-rust`][quilt-rust]  | server       | Rust, ~50k ops/s in TS, much more in Rust |
+
+[quilt]: https://github.com/SuperInstance/quilt
+[quilt-rust]: https://github.com/SuperInstance/quilt-rust
+[quilt-live]: https://github.com/SuperInstance/quilt-live
+[quilt-esp32]: https://github.com/SuperInstance/quilt-esp32
+[quilt-mesh]: https://github.com/SuperInstance/quilt-mesh
+[quilt-agent]: https://github.com/SuperInstance/quilt-agent
+[quilt-time]: https://github.com/SuperInstance/quilt-time
+[quilt-vault]: https://github.com/SuperInstance/quilt-vault
+[quilt-vision]: https://github.com/SuperInstance/quilt-vision
+[quilt-zk]: https://github.com/SuperInstance/quilt-zk
+[quilt-flow]: https://github.com/SuperInstance/quilt-flow
+[quilt-cloudflare]: https://github.com/SuperInstance/quilt-cloudflare
+[quilt-ai]: https://github.com/SuperInstance/quilt-ai
+[quilt-evolve]: https://github.com/SuperInstance/quilt-evolve
+[quilt-codespace]: https://github.com/SuperInstance/quilt-codespace
+
+> **The cell model is the universal interface.** A cell on an ESP32 is a row on a Jetson's Quilt which is a row on a Codespace's Quilt which is a row on a Cloudflare Quilt. Same engine, same semantics, five deployment tiers, one mental model. **[See the Federation landing page →](https://superinstance.github.io/quilt/landing/federation.html)**
+
+---
+
+## What it is, more concretely
+
+The cell is the unit. There are **9 cell kinds**, each with its own evaluator:
+
+| Kind | What it does | Example |
+|---|---|---|
+| `value` | A static value | `kind: value, value: "Hello, world"` |
+| `formula` | A computed expression over other cells | `kind: formula, expr: "=price * quantity"` |
+| `api` | An outbound HTTP call | `kind: api, url: "https://api.example.com/..."` |
+| `program` | A function body (closure or string) | `kind: program, fn: "(x) => x * 2"` |
+| `sensor` | A pull-based data source (polling) | `kind: sensor, source: "coingecko://btc"` |
+| `listener` | A push-based reactive side effect | `kind: listener, on: "alert.critical"` |
+| `router` | Picks a value based on the caller | `kind: router, by: "caller.tier"` |
+| `io` | Bidirectional IO (WebSocket, MQTT, serial) | `kind: io, transport: "ws://..."` |
+| `ai` | A cell backed by an LLM (z.ai, Kimi, DeepSeek, Cloudflare) | `kind: ai, ai_kind: "classify"` |
+
+A few things that fall out for free:
+
+- **A cell reference is a stable address, not a coordinate.** Move a cell anywhere in the grid; every reference still resolves.
+- **A cell can route based on who called it.** `caller.row > 10` → use Model A; `caller.tier === 'premium'` → use a stronger model. Per-context memoization keeps each caller's result separate.
+- **The whole sheet is an MCP server.** Every named cell is an MCP tool. `quilt serve sheet.yaml --mcp` and any Claude / Cursor / agent can read, write, and react to your cells.
+- **It's reactive by default.** Change one cell, every dependent rewires. No callbacks, no event loops, no state machines.
+- **Cells federate.** `quilt://jetson-lab/perception#vision.scene` is a live, subscribable cell on a Jetson, and a Codespace 4 hops away can subscribe to it.
 
 > **The paradigm shift, in one line:** A cell is not a value. A cell is a live, typed, addressable capability. The spreadsheet is not a document. The spreadsheet is the runtime.
 
