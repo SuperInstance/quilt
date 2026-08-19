@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt + AI — architecture, providers, and patterns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--green); text-decoration: none; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+pre { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; color: var(--text-dim); }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 640px; margin: 0 auto; }
+
+main { max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+section { margin: 60px 0; }
+section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.02em; }
+section h2 .num { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-right: 12px; }
+section h3 { font-size: 1.3rem; font-weight: 600; margin: 24px 0 12px; color: var(--text); }
+section p { color: var(--text-dim); margin-bottom: 16px; max-width: 720px; }
+
+.cmp { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.cmp table { width: 100%; border-collapse: collapse; }
+.cmp th, .cmp td { padding: 10px 12px; text-align: left; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+.cmp th { color: var(--text-faint); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; }
+.cmp tr:last-child td { border-bottom: none; }
+.cmp td.mono, .cmp th.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.cmp .best { color: var(--green); font-weight: 600; }
+.cmp .ok { color: var(--text-dim); }
+.cmp .bad { color: var(--red); }
+
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-dim); white-space: pre; overflow-x: auto; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 24px 0; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card h4 { font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.card p { font-size: 0.85rem; color: var(--text-dim); }
+.card .price { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin-top: 8px; }
+
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 20px 0; }
+.flow .step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; position: relative; }
+.flow .step .n { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; }
+.flow .step h4 { font-size: 0.9rem; margin: 4px 0; }
+.flow .step p { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
+
+.warning { background: rgba(198, 126, 126, 0.1); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 0.85rem; }
+.warning strong { color: var(--red); }
+.tip { background: rgba(126, 198, 153, 0.08); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 0.85rem; }
+.tip strong { color: var(--green); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 60px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="zai-live.html">z.ai Live</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="ai-rag.html">RAG</a>
+    <a href="ai-agent.html">Agent</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt <span class="grad-text">+ AI</span></h1>
+  <p class="lead">How the cell model absorbs LLMs. 4 providers, 8 cell kinds, 1 uniform interface. From the browser to Cloudflare Workers to your laptop.</p>
+</div>
+
+<main>
+
+  <section>
+    <h2><span class="num">01</span>The big idea</h2>
+    <p>A Quilt cell is a reactive value with a kind. It could be a number, a formula, a sensor, or a function. The same model extends to <strong>AI as a cell kind</strong>. An <code>ai.llm</code> cell has a prompt, a provider, a model, and a value (the model's response). It composes with everything else: it can be the input to a formula, the trigger of a listener, the body of a router.</p>
+    <p>Why is this the right abstraction? Because LLMs are slow, expensive, and nondeterministic. They need to be <strong>addressable</strong> (so you can reference them from formulas), <strong>cacheable</strong> (so you don't pay for the same prompt twice), and <strong>composable</strong> (so a model output can drive a router, which can fire another model, which can populate a sheet). The cell model is the only abstraction that gives you all three for free.</p>
+
+    <div class="diagram">                    ┌─────────────────────┐
+                    │   Quilt Sheet       │
+                    │                     │
+  input.text ──────▶│   ┌─────────────┐   │
+  (value)           │   │  ai.llm     │   │
+                    │   │  provider:  │   │
+                    │   │  z.ai       │   │────▶ ai.response
+                    │   │  model:     │   │      (value)
+                    │   │  glm-4.5    │   │
+                    │   └─────────────┘   │
+                    │                     │
+                    │   ┌─────────────┐   │
+  ai.response ──────▶│   │  listener   │   │────▶ post to webhook
+  (value)           │   │  when:      │   │
+                    │   │  contains:  │   │
+                    │   │  'spam'     │   │
+                    │   └─────────────┘   │
+                    └─────────────────────┘</div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>The 4 providers</h2>
+    <p>Quilt supports four AI providers out of the box. Each is a cell-level decision — you can mix and match in a single sheet.</p>
+
+    <div class="cards">
+      <div class="card">
+        <h4>⚡ z.ai</h4>
+        <p>GLM 4.5 and AirX. Best for coding and reasoning. Strongest chain-of-thought. ~200ms latency.</p>
+        <div class="price">max plan: free · per-token: $0.001/$0.002</div>
+      </div>
+      <div class="card">
+        <h4>🌙 Kimi (Moonshot)</h4>
+        <p>Moonshot v1 8k/32k/128k. Best long-context. Web search built in. ~300ms.</p>
+        <div class="price">plan: $0.0001/1k · pro: 5x</div>
+      </div>
+      <div class="card">
+        <h4>🌊 DeepSeek</h4>
+        <p>DeepSeek Chat (V3 Flash) + DeepSeek Reasoner (R1). Cheapest. Best for parallel workers. ~200ms.</p>
+        <div class="price">flash: $0.0001/1k · pro: $0.0014/1k</div>
+      </div>
+      <div class="card">
+        <h4>☁️ Cloudflare Workers AI</h4>
+        <p>Runs on Cloudflare's edge. Free tier 10k neurons/day. Llama 3.3, Mistral, BGE embeddings.</p>
+        <div class="price">free: 10k neurons/day · paid: $0.011/1k</div>
+      </div>
+    </div>
+
+    <h3>How to choose</h3>
+    <div class="cmp">
+      <table>
+        <thead>
+          <tr>
+            <th class="mono">Use case</th>
+            <th>Best</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Code generation</td><td class="best">z.ai GLM 4.5</td><td>Strongest code, native CoT</td></tr>
+          <tr><td>Reasoning / math</td><td class="best">DeepSeek R1</td><td>Dedicated reasoning model</td></tr>
+          <tr><td>Long context (100k+)</td><td class="best">Kimi 128k</td><td>Cheapest per token at scale</td></tr>
+          <tr><td>Concurrent fan-out (10+ calls)</td><td class="best">DeepSeek Flash</td><td>Cheapest, fast</td></tr>
+          <tr><td>Embeddings (semantic search)</td><td class="best">Cloudflare BGE</td><td>Free tier, on-edge, 768d</td></tr>
+          <tr><td>Vision (image → text)</td><td class="best">Cloudflare Llama 3.2 Vision</td><td>On edge, no upload</td></tr>
+          <tr><td>Translation</td><td class="ok">Cloudflare M2M100</td><td>418 langs, free</td></tr>
+          <tr><td>Sentiment</td><td class="ok">Cloudflare DistilBERT</td><td>Fast, free</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>The 8 cell kinds</h2>
+    <p>Every AI interaction in Quilt is one of 8 cell kinds. Each has a uniform interface: <code>kind</code>, <code>provider</code>, <code>model</code>, <code>input</code> (cell reference), and the cell's value is the result.</p>
+
+    <pre><span style="color: var(--text-faint);"># 1. ai.llm — generic chat completion</span>
+<span style="color: var(--purple);">- id: ai.answer</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">provider: zai</span>
+  <span style="color: var(--purple);">model: glm-4.5</span>
+  <span style="color: var(--purple);">prompt: "{{input.question}}"</span>
+
+<span style="color: var(--text-faint);"># 2. ai.embed — text → vector</span>
+<span style="color: var(--purple);">- id: ai.embedding</span>
+  <span style="color: var(--purple);">kind: ai.embed</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/baai/bge-base-en-v1.5"</span>
+  <span style="color: var(--purple);">input: input.text</span>
+
+<span style="color: var(--text-faint);"># 3. ai.image — text → image (Stable Diffusion)</span>
+<span style="color: var(--purple);">- id: ai.art</span>
+  <span style="color: var(--purple);">kind: ai.image</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/stabilityai/stable-diffusion-xl-base-1.0"</span>
+  <span style="color: var(--purple);">prompt: "{{input.description}}"</span>
+
+<span style="color: var(--text-faint);"># 4. ai.translate — text → translated text</span>
+<span style="color: var(--purple);">- id: ai.french</span>
+  <span style="color: var(--purple);">kind: ai.translate</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/meta/m2m100-1.2b"</span>
+  <span style="color: var(--purple);">input: input.text</span>
+  <span style="color: var(--purple);">target: fr</span>
+
+<span style="color: var(--text-faint);"># 5. ai.sentiment — text → label</span>
+<span style="color: var(--purple);">- id: ai.mood</span>
+  <span style="color: var(--purple);">kind: ai.sentiment</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/huggingface/distilbert-sst-2-int8"</span>
+  <span style="color: var(--purple);">input: review.text</span>
+
+<span style="color: var(--text-faint);"># 6. ai.summarize — long text → short text</span>
+<span style="color: var(--purple);">- id: ai.summary</span>
+  <span style="color: var(--purple);">kind: ai.summarize</span>
+  <span style="color: var(--purple);">provider: zai</span>
+  <span style="color: var(--purple);">model: glm-4.5</span>
+  <span style="color: var(--purple);">input: doc.body</span>
+  <span style="color: var(--purple);">max_words: 50</span>
+
+<span style="color: var(--text-faint);"># 7. ai.code — description → code</span>
+<span style="color: var(--purple);">- id: ai.function</span>
+  <span style="color: var(--purple);">kind: ai.code</span>
+  <span style="color: var(--purple);">provider: zai</span>
+  <span style="color: var(--purple);">model: glm-4.5</span>
+  <span style="color: var(--purple);">input: task.description</span>
+  <span style="color: var(--purple);">language: rust</span>
+
+<span style="color: var(--text-faint);"># 8. ai.vision — image + text → text</span>
+<span style="color: var(--purple);">- id: ai.caption</span>
+  <span style="color: var(--purple);">kind: ai.vision</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/llava-hf/llava-1.5-7b-hf"</span>
+  <span style="color: var(--purple);">image: input.image</span>
+  <span style="color: var(--purple);">prompt: "Describe this image"</span></pre>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>The execution model</h2>
+    <p>When you set a value cell, the runtime does a <strong>topological sort</strong> of all dependent cells, then evaluates them in order. The same is true for AI cells — they propagate exactly like formulas. The only difference is they're async.</p>
+
+    <div class="flow">
+      <div class="step">
+        <div class="n">1</div>
+        <h4>Input changes</h4>
+        <p>A value cell is set (by user, by sensor, by API).</p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h4>Dependents queue</h4>
+        <p>The runtime queues all cells that depend on it.</p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h4>Topological order</h4>
+        <p>Cells are sorted by dependency. LLM cells go in the right place.</p>
+      </div>
+      <div class="step">
+        <div class="n">4</div>
+        <h4>Evaluate</h4>
+        <p>Value, formula, and sensor cells run sync. LLM cells run async.</p>
+      </div>
+      <div class="step">
+        <div class="n">5</div>
+        <h4>Cache</h4>
+        <p>If a cell's input is unchanged, the cached result is returned. No model call.</p>
+      </div>
+      <div class="step">
+        <div class="n">6</div>
+        <h4>Propagate</h4>
+        <p>New value cascades to the next level. Listeners fire.</p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <strong>Cache-first.</strong> Every AI cell caches by input hash. If you set <code>input.text = "hello"</code> twice, the model is only called once. This is critical when a formula or sensor updates a cell 10x/second.
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Security: API keys</h2>
+    <p>API keys are sensitive. Quilt handles them in three layers, depending on where the cell runs.</p>
+
+    <h3>Layer 1: Browser (Quilt Live)</h3>
+    <p>The browser version uses CORS-enabled public endpoints. Keys are <strong>not</strong> embedded in the page. Instead, the page calls a proxy URL that you configure. The proxy holds the key.</p>
+    <p>In production, deploy a Cloudflare Worker that proxies to each provider. The browser makes a single call to your Worker, which fans out to the providers.</p>
+
+    <h3>Layer 2: Cloudflare Worker (quilt-cloudflare)</h3>
+    <p>Keys are set as Wrangler secrets. The Worker reads them with <code>env.ZAI_API_KEY</code>. Only the Worker has access. The browser sees nothing.</p>
+
+    <h3>Layer 3: Local / server (TS / Rust)</h3>
+    <p>Keys are read from environment variables. <code>process.env.ZAI_API_KEY</code> or <code>std::env::var("ZAI_API_KEY")</code>. Quilt never logs or persists them.</p>
+
+    <div class="warning">
+      <strong>Never put API keys in a YAML sheet.</strong> Sheets are usually committed to version control. Quilt will refuse to load a sheet that contains a key. Use the key manager separately (env var, Worker secret, or a sealed secrets manager).
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>Patterns</h2>
+    <p>Six patterns that emerge naturally from the cell model.</p>
+
+    <h3>1. Cascade (output → input)</h3>
+    <p>Chain cells. The output of cell A is the input of cell B, which is the input of cell C. The cascade re-runs whenever any input changes.</p>
+
+    <pre><span style="color: var(--purple);">- id: extract</span>  <span style="color: var(--text-faint);"># cell 1: extract entities</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">prompt: "Extract entities from: {{text}}"</span>
+
+<span style="color: var(--purple);">- id: classify</span>  <span style="color: var(--text-faint);"># cell 2: classify</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">prompt: "Classify sentiment of: {{extract}}"</span>
+
+<span style="color: var(--purple);">- id: route</span>  <span style="color: var(--text-faint);"># cell 3: route</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">prompt: "Where should we send this? {{classify}}"</span></pre>
+
+    <h3>2. Fan-out (parallel)</h3>
+    <p>Three cells, same input, run in parallel. Then a <code>synth</code> cell takes all 3 and combines them.</p>
+
+    <pre><span style="color: var(--purple);">- id: draft.zai</span>     <span style="color: var(--purple);">kind: ai.llm</span>  <span style="color: var(--purple);">provider: zai</span>
+<span style="color: var(--purple);">- id: draft.kimi</span>    <span style="color: var(--purple);">kind: ai.llm</span>  <span style="color: var(--purple);">provider: kimi</span>
+<span style="color: var(--purple);">- id: draft.deepseek</span> <span style="color: var(--purple);">kind: ai.llm</span>  <span style="color: var(--purple);">provider: deepseek</span>
+<span style="color: var(--purple);">- id: best</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">provider: zai</span>
+  <span style="color: var(--purple);">prompt: "Pick the best of these 3: {{draft.zai}} {{draft.kimi}} {{draft.deepseek}}"</span></pre>
+
+    <h3>3. RAG (retrieve → augment → generate)</h3>
+    <p>Embed the input. Search Vectorize for top-K. Pass the matches as context to the LLM cell.</p>
+
+    <pre><span style="color: var(--purple);">- id: query.embed</span>
+  <span style="color: var(--purple);">kind: ai.embed</span>
+  <span style="color: var(--purple);">input: query.text</span>
+<span style="color: var(--purple);">- id: matches</span>
+  <span style="color: var(--purple);">kind: vectorize.search</span>
+  <span style="color: var(--purple);">vector: query.embed</span>
+  <span style="color: var(--purple);">top_k: 5</span>
+<span style="color: var(--purple);">- id: answer</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">prompt: "Context: {{matches}}\nQuestion: {{query.text}}"</span></pre>
+
+    <h3>4. Agent (loop until done)</h3>
+    <p>An agent cell that calls other cells in a loop. Memory is a value cell. Termination is a listener.</p>
+
+    <pre><span style="color: var(--purple);">- id: agent.thought</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">prompt: "Goal: {{goal}}\nStep {{step}}: what next?"</span>
+<span style="color: var(--purple);">- id: agent.action</span>  <span style="color: var(--purple);">kind: router</span>
+<span style="color: var(--purple);">- id: agent.memory</span>  <span style="color: var(--purple);">kind: value</span>
+<span style="color: var(--purple);">- id: agent.done</span>
+  <span style="color: var(--purple);">kind: listener</span>
+  <span style="color: var(--purple);">when: 'agent.thought contains "DONE"'</span></pre>
+
+    <h3>5. Memoize (cache by input)</h3>
+    <p>Quilt caches by default. If you set <code>input.text = "hello"</code> once, the second set is a no-op. To force a re-run, use a <code>version</code> cell that the formula includes.</p>
+
+    <pre><span style="color: var(--purple);">- id: input.version</span>  <span style="color: var(--purple);">kind: value</span>  <span style="color: var(--purple);">default: 0</span>
+<span style="color: var(--purple);">- id: cache.key</span>
+  <span style="color: var(--purple);">kind: formula</span>
+  <span style="color: var(--purple);">value: 'input.text + ":" + input.version'</span>
+<span style="color: var(--purple);">- id: ai.answer</span>  <span style="color: var(--purple);">kind: ai.llm</span>  <span style="color: var(--purple);">prompt: "{{cache.key}}"</span></pre>
+
+    <h3>6. Cost control (budget)</h3>
+    <p>Add a formula cell that estimates cost, a listener that checks the budget, and a router that picks a cheaper model when over.</p>
+
+    <pre><span style="color: var(--purple);">- id: ai.cost</span>
+  <span style="color: var(--purple);">kind: formula</span>
+  <span style="color: var(--purple);">value: "ai.tokens * 0.001"</span>
+<span style="color: var(--purple);">- id: ai.over_budget</span>
+  <span style="color: var(--purple);">kind: listener</span>
+  <span style="color: var(--purple);">when: "ai.cost > budget.max"</span>
+<span style="color: var(--purple);">- id: ai.fallback</span>
+  <span style="color: var(--purple);">kind: router</span>
+  <span style="color: var(--purple);">routes:</span>
+    <span style="color: var(--purple);">- when: "ai.cost > budget.max"</span>
+      <span style="color: var(--purple);">then: "ai.deepseek"</span>  <span style="color: var(--text-faint);"># cheaper</span></pre>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>Where it runs</h2>
+
+    <div class="cmp">
+      <table>
+        <thead>
+          <tr>
+            <th class="mono">Runtime</th>
+            <th>AI support</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>quilt (TS)</td><td class="best">✓ all 8 kinds</td><td>OpenAI, Anthropic, z.ai, Kimi, DeepSeek, custom</td></tr>
+          <tr><td>quilt-rust</td><td class="best">✓ all 8 kinds</td><td>Same providers, sync + tokio async</td></tr>
+          <tr><td>quilt-cloudflare</td><td class="best">✓ 8 + Workers AI</td><td>Runs on edge, free tier available</td></tr>
+          <tr><td>quilt-live (browser)</td><td class="ok">✓ via Worker proxy</td><td>Browser never holds keys</td></tr>
+          <tr><td>quilt-esp32</td><td class="ok">✓ local models only</td><td>1.4 MB flash, 520 KB RAM</td></tr>
+          <tr><td>quilt-mesh</td><td class="ok">✓ peer-to-peer</td><td>Each peer can be an AI node</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">08</span>What's next</h2>
+    <p>The cell model absorbs AI. The next steps are obvious:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>Streaming cells (return chunks as they come)</li>
+      <li>Multimodal cells (text + image + audio)</li>
+      <li>Tool cells (model can call a function and get a result back)</li>
+      <li>Persistent memory (memory that survives across sessions, encrypted)</li>
+      <li>Agent cells (multi-step loop with self-critique)</li>
+      <li>Federated cells (cells that run on the peer mesh)</li>
+    </ul>
+    <p>All of these are just new cell kinds. The runtime doesn't change.</p>
+  </section>
+
+</main>
+
+<footer>
+  <p>Quilt + AI · 4 providers · 8 cell kinds · 1 uniform interface</p>
+  <p style="margin-top: 8px;">
+    <a href="index.html">Home</a> ·
+    <a href="quilt-cloudflare.html">Cloudflare</a> ·
+    <a href="https://github.com/SuperInstance/quilt-cloudflare" target="_blank">Source</a>
+  </p>
+</footer>
+
+</body>
+</html>
