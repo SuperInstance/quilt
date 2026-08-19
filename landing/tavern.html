@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Crooked Tankard — a Quilt scene</title>
+<meta name="description" content="A vibe-coded tavern scene as a Quilt sheet. Three characters, time-stepped simulation, radio theater on a spreadsheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --fire: #c67e3e; --ale: #c6a87e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--tan); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--fire), var(--tan), var(--ale)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--fire), var(--tan), var(--ale)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 50px 24px 24px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px; }
+.hero p.lead { color: var(--text-dim); font-size: 1rem; max-width: 640px; margin: 0 auto; }
+
+main { max-width: 1300px; margin: 0 auto; padding: 0 24px 40px; }
+
+.controls { display: flex; gap: 12px; justify-content: center; margin: 20px 0; align-items: center; flex-wrap: wrap; }
+.controls button { padding: 12px 24px; background: var(--fire); color: var(--bg); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.95rem; }
+.controls button:hover { background: var(--tan); }
+.controls button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+.controls .secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+.controls .secondary:hover { background: var(--bg-elev); }
+.controls .label { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dim); }
+
+.scene { background: linear-gradient(180deg, var(--bg-card) 0%, #1a1410 100%); border: 1px solid var(--fire); border-radius: 16px; padding: 24px; margin: 20px 0; }
+
+.characters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 800px) { .characters { grid-template-columns: 1fr; } }
+
+.character { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; transition: all 0.3s; }
+.character.speaking { border-color: var(--fire); box-shadow: 0 0 16px rgba(198, 126, 62, 0.3); }
+.character .portrait { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.character .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.character.dwarf .avatar { background: linear-gradient(135deg, #8b6f47, #5d4a30); }
+.character.bard .avatar { background: linear-gradient(135deg, var(--red), #8b3a3a); }
+.character.stranger .avatar { background: linear-gradient(135deg, #444, #222); }
+.character h3 { font-size: 1rem; margin-bottom: 2px; }
+.character .role { font-size: 0.75rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.character .mood { margin: 10px 0; }
+.character .mood-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-faint); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+.character .mood-bar { height: 8px; background: var(--bg-elev); border-radius: 4px; overflow: hidden; }
+.character .mood-fill { height: 100%; background: var(--fire); transition: width 0.5s, background 0.5s; }
+.character .mood-fill.angry { background: var(--red); }
+.character .mood-fill.happy { background: var(--green); }
+.character .mood-fill.neutral { background: var(--tan); }
+.character .thought { background: var(--bg-elev); border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: var(--text-dim); font-style: italic; margin: 8px 0; min-height: 32px; }
+.character .speech { background: var(--bg-card); border-left: 3px solid var(--fire); border-radius: 4px; padding: 10px 12px; font-size: 0.9rem; color: var(--text); min-height: 50px; margin-top: 8px; transition: all 0.3s; }
+.character .speech:empty { color: var(--text-faint); font-style: italic; }
+.character .speech.loading { opacity: 0.5; }
+.character .speech-meta { font-size: 0.7rem; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+.transcript { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; max-height: 400px; overflow-y: auto; }
+.transcript h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.transcript .line { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+.transcript .line:last-child { border-bottom: none; }
+.transcript .line .turn { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); min-width: 50px; padding-top: 2px; }
+.transcript .line .who { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; min-width: 80px; font-weight: 600; }
+.transcript .line.dwarf .who { color: var(--tan); }
+.transcript .line.bard .who { color: var(--red); }
+.transcript .line.stranger .who { color: #888; }
+.transcript .line .what { flex: 1; font-size: 0.9rem; color: var(--text); }
+
+.cells { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 20px 0; }
+.cells h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cells .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.cells .cell { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; transition: all 0.2s; }
+.cells .cell.evaluating { border-color: var(--fire); box-shadow: 0 0 0 1px var(--fire); }
+.cells .cell.complete { border-color: var(--green); }
+.cells .cell .id { color: var(--tan); font-weight: 600; margin-bottom: 2px; word-break: break-all; }
+.cells .cell .kind { color: var(--text-faint); font-size: 0.65rem; }
+.cells .cell .val { color: var(--text-dim); margin-top: 4px; font-size: 0.7rem; word-break: break-word; max-height: 30px; overflow: hidden; }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="neural-cells.html">Neural Cells</a>
+    <a href="tavern.html" style="color: var(--tan);">🍺 Tavern</a>
+    <a href="vibe.html">Vibe</a>
+    <a href="evolve.html">Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>The <span class="grad-text">Crooked Tankard</span></h1>
+  <p class="lead">A vibe-coded tavern scene. Three characters. Each is a Quilt cell. Each cell has a mood, a thought, a speech. The cells overhear each other, react to each other, talk to each other. Click <b>Play</b> to watch the conversation unfold.</p>
+</div>
+
+<main>
+
+  <div class="controls">
+    <button id="play-btn" onclick="playTurn()">▶ Play turn</button>
+    <button class="secondary" id="auto-btn" onclick="toggleAuto()">⏯ Auto-play</button>
+    <button class="secondary" onclick="reset()">↺ Reset</button>
+    <span class="label" id="turn-label">Turn 0</span>
+    <span class="label" id="status-label">ready</span>
+  </div>
+
+  <div class="scene">
+
+    <div class="characters">
+      <div class="character dwarf" id="char-dwarf">
+        <div class="portrait">
+          <div class="avatar">🧔</div>
+          <div>
+            <h3>Grumthor Ironbeard</h3>
+            <div class="role">Bartender</div>
+          </div>
+        </div>
+        <div class="mood">
+          <div class="mood-label"><span>angry</span><span id="dwarf-mood-v">5/10</span><span>jovial</span></div>
+          <div class="mood-bar"><div class="mood-fill" id="dwarf-mood" style="width: 50%"></div></div>
+        </div>
+        <div class="thought" id="dwarf-thought">wiping the bar with a rag...</div>
+        <div class="speech" id="dwarf-speech"></div>
+      </div>
+
+      <div class="character bard" id="char-bard">
+        <div class="portrait">
+          <div class="avatar">🎵</div>
+          <div>
+            <h3>Pip the Merry</h3>
+            <div class="role">Bard</div>
+          </div>
+        </div>
+        <div class="mood">
+          <div class="mood-label"><span>sad</span><span id="bard-mood-v">8/10</span><span>elated</span></div>
+          <div class="mood-bar"><div class="mood-fill happy" id="bard-mood" style="width: 80%"></div></div>
+        </div>
+        <div class="thought" id="bard-thought">tuning the lute...</div>
+        <div class="speech" id="bard-speech"></div>
+      </div>
+
+      <div class="character stranger" id="char-stranger">
+        <div class="portrait">
+          <div class="avatar">🌑</div>
+          <div>
+            <h3>The Hooded Figure</h3>
+            <div class="role">Stranger</div>
+          </div>
+        </div>
+        <div class="mood">
+          <div class="mood-label"><span>closed</span><span id="stranger-mood-v">5/10</span><span>curious</span></div>
+          <div class="mood-bar"><div class="mood-fill neutral" id="stranger-mood" style="width: 50%"></div></div>
+        </div>
+        <div class="thought" id="stranger-thought">watching from the corner...</div>
+        <div class="speech" id="stranger-speech"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="transcript">
+    <h3>Transcript</h3>
+    <div id="transcript-content">
+      <div style="color: var(--text-faint); font-style: italic; padding: 12px;">The Crooked Tankard is quiet. Rain patters on the windows. Click <b>Play</b> to begin.</div>
+    </div>
+  </div>
+
+  <div class="cells">
+    <h3>Cell graph (live)</h3>
+    <div class="grid" id="cell-grid">
+      <div class="cell" data-id="dwarf.mood"><div class="id">dwarf.mood</div><div class="kind">value</div><div class="val">5</div></div>
+      <div class="cell" data-id="dwarf.thought"><div class="id">dwarf.thought</div><div class="kind">formula</div><div class="val">—</div></div>
+      <div class="cell" data-id="dwarf.speech"><div class="id">dwarf.speech</div><div class="kind">ai.llm</div><div class="val">—</div></div>
+      <div class="cell" data-id="bard.mood"><div class="id">bard.mood</div><div class="kind">value</div><div class="val">8</div></div>
+      <div class="cell" data-id="bard.audience"><div class="id">bard.audience</div><div class="kind">formula</div><div class="val">—</div></div>
+      <div class="cell" data-id="bard.speech"><div class="id">bard.speech</div><div class="kind">ai.llm</div><div class="val">—</div></div>
+      <div class="cell" data-id="stranger.mood"><div class="id">stranger.mood</div><div class="kind">value</div><div class="val">5</div></div>
+      <div class="cell" data-id="stranger.observation"><div class="id">stranger.observation</div><div class="kind">ai.llm</div><div class="val">—</div></div>
+      <div class="cell" data-id="stranger.speech"><div class="id">stranger.speech</div><div class="kind">ai.llm</div><div class="val">—</div></div>
+      <div class="cell" data-id="turn"><div class="id">turn</div><div class="kind">value</div><div class="val">0</div></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>The Crooked Tankard · a Quilt scene · 3 characters · 10 cells · watch the trajectory, not the end</p>
+  <p style="margin-top: 8px;">
+    <a href="neural-cells.html">Neural Cells (research)</a> ·
+    <a href="vibe.html">Vibe-code your own scene</a> ·
+    <a href="evolve.html">Evolve it</a>
+  </p>
+</footer>
+
+<script>
+// ============================================================================
+// THE TAVERN — a Quilt sheet, running in the browser
+// ============================================================================
+// 10 cells. 3 characters. Each character has: mood, thought, speech.
+// The cells overhear each other, react to each other, talk to each other.
+// This is the plinko: a puck (the conversation) drops through pegs (the cells).
+
+const ZAI = 'https://api.z.ai/api/paas/v4/chat/completions';
+const MODEL = 'glm-4.5';
+
+// Cell state
+const sheet = {
+  'dwarf.mood': { value: 5, kind: 'value' },
+  'dwarf.thought': { value: 'wiping the bar with a rag...', kind: 'formula' },
+  'dwarf.speech': { value: '', kind: 'ai.llm' },
+  'bard.mood': { value: 8, kind: 'value' },
+  'bard.audience': { value: 'steady', kind: 'formula' },
+  'bard.speech': { value: '', kind: 'ai.llm' },
+  'stranger.mood': { value: 5, kind: 'value' },
+  'stranger.observation': { value: '', kind: 'ai.llm' },
+  'stranger.speech': { value: '', kind: 'ai.llm' },
+  'turn': { value: 0, kind: 'value' },
+};
+
+let turn = 0;
+let autoPlay = false;
+let autoTimer = null;
+let evaluating = false;
+
+const transcript = [];
+
+function setStatus(text) { document.getElementById('status-label').textContent = text; }
+
+function setCellEvaluating(id) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) {
+    el.classList.add('evaluating');
+    el.classList.remove('complete');
+  }
+}
+function setCellComplete(id, val) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) {
+    el.classList.remove('evaluating');
+    el.classList.add('complete');
+    if (val !== undefined) {
+      const v = el.querySelector('.val');
+      if (v) v.textContent = String(val).slice(0, 80);
+    }
+    setTimeout(() => el.classList.remove('complete'), 800);
+  }
+}
+
+function addTranscript(who, what) {
+  transcript.push({ turn, who, what });
+  const content = document.getElementById('transcript-content');
+  const initial = content.querySelector('div[style*="italic"]');
+  if (initial) initial.remove();
+  const line = document.createElement('div');
+  line.className = 'line ' + who;
+  line.innerHTML = `<span class="turn">t${turn}</span><span class="who">${who}</span><span class="what">${escapeHtml(what)}</span>`;
+  content.appendChild(line);
+  content.scrollTop = content.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function callZai(prompt, opts = {}) {
+  const t0 = performance.now();
+  const res = await fetch(ZAI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content: prompt }], max_tokens: opts.max_tokens || 150, temperature: opts.temperature ?? 0.8 }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('z.ai ' + res.status + ': ' + errText.slice(0, 200));
+  }
+  const data = await res.json();
+  return {
+    text: (data.choices?.[0]?.message?.content || '').trim(),
+    time: performance.now() - t0,
+  };
+}
+
+// Formulas (computed locally, no API call)
+function evaluateFormulas() {
+  // dwarf.thought = based on mood
+  const dm = sheet['dwarf.mood'].value;
+  if (dm < 3) sheet['dwarf.thought'].value = 'fingers tightening on the mug...';
+  else if (dm > 7) sheet['dwarf.thought'].value = 'humming under his breath...';
+  else sheet['dwarf.thought'].value = 'polishing the bar with a rag...';
+
+  // bard.audience = based on dwarf.mood
+  if (dm < 3) sheet['bard.audience'].value = 'dwindling — the bartender is glaring';
+  else if (dm > 6) sheet['bard.audience'].value = 'engaged — the bartender is listening';
+  else sheet['bard.audience'].value = 'polite — the bartender is tolerating';
+
+  // stranger.mood = based on what they've heard
+  if (sheet['stranger.speech'].value) {
+    sheet['stranger.mood'].value = Math.min(10, sheet['stranger.mood'].value + 0.5);
+  }
+  if (sheet['bard.speech'].value && sheet['bard.speech'].value.includes('secret')) {
+    sheet['stranger.mood'].value = Math.min(10, sheet['stranger.mood'].value + 1);
+  }
+}
+
+function updateUI() {
+  // Moods
+  updateMood('dwarf', sheet['dwarf.mood'].value);
+  updateMood('bard', sheet['bard.mood'].value);
+  updateMood('stranger', sheet['stranger.mood'].value);
+  // Thoughts
+  document.getElementById('dwarf-thought').textContent = sheet['dwarf.thought'].value;
+  document.getElementById('bard-thought').textContent = sheet['bard.audience'].value;
+  document.getElementById('stranger-thought').textContent = sheet['stranger.observation'].value || 'watching from the corner...';
+  // Speeches
+  document.getElementById('dwarf-speech').textContent = sheet['dwarf.speech'].value || '';
+  document.getElementById('bard-speech').textContent = sheet['bard.speech'].value || '';
+  document.getElementById('stranger-speech').textContent = sheet['stranger.speech'].value || '';
+  // Turn
+  document.getElementById('turn-label').textContent = `Turn ${turn}`;
+  document.querySelector('[data-id="turn"] .val').textContent = turn;
+  document.querySelector('[data-id="dwarf.mood"] .val').textContent = sheet['dwarf.mood'].value.toFixed(1);
+  document.querySelector('[data-id="bard.mood"] .val').textContent = sheet['bard.mood'].value.toFixed(1);
+  document.querySelector('[data-id="stranger.mood"] .val').textContent = sheet['stranger.mood'].value.toFixed(1);
+  document.querySelector('[data-id="dwarf.thought"] .val').textContent = sheet['dwarf.thought'].value;
+  document.querySelector('[data-id="bard.audience"] .val').textContent = sheet['bard.audience'].value;
+  document.querySelector('[data-id="dwarf.speech"] .val').textContent = sheet['dwarf.speech'].value.slice(0, 80);
+  document.querySelector('[data-id="bard.speech"] .val').textContent = sheet['bard.speech'].value.slice(0, 80);
+  document.querySelector('[data-id="stranger.observation"] .val').textContent = sheet['stranger.observation'].value.slice(0, 80);
+  document.querySelector('[data-id="stranger.speech"] .val').textContent = sheet['stranger.speech'].value.slice(0, 80);
+}
+
+function updateMood(char, v) {
+  const bar = document.getElementById(char + '-mood');
+  const label = document.getElementById(char + '-mood-v');
+  bar.style.width = (v * 10) + '%';
+  bar.classList.remove('angry', 'happy', 'neutral');
+  if (v < 4) bar.classList.add('angry');
+  else if (v > 6) bar.classList.add('happy');
+  else bar.classList.add('neutral');
+  label.textContent = v.toFixed(1) + '/10';
+}
+
+async function playTurn() {
+  if (evaluating) return;
+  evaluating = true;
+  setStatus('thinking...');
+  turn++;
+  sheet['turn'].value = turn;
+
+  // ===== Bard: sing =====
+  setCellEvaluating('bard.audience');
+  evaluateFormulas();
+  setCellComplete('bard.audience');
+  setCellEvaluating('bard.speech');
+  document.getElementById('char-bard').classList.add('speaking');
+  document.getElementById('bard-speech').classList.add('loading');
+  document.getElementById('bard-speech').textContent = '...';
+  try {
+    const r = await callZai(
+      `You are Pip the Merry, a cheerful bard at the Crooked Tankard tavern. You have a lute, a red feather in your cap, and a ready smile. It's a rainy night, the fire is low, and you're trying to lift spirits.
+
+Your mood: ${sheet['bard.mood'].value}/10
+The audience reaction: ${sheet['bard.audience'].value}
+What the bartender just said: ${sheet['dwarf.speech'].value || 'nothing yet'}
+What the stranger just said: ${sheet['stranger.speech'].value || 'nothing yet'}
+This is turn ${turn}.
+
+Sing or say one short thing (1-2 sentences, cheerful, with a song lyric if it fits). Be vivid and characterful.`,
+      { max_tokens: 120, temperature: 0.85 }
+    );
+    sheet['bard.speech'].value = r.text;
+    setCellComplete('bard.speech', r.text);
+    document.getElementById('bard-speech').textContent = r.text;
+    addTranscript('bard', r.text);
+  } catch (e) {
+    sheet['bard.speech'].value = '(the lute strings snap — silence)';
+    document.getElementById('bard-speech').textContent = sheet['bard.speech'].value;
+    addTranscript('bard', sheet['bard.speech'].value);
+  }
+  document.getElementById('bard-speech').classList.remove('loading');
+  document.getElementById('char-bard').classList.remove('speaking');
+
+  // Bard's mood adjusts based on audience
+  if (sheet['bard.audience'].value.includes('engaged')) sheet['bard.mood'].value = Math.min(10, sheet['bard.mood'].value + 0.5);
+  if (sheet['bard.audience'].value.includes('dwindling')) sheet['bard.mood'].value = Math.max(0, sheet['bard.mood'].value - 0.5);
+
+  // ===== Dwarf: react =====
+  setCellEvaluating('dwarf.mood');
+  // Mood drops with noise (the bard is singing)
+  if (sheet['bard.speech'].value && !sheet['bard.speech'].value.includes('silence')) {
+    sheet['dwarf.mood'].value = Math.max(0, sheet['dwarf.mood'].value - 0.7);
+  } else {
+    sheet['dwarf.mood'].value = Math.min(10, sheet['dwarf.mood'].value + 0.3);
+  }
+  setCellComplete('dwarf.mood');
+  setCellEvaluating('dwarf.thought');
+  evaluateFormulas();
+  setCellComplete('dwarf.thought');
+  setCellEvaluating('dwarf.speech');
+  document.getElementById('char-dwarf').classList.add('speaking');
+  document.getElementById('dwarf-speech').classList.add('loading');
+  document.getElementById('dwarf-speech').textContent = '...';
+  try {
+    const r = await callZai(
+      `You are Grumthor Ironbeard, a gruff dwarf bartender at the Crooked Tankard. You have a magnificent braided beard, you stand 4 feet tall, and you HATE noise. You're wiping down the bar with a wet rag.
+
+Your mood: ${sheet['dwarf.mood'].value.toFixed(1)}/10
+Your thought: ${sheet['dwarf.thought'].value}
+The bard just sang: "${sheet['bard.speech'].value}"
+The stranger: ${sheet['stranger.speech'].value || 'silently watching'}
+
+What do you say or do? (1-2 sentences, grumpy and brief. Maybe a complaint, a muttered curse, or a quiet aside to a regular.)`,
+      { max_tokens: 100, temperature: 0.7 }
+    );
+    sheet['dwarf.speech'].value = r.text;
+    setCellComplete('dwarf.speech', r.text);
+    document.getElementById('dwarf-speech').textContent = r.text;
+    addTranscript('dwarf', r.text);
+  } catch (e) {
+    sheet['dwarf.speech'].value = '*slams a mug down*';
+    document.getElementById('dwarf-speech').textContent = sheet['dwarf.speech'].value;
+    addTranscript('dwarf', sheet['dwarf.speech'].value);
+  }
+  document.getElementById('dwarf-speech').classList.remove('loading');
+  document.getElementById('char-dwarf').classList.remove('speaking');
+
+  // ===== Stranger: observe, then maybe speak =====
+  setCellEvaluating('stranger.observation');
+  document.getElementById('char-stranger').classList.add('speaking');
+  document.getElementById('stranger-speech').classList.add('loading');
+  document.getElementById('stranger-speech').textContent = '...';
+  try {
+    const obs = await callZai(
+      `You are a mysterious hooded stranger at the Crooked Tankard. You're nursing an ale, watching everyone, and you have a secret.
+
+The bard just sang: "${sheet['bard.speech'].value}"
+The bartender just said: "${sheet['dwarf.speech'].value}"
+
+What are you thinking? One sentence, internal, cryptic.`,
+      { max_tokens: 80, temperature: 0.9 }
+    );
+    sheet['stranger.observation'].value = obs.text;
+    setCellComplete('stranger.observation', obs.text);
+
+    // Decide if the stranger speaks (routing by agreement)
+    const shouldSpeak = (turn >= 2 && Math.random() < 0.5) || sheet['stranger.observation'].value.toLowerCase().includes('must') || sheet['stranger.observation'].value.toLowerCase().includes('cannot stay silent');
+
+    if (shouldSpeak) {
+      setCellEvaluating('stranger.speech');
+      const r = await callZai(
+        `You are a mysterious hooded stranger at the Crooked Tankard. You've been silent for a while. You suddenly speak.
+
+Your thought: ${sheet['stranger.observation'].value}
+The bard: ${sheet['bard.speech'].value}
+The bartender: ${sheet['dwarf.speech'].value}
+
+Say something cryptic and short (1 sentence). Don't reveal your secret yet — just drop a hint.`,
+        { max_tokens: 100, temperature: 0.85 }
+      );
+      sheet['stranger.speech'].value = r.text;
+      setCellComplete('stranger.speech', r.text);
+      document.getElementById('stranger-speech').textContent = r.text;
+      addTranscript('stranger', r.text);
+    } else {
+      sheet['stranger.speech'].value = '';
+      setCellComplete('stranger.speech', '(silent)');
+      document.getElementById('stranger-speech').textContent = '';
+    }
+  } catch (e) {
+    sheet['stranger.speech'].value = '';
+    document.getElementById('stranger-speech').textContent = '';
+  }
+  document.getElementById('stranger-speech').classList.remove('loading');
+  document.getElementById('char-stranger').classList.remove('speaking');
+
+  // Recompute formulas one more time (other cells' speech now affects thoughts)
+  setCellEvaluating('stranger.mood');
+  evaluateFormulas();
+  setCellComplete('stranger.mood');
+  setCellEvaluating('bard.audience');
+  setCellComplete('bard.audience');
+
+  updateUI();
+  setStatus('ready');
+
+  evaluating = false;
+
+  if (autoPlay && turn < 20) {
+    autoTimer = setTimeout(playTurn, 2500);
+  } else if (autoPlay) {
+    autoPlay = false;
+    document.getElementById('auto-btn').textContent = '⏯ Auto-play';
+  }
+}
+
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  document.getElementById('auto-btn').textContent = autoPlay ? '⏸ Pause' : '⏯ Auto-play';
+  if (autoPlay && !evaluating) playTurn();
+  if (!autoPlay && autoTimer) clearTimeout(autoTimer);
+}
+
+function reset() {
+  if (autoTimer) clearTimeout(autoTimer);
+  autoPlay = false;
+  document.getElementById('auto-btn').textContent = '⏯ Auto-play';
+  turn = 0;
+  sheet['dwarf.mood'].value = 5;
+  sheet['dwarf.thought'].value = 'wiping the bar with a rag...';
+  sheet['dwarf.speech'].value = '';
+  sheet['bard.mood'].value = 8;
+  sheet['bard.audience'].value = 'steady';
+  sheet['bard.speech'].value = '';
+  sheet['stranger.mood'].value = 5;
+  sheet['stranger.observation'].value = '';
+  sheet['stranger.speech'].value = '';
+  sheet['turn'].value = 0;
+  transcript.length = 0;
+  document.getElementById('transcript-content').innerHTML = '<div style="color: var(--text-faint); font-style: italic; padding: 12px;">The Crooked Tankard is quiet. Rain patters on the windows. Click <b>Play</b> to begin.</div>';
+  updateUI();
+  setStatus('ready');
+}
+
+updateUI();
+</script>
+
+</body>
+</html>

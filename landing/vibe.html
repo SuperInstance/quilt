@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe-Code — describe a scene, get a Quilt sheet</title>
+<meta name="description" content="Describe a scene in natural language. The AI generates a Quilt sheet of cells and connections. You play it, edit it, evolve it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --vibe: #bb7ec6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--vibe); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--vibe), var(--blue), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--vibe), var(--blue), var(--green)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 50px 24px 24px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px; }
+.hero p.lead { color: var(--text-dim); font-size: 1rem; max-width: 640px; margin: 0 auto; }
+
+main { max-width: 1400px; margin: 0 auto; padding: 0 24px 40px; }
+
+.split { display: grid; grid-template-columns: 380px 1fr; gap: 16px; margin: 20px 0; min-height: 70vh; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+
+.chat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
+.chat h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--vibe); padding: 14px 16px 0; }
+.chat .messages { flex: 1; overflow-y: auto; padding: 12px 16px; max-height: 60vh; }
+.chat .msg { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; }
+.chat .msg.user { background: var(--bg-elev); border-left: 3px solid var(--blue); }
+.chat .msg.assistant { background: var(--bg); border-left: 3px solid var(--vibe); }
+.chat .msg.system { background: rgba(126, 198, 153, 0.1); border-left: 3px solid var(--green); font-size: 0.8rem; color: var(--text-dim); }
+.chat .input-row { display: flex; padding: 12px; border-top: 1px solid var(--border); gap: 8px; }
+.chat .input-row input { flex: 1; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: inherit; font-size: 0.9rem; }
+.chat .input-row button { padding: 8px 16px; background: var(--vibe); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.chat .input-row button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+.chat .examples { padding: 8px 16px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.chat .examples .ex { padding: 4px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; cursor: pointer; color: var(--text-dim); }
+.chat .examples .ex:hover { color: var(--text); border-color: var(--vibe); }
+
+.workspace { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; }
+.workspace .tabs { display: flex; gap: 4px; padding: 8px 12px 0; border-bottom: 1px solid var(--border); }
+.workspace .tab { padding: 8px 14px; background: transparent; border: none; color: var(--text-dim); font-size: 0.85rem; cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; }
+.workspace .tab.active { color: var(--vibe); border-bottom-color: var(--vibe); }
+.workspace .tab-pane { display: none; padding: 16px; flex: 1; overflow: auto; }
+.workspace .tab-pane.active { display: block; }
+
+.yaml-edit { width: 100%; min-height: 400px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; resize: vertical; }
+
+.graph { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.graph .cell { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.graph .cell .id { color: var(--vibe); font-weight: 600; margin-bottom: 4px; }
+.graph .cell .kind { color: var(--text-faint); font-size: 0.7rem; }
+.graph .cell .val { color: var(--text-dim); margin-top: 6px; word-break: break-word; max-height: 50px; overflow: hidden; }
+
+.play-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.play-controls button { padding: 8px 16px; background: var(--vibe); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.play-controls button.secondary { background: var(--bg-elev); color: var(--text); border: 1px solid var(--border); }
+.play-controls button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+.play-controls .label { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); }
+
+.transcript { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; max-height: 300px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6; }
+.transcript .line { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.transcript .line:last-child { border-bottom: none; }
+.transcript .line .turn { color: var(--text-faint); min-width: 40px; }
+.transcript .line .who { min-width: 80px; font-weight: 600; }
+.transcript .line .what { flex: 1; }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="neural-cells.html">Neural Cells</a>
+    <a href="tavern.html">Tavern</a>
+    <a href="vibe.html" style="color: var(--vibe);">✨ Vibe</a>
+    <a href="evolve.html">Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>✨ <span class="grad-text">Vibe-Code</span></h1>
+  <p class="lead">Describe a scene in natural language. The AI builds a Quilt sheet of cells and connections. You play it, edit it, evolve it. The cell model is the substrate; natural language is the UI.</p>
+</div>
+
+<main>
+
+  <div class="split">
+    <div class="chat">
+      <h3>Side panel</h3>
+      <div class="messages" id="messages">
+        <div class="msg system">
+          ✨ Describe a scene. The AI will generate a Quilt sheet (YAML) with cells and connections. You can play it, edit it, or ask for changes.
+        </div>
+        <div class="msg system">
+          Try the examples below, or describe your own: a heist, a battle, a meeting, a debugging session, anything.
+        </div>
+      </div>
+      <div class="examples">
+        <button class="ex" data-q="A space station where 3 crew members disagree about whether to investigate a strange signal">Space station</button>
+        <button class="ex" data-q="A medieval market where a thief, a guard, and a merchant negotiate">Market</button>
+        <button class="ex" data-q="A startup pitch meeting with the founder, an investor, and a skeptical CTO">Startup pitch</button>
+        <button class="ex" data-q="A kitchen where a chef, a sous chef, and a food critic prepare a meal">Kitchen</button>
+      </div>
+      <div class="input-row">
+        <input type="text" id="input" placeholder="Describe a scene..." />
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <div class="workspace">
+      <div class="tabs">
+        <button class="tab active" data-tab="yaml">📝 YAML</button>
+        <button class="tab" data-tab="graph">🔗 Graph</button>
+        <button class="tab" data-tab="play">▶ Play</button>
+      </div>
+
+      <div class="tab-pane active" id="tab-yaml">
+        <p style="color: var(--text-faint); font-size: 0.85rem; margin-bottom: 12px;">Generated sheet. Edit the cells. Click <b>Play</b> tab to run it.</p>
+        <textarea class="yaml-edit" id="yaml-editor" spellcheck="false"># A scene will appear here once you describe one.
+# Try: "A medieval market where a thief, a guard, and a merchant negotiate"</textarea>
+      </div>
+
+      <div class="tab-pane" id="tab-graph">
+        <p style="color: var(--text-faint); font-size: 0.85rem; margin-bottom: 12px;">Cells in the current sheet. Generated from the YAML.</p>
+        <div class="graph" id="graph">
+          <div style="color: var(--text-faint); padding: 12px;">No cells yet. Generate a sheet first.</div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-play">
+        <div class="play-controls">
+          <button id="play-btn" onclick="playTurn()">▶ Play turn</button>
+          <button class="secondary" id="auto-btn" onclick="toggleAuto()">⏯ Auto-play</button>
+          <button class="secondary" onclick="reset()">↺ Reset</button>
+          <span class="label" id="turn-label">Turn 0</span>
+          <span class="label" id="status-label">ready</span>
+        </div>
+        <p style="color: var(--text-faint); font-size: 0.85rem; margin-bottom: 12px;">Watch the cells talk. The "plinko" — each turn is a cascade through the dependency graph.</p>
+        <div class="transcript" id="transcript">
+          <div style="color: var(--text-faint); font-style: italic;">No transcript yet. Generate a sheet and play a turn.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>Quilt · Vibe-Code · describe a scene · get a Quilt sheet · play it</p>
+  <p style="margin-top: 8px;">
+    <a href="neural-cells.html">Neural Cells</a> ·
+    <a href="tavern.html">Tavern</a> ·
+    <a href="evolve.html">Evolve</a>
+  </p>
+</footer>
+
+<script>
+// ============================================================================
+// VIBE-CODE — describe a scene, get a Quilt sheet
+// ============================================================================
+
+const ZAI = 'https://api.z.ai/api/paas/v4/chat/completions';
+const MODEL = 'glm-4.5';
+
+let sheetYaml = '';
+let engine = null;
+let turn = 0;
+let autoPlay = false;
+let autoTimer = null;
+let evaluating = false;
+
+const TAVERN_YAML = `id: tavern-001
+description: A Quilt scene — a tavern with 3 characters.
+cells:
+  - id: dwarf.mood
+    kind: value
+    default: 5
+  - id: dwarf.thought
+    kind: formula
+    value: 'dwarf.mood < 3 ? "fingers tightening on the mug..." : dwarf.mood > 7 ? "humming under his breath..." : "polishing the bar..."'
+  - id: dwarf.speech
+    kind: ai
+    ai_kind: ai.llm
+    provider: zai
+    model: glm-4.5
+    prompt: |
+      You are Grumthor Ironbeard, a gruff dwarf bartender. You're 4 feet tall, you have a magnificent braided beard, and you HATE noise.
+      Mood: {{dwarf.mood}}/10
+      Thought: {{dwarf.thought}}
+      Bard just said: "{{bard.speech}}"
+      Stranger said: "{{stranger.speech}}"
+      What do you say? (1-2 sentences, grumpy and brief)
+    max_tokens: 100
+
+  - id: bard.mood
+    kind: value
+    default: 8
+  - id: bard.audience
+    kind: formula
+    value: 'dwarf.mood < 3 ? "dwindling" : dwarf.mood > 6 ? "engaged" : "polite"'
+  - id: bard.speech
+    kind: ai
+    ai_kind: ai.llm
+    provider: zai
+    model: glm-4.5
+    prompt: |
+      You are Pip the Merry, a cheerful bard with a lute and a red feather in your cap. You want to lift spirits.
+      Mood: {{bard.mood}}/10
+      Audience: {{bard.audience}}
+      Bartender said: "{{dwarf.speech}}"
+      Stranger said: "{{stranger.speech}}"
+      Sing or say one short thing (1-2 sentences, with a song lyric if it fits).
+    max_tokens: 120
+
+  - id: stranger.mood
+    kind: value
+    default: 5
+  - id: stranger.thought
+    kind: ai
+    ai_kind: ai.llm
+    provider: zai
+    model: glm-4.5
+    prompt: |
+      You are a mysterious hooded stranger, watching from a corner. You have a secret.
+      Bard: "{{bard.speech}}"
+      Bartender: "{{dwarf.speech}}"
+      What are you thinking? (1 sentence, cryptic, internal)
+    max_tokens: 80
+  - id: stranger.speech
+    kind: ai
+    ai_kind: ai.llm
+    provider: zai
+    model: glm-4.5
+    prompt: |
+      You are the hooded stranger. You've been silent. Now you speak.
+      Thought: {{stranger.thought}}
+      Bard: "{{bard.speech}}"
+      Bartender: "{{dwarf.speech}}"
+      Say something cryptic and short (1 sentence). Don't reveal your secret yet.
+    max_tokens: 100
+`;
+
+let cells = [];
+let transcript = [];
+
+function addMessage(role, text) {
+  const el = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStatus(text) { document.getElementById('status-label').textContent = text; }
+
+async function sendMessage() {
+  const input = document.getElementById('input');
+  const btn = document.getElementById('send-btn');
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage('user', text);
+  input.value = '';
+  btn.disabled = true;
+  setStatus('thinking...');
+  addMessage('assistant', '✨ Generating Quilt sheet...');
+
+  try {
+    const yaml = await generateSheet(text);
+    sheetYaml = yaml;
+    document.getElementById('yaml-editor').value = yaml;
+    parseYaml();
+    addMessage('assistant', '✓ Sheet generated. Click the Play tab to run it.');
+    setStatus('ready');
+  } catch (e) {
+    addMessage('assistant', '✗ Error: ' + e.message);
+    setStatus('error');
+  }
+  btn.disabled = false;
+}
+
+document.getElementById('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+document.querySelectorAll('.examples .ex').forEach(b => b.onclick = () => {
+  document.getElementById('input').value = b.dataset.q;
+  sendMessage();
+});
+
+document.querySelectorAll('.workspace .tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.workspace .tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.querySelectorAll('.workspace .tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+});
+
+document.getElementById('yaml-editor').addEventListener('change', () => {
+  sheetYaml = document.getElementById('yaml-editor').value;
+  parseYaml();
+});
+
+async function generateSheet(description) {
+  const prompt = `You generate Quilt sheets. A Quilt sheet is a YAML file with cells and connections.
+
+Cell kinds:
+- value: a static value
+- formula: a small expression that references other cells
+- ai: an AI cell with a sub-kind (ai.llm, ai.code, ai.summarize, ai.translate, etc.)
+- listener: fires on a condition
+- router: picks which downstream cell to invoke
+- sensor: external data source
+
+The user described this scene:
+"""
+${description}
+"""
+
+Generate a Quilt sheet that models this scene as a reactive system of 3-5 characters. Each character has:
+- a mood (value)
+- a thought (formula based on other cells)
+- a speech (ai.llm cell that generates what they say, based on others' speeches)
+
+The cells should propagate: when one character speaks, others' moods/thoughts update, then they speak.
+
+RESPOND with ONLY a YAML sheet (no markdown fences, no explanation). Start with "id: scene-name" and "description: ...". Use ai_kind: ai.llm for speech cells. Reference other cells in prompts with {{cell.id}}.
+
+Keep it focused: 8-15 cells. The user can play the sheet turn by turn.`;
+
+  const res = await fetch(ZAI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 2500,
+      temperature: 0.7,
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('z.ai ' + res.status + ': ' + errText.slice(0, 200));
+  }
+  const data = await res.json();
+  let yaml = (data.choices?.[0]?.message?.content || '').trim();
+  // Strip markdown fences if present
+  yaml = yaml.replace(/^```ya?ml?\n/, '').replace(/^```\n/, '').replace(/\n```$/, '');
+  return yaml;
+}
+
+function parseYaml() {
+  // Simple parser: extract cell ids and kinds
+  cells = [];
+  const lines = sheetYaml.split('\n');
+  let inCells = false;
+  for (const line of lines) {
+    if (line.match(/^\s*cells:\s*$/)) { inCells = true; continue; }
+    if (!inCells) continue;
+    const m = line.match(/^\s*-\s*id:\s*(\S+)/);
+    if (m) {
+      cells.push({ id: m[1], kind: 'value' });
+      continue;
+    }
+    const km = line.match(/^\s*kind:\s*(\S+)/);
+    if (km && cells.length > 0) {
+      cells[cells.length - 1].kind = km[1];
+    }
+  }
+  // Render graph
+  const graph = document.getElementById('graph');
+  if (cells.length === 0) {
+    graph.innerHTML = '<div style="color: var(--text-faint); padding: 12px;">No cells parsed.</div>';
+  } else {
+    graph.innerHTML = cells.map(c => `
+      <div class="cell">
+        <div class="id">${c.id}</div>
+        <div class="kind">${c.kind}</div>
+        <div class="val">—</div>
+      </div>
+    `).join('');
+  }
+}
+
+async function callZai(prompt, opts = {}) {
+  const res = await fetch(ZAI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: opts.max_tokens || 120,
+      temperature: opts.temperature ?? 0.8,
+    }),
+  });
+  if (!res.ok) throw new Error('z.ai ' + res.status);
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
+}
+
+async function playTurn() {
+  if (evaluating) return;
+  if (!sheetYaml || cells.length === 0) {
+    alert('Generate a sheet first.');
+    return;
+  }
+  evaluating = true;
+  setStatus('thinking...');
+  turn++;
+
+  // Substitute {{cell.id}} in any ai cell prompts and call them
+  const aiCells = cells.filter(c => c.kind === 'ai');
+  for (const cell of aiCells) {
+    // Try to extract the prompt from the YAML
+    const idMatch = sheetYaml.match(new RegExp(`-\\s*id:\\s*${cell.id}[\\s\\S]*?(?=-\\s*id:|$)`));
+    if (!idMatch) continue;
+    const cellYaml = idMatch[0];
+    const promptMatch = cellYaml.match(/prompt:\s*\|\s*\n([\s\S]*?)(?=\n\s*-|\n\s*[a-z_]+:|$)/);
+    let prompt = promptMatch ? promptMatch[1] : cellYaml.match(/prompt:\s*(.+)/)?.[1] || '';
+    // Substitute {{cell.id}}
+    for (const other of cells) {
+      const placeholder = new RegExp(`{{\\s*${other.id.replace(/\./g, '\\.')}\\s*}}`, 'g');
+      prompt = prompt.replace(placeholder, other.value || '');
+    }
+    if (prompt.trim()) {
+      try {
+        const r = await callZai(prompt);
+        cell.value = r;
+        // Update graph UI
+        const el = document.querySelector(`#graph .cell:nth-child(${cells.indexOf(cell) + 1}) .val`);
+        if (el) el.textContent = r.slice(0, 80);
+        // Add to transcript
+        addTranscript(cell.id, r);
+      } catch (e) {
+        cell.value = '(error: ' + e.message + ')';
+      }
+    }
+  }
+
+  document.getElementById('turn-label').textContent = `Turn ${turn}`;
+  setStatus('ready');
+  evaluating = false;
+  if (autoPlay && turn < 10) {
+    autoTimer = setTimeout(playTurn, 2500);
+  } else if (autoPlay) {
+    autoPlay = false;
+    document.getElementById('auto-btn').textContent = '⏯ Auto-play';
+  }
+}
+
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  document.getElementById('auto-btn').textContent = autoPlay ? '⏸ Pause' : '⏯ Auto-play';
+  if (autoPlay && !evaluating) playTurn();
+  if (!autoPlay && autoTimer) clearTimeout(autoTimer);
+}
+
+function reset() {
+  if (autoTimer) clearTimeout(autoTimer);
+  autoPlay = false;
+  turn = 0;
+  cells.forEach(c => c.value = '');
+  transcript = [];
+  document.getElementById('transcript').innerHTML = '<div style="color: var(--text-faint); font-style: italic;">No transcript yet. Play a turn to start.</div>';
+  document.getElementById('turn-label').textContent = 'Turn 0';
+  parseYaml();
+}
+
+function addTranscript(who, what) {
+  transcript.push({ turn, who, what });
+  const el = document.getElementById('transcript');
+  const initial = el.querySelector('div[style*="italic"]');
+  if (initial) initial.remove();
+  const line = document.createElement('div');
+  line.className = 'line';
+  line.innerHTML = `<span class="turn">t${turn}</span><span class="who">${who}</span><span class="what">${escapeHtml(what)}</span>`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// On load: load the tavern example
+addMessage('system', '✦ The tavern is loaded as an example. Click "▶ Play turn" in the Play tab to see it run. Or describe a new scene in the side panel.');
+sheetYaml = TAVERN_YAML;
+document.getElementById('yaml-editor').value = TAVERN_YAML;
+parseYaml();
+</script>
+
+</body>
+</html>

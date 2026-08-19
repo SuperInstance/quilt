@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Cells — Quilt as a Generalized Message-Passing Architecture</title>
+<meta name="description" content="How Quilt cells are generalized message-passing nodes. Connections to Hopfield networks, GNNs, transformers, mixture of experts, capsule networks, Mamba, diffusion, neural ODEs, predictive coding, and neural cellular automata.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--green); text-decoration: none; }
+a:hover { color: var(--blue); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+pre { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; color: var(--text-dim); }
+p { color: var(--text-dim); margin-bottom: 12px; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+main { max-width: 920px; margin: 0 auto; padding: 0 24px 60px; }
+
+section { margin: 60px 0; }
+section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.02em; }
+section h2 .num { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-right: 12px; font-size: 0.9rem; vertical-align: middle; }
+section h3 { font-size: 1.2rem; font-weight: 600; margin: 24px 0 10px; color: var(--text); }
+section h3 .tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 2px 8px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; margin-left: 8px; color: var(--text-faint); vertical-align: middle; }
+
+.equation { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--text); }
+
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+@media (max-width: 700px) { .cmp { grid-template-columns: 1fr; } }
+.cmp-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.cmp-card.nn { border-left: 3px solid var(--blue); }
+.cmp-card.quilt { border-left: 3px solid var(--green); }
+.cmp-card .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.cmp-card h4 { font-size: 1rem; margin-bottom: 8px; color: var(--text); }
+.cmp-card p { font-size: 0.85rem; margin: 0; }
+
+.arch-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+.arch-table th, .arch-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.arch-table th { color: var(--text-faint); font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.1em; }
+.arch-table tr:last-child td { border-bottom: none; }
+.arch-table td.arch { color: var(--blue); font-weight: 600; }
+.arch-table td.quilt { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+.callout { background: linear-gradient(135deg, rgba(126, 198, 153, 0.05), rgba(95, 168, 211, 0.05)); border: 1px solid var(--green); border-radius: 12px; padding: 20px; margin: 24px 0; }
+.callout h4 { color: var(--green); margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.callout p { margin: 0; }
+
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-dim); white-space: pre; overflow-x: auto; }
+
+.next { display: flex; gap: 12px; margin: 32px 0; flex-wrap: wrap; }
+.next a { padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); text-decoration: none; flex: 1; min-width: 220px; transition: all 0.2s; }
+.next a:hover { border-color: var(--green); }
+.next a .l { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+.next a .t { display: block; font-size: 1rem; font-weight: 600; color: var(--text); margin: 4px 0; }
+.next a .d { font-size: 0.85rem; color: var(--text-dim); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 60px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="tavern.html">Tavern</a>
+    <a href="vibe.html">Vibe</a>
+    <a href="evolve.html">Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt as a <span class="grad-text">Generalized Message-Passing Architecture</span></h1>
+  <p class="lead">A research synthesis: how a cell in a Quilt sheet is a node in a graph neural network, an attractor in a Hopfield net, a router in a mixture of experts, an attention head, a state in Mamba, a step in a diffusion process, and a column in a predictive coding hierarchy — all at once.</p>
+</div>
+
+<main>
+
+  <section>
+    <h2><span class="num">00</span>The core insight</h2>
+    <p>A Quilt cell is a node in a directed graph. It receives inputs (from other cells or external sources), computes a value (using any function: formula, LLM, sensor, code), and exposes that value to its dependents. This is <em>exactly</em> the message-passing pattern that underlies most modern neural architectures — but with one crucial difference: the node function is arbitrary, not a fixed weighted sum.</p>
+
+    <div class="equation">
+      Quilt cell: v<sub>i</sub> = f<sub>i</sub>({v<sub>j</sub> : j ∈ neighbors(i)})<br>
+      Neuron:     v<sub>i</sub> = σ(Σ<sub>j</sub> w<sub>ij</sub> v<sub>j</sub> + b<sub>i</sub>)
+    </div>
+
+    <p>The neuron is a special case of the Quilt cell: f<sub>i</sub> is a fixed function (a linear combination + nonlinearity). The Quilt cell lifts this restriction. A cell can be:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>An LLM call</b> — the most expensive, most flexible node function possible</li>
+      <li><b>A formula</b> — equivalent to a fixed neural layer</li>
+      <li><b>A program</b> — arbitrary code (a learned sub-network in a search space)</li>
+      <li><b>A sensor</b> — external data (the "input" to the network)</li>
+      <li><b>A router</b> — picks which downstream cell to invoke (a Mixture-of-Experts gate)</li>
+      <li><b>A listener</b> — fires on a condition (an event in the graph)</li>
+    </ul>
+
+    <p>This generality is the point. Quilt is a <b>meta-architecture</b> — a substrate on which the specific architectures below can be expressed, mixed, and composed.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">01</span>Message passing neural networks (Gilmer et al., 2017)</h2>
+    <p>The MPNN framework unifies most graph neural networks. The forward pass is: for each node, gather messages from neighbors, aggregate them, update the node's state. Repeat for T steps.</p>
+
+    <div class="equation">
+      m<sub>v</sub><sup>t+1</sup> = Σ<sub>w∈N(v)</sub> M<sub>t</sub>(h<sub>v</sub><sup>t</sup>, h<sub>w</sub><sup>t</sup>, e<sub>vw</sub>)<br>
+      h<sub>v</sub><sup>t+1</sup> = U<sub>t</sub>(h<sub>v</sub><sup>t</sup>, m<sub>v</sub><sup>t+1</sup>)
+    </div>
+
+    <div class="cmp">
+      <div class="cmp-card nn">
+        <div class="lbl">In an MPNN</div>
+        <h4>Message function M<sub>t</sub></h4>
+        <p>Usually a small MLP. The same for all nodes. Trained by backprop.</p>
+      </div>
+      <div class="cmp-card quilt">
+        <div class="lbl">In a Quilt sheet</div>
+        <h4>Formula cell</h4>
+        <p>Any function: a tiny expression, a 70B-parameter LLM, a 1000-line program. Different for every cell. Hand-written or evolved.</p>
+      </div>
+      <div class="cmp-card nn">
+        <div class="lbl">In an MPNN</div>
+        <h4>Aggregation (sum, mean, max)</h4>
+        <p>Fixed. Order-invariant. Differentiability required for backprop.</p>
+      </div>
+      <div class="cmp-card quilt">
+        <div class="lbl">In a Quilt sheet</div>
+        <h4>Formula body</h4>
+        <p>Any combination, any order. Can be non-differentiable. Can call out to the world.</p>
+      </div>
+      <div class="cmp-card nn">
+        <div class="lbl">In an MPNN</div>
+        <h4>Update function U<sub>t</sub></h4>
+        <p>Another small MLP. Same for all nodes. Trained.</p>
+      </div>
+      <div class="cmp-card quilt">
+        <div class="lbl">In a Quilt sheet</div>
+        <h4>Value cell (the cell itself)</h4>
+        <p>Anything. The cell IS the update function.</p>
+      </div>
+    </div>
+
+    <h3>What Quilt keeps</h3>
+    <p>The graph structure, the propagation order, the reactive recomputation when inputs change. These are the structural invariants of message passing.</p>
+
+    <h3>What Quilt drops</h3>
+    <p>Fixed node functions, weight sharing, differentiability. Quilt gains expressivity at the cost of gradient-based learning — but it regains learning through <a href="evolve.html">@quilt/evolve</a> (evolutionary, not gradient-based).</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>Hopfield networks (Hopfield, 1982)</h2>
+    <p>A Hopfield network is a recurrent network of binary threshold units with symmetric weights. It has an energy function that monotonically decreases as the network updates. Memories are stored as energy minima — attractors. Given a partial or noisy cue, the network settles into the nearest stored memory.</p>
+
+    <div class="equation">
+      E = -½ Σ<sub>i,j</sub> w<sub>ij</sub> s<sub>i</sub> s<sub>j</sub> + Σ<sub>i</sub> θ<sub>i</sub> s<sub>i</sub><br>
+      ΔE ≤ 0 for every update (guaranteed convergence for symmetric w)
+    </div>
+
+    <p>Hopfield's key insight was that a recurrent dynamical system with an energy function acts as <b>content-addressable memory</b>: you give it a partial pattern, and it falls into the nearest complete pattern. No address lookup, no index — just the geometry of the energy landscape.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt sheet can <em>behave</em> like a Hopfield net, but with one twist: the energy function isn't fixed. It's whatever the formulas define. You can have a sheet where:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>Setting some cells to "noisy" values causes other cells to settle to consistent "clean" values</li>
+      <li>The "attractor" is the set of mutually-consistent cell values</li>
+      <li>Reactive propagation is the energy descent</li>
+    </ul>
+    <p>Hopfield nets store memories in the weight matrix. Quilt sheets store "memories" in the cell structure itself — the formulas, the connections, the LLM prompts. Setting initial cells is the cue; propagation is the recall; the final state is the retrieved memory.</p>
+
+    <p>This is also why <a href="vibe.html">vibe-coding</a> is interesting: the user describes an attractor landscape in natural language, and the LLM builds a sheet that has that landscape. The "memories" are whatever patterns of cell values are self-consistent given the structure.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Transformers / attention</h2>
+    <p>A transformer computes scaled dot-product attention. For every query, it scores similarity to every key, normalizes with softmax, and takes a weighted sum of values.</p>
+
+    <div class="equation">
+      Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d<sub>k</sub>) V
+    </div>
+
+    <p>Every token attends to every other token with a learned, input-dependent weight. This is what makes transformers "attend to what matters" rather than treating all inputs equally.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt listener cell is structurally an attention head:</p>
+
+<pre><span style="color: var(--text-faint);"># Transformer attention</span>
+attention = softmax(Q @ K.T / sqrt(d)) @ V
+
+<span style="color: var(--text-faint);"># Quilt listener</span>
+- id: alert
+  <span style="color: var(--purple);">kind: listener</span>
+  <span style="color: var(--purple);">when: 'a.value > threshold && b.value != c.value'</span>
+  <span style="color: var(--purple);">action: 'doSomething()'</span></pre>
+
+    <p>The <code>when</code> condition is a learned (or hand-written) filter. It selects which "tokens" (cells) matter. The action is what gets weighted and propagated. Multi-head attention is multiple listeners with different conditions firing on the same cells. Cross-attention is a listener that watches one group of cells (keys) and updates another (values).</p>
+
+    <p>The crucial difference: transformer attention scores are continuous (the softmax output), while Quilt listeners are boolean (fire or don't). This is a quantization — Quilt replaces the smooth attention distribution with a hard decision. The benefit: simpler reasoning about what the model is paying attention to. The cost: less expressive for some tasks.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Mixture of experts (Shazeer et al., 2017)</h2>
+    <p>A Mixture-of-Experts layer has multiple "expert" subnetworks and a learned router that decides which expert(s) to invoke for each input. Sparse MoE only activates a few experts per token — this gives a huge parameter count with manageable compute.</p>
+
+    <div class="equation">
+      y = Σ<sub>i ∈ TopK(g)</sub> g<sub>i</sub> / Σ<sub>j ∈ TopK(g)</sub> g<sub>j</sub> · E<sub>i</sub>(h)
+    </div>
+
+    <p>The router is the locus of every hard problem. Get routing right and you scale parameters without scaling compute. Get it wrong and some experts are undertrained while others are overloaded.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt router cell <em>is</em> an MoE gate. It examines inputs and dispatches to one of N downstream cells (the "experts"). The rules are explicit, not learned — but they can be evolved by <a href="evolve.html">@quilt/evolve</a>:</p>
+
+<pre><span style="color: var(--text-faint);"># Quilt router — explicit MoE</span>
+- id: dispatch
+  <span style="color: var(--purple);">kind: router</span>
+  <span style="color: var(--purple);">routes:</span>
+    - <span style="color: var(--purple);">when: 'request.type == "translate"'</span>
+      <span style="color: var(--purple);">then: experts.translator</span>
+    - <span style="color: var(--purple);">when: 'request.type == "summarize"'</span>
+      <span style="color: var(--purple);">then: experts.summarizer</span>
+    - <span style="color: var(--purple);">when: 'request.type == "code"'</span>
+      <span style="color: var(--purple);">then: experts.coder</span>
+    - <span style="color: var(--purple);">then: experts.fallback</span></pre>
+
+    <p>The "experts" can be anything — formulas, LLM calls, whole sub-sheets. This is a structural advantage of Quilt: the experts aren't restricted to a fixed architecture. A formula expert and an LLM expert can sit side-by-side in the same MoE layer.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Capsule networks (Hinton, Sabour &amp; Frosst, 2017)</h2>
+    <p>Capsules are groups of neurons whose activity vector represents the instantiation parameters of an entity (e.g., the pose of a face). Lower-level capsules predict the parameters of higher-level capsules; when multiple predictions agree, the higher-level capsule activates. This is <b>routing by agreement</b>.</p>
+
+    <div class="equation">
+      b<sub>ij</sub> ← 0<br>
+      for r iterations:<br>
+      &nbsp;&nbsp;c<sub>ij</sub> = softmax(b<sub>ij</sub>)<br>
+      &nbsp;&nbsp;s<sub>j</sub> = Σ<sub>i</sub> c<sub>ij</sub> û<sub>j|i</sub><br>
+      &nbsp;&nbsp;v<sub>j</sub> = squash(s<sub>j</sub>)<br>
+      &nbsp;&nbsp;b<sub>ij</sub> ← b<sub>ij</sub> + û<sub>j|i</sub> · v<sub>j</sub>
+    </div>
+
+    <p>The dot product û<sub>j|i</sub> · v<sub>j</sub> measures agreement between the prediction from capsule <em>i</em> and the actual output of capsule <em>j</em>. The routing coefficient c<sub>ij</sub> is updated based on this agreement. After a few iterations, the routing settles: each lower-level capsule "votes" for the higher-level capsules that agree with its prediction.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt formula cell with multiple inputs is doing routing by agreement: it computes an aggregate (sum, max, weighted average) of its inputs, and the inputs with high values contribute more. A listener cell is doing it explicitly: it fires when its condition matches, and the condition can encode agreement ("all of A, B, C are true").</p>
+
+    <p>Where Quilt goes further: agreement can be a qualitative predicate, not just a dot product. "Does this text contain 'spam'?" is a routing criterion that no fixed dot product could encode.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>State space models (Mamba, 2023)</h2>
+    <p>Mamba is a selective state space model. It maintains a recurrent state h(t) and at each step computes a new state from the input. The "selection" mechanism makes the state update input-dependent: the model can choose to remember or forget specific information based on context.</p>
+
+    <div class="equation">
+      h(t+1) = A · h(t) + B(x(t)) · x(t)<br>
+      y(t) = C(x(t)) · h(t)
+    </div>
+
+    <p>The key property: linear-time complexity (like an RNN) with input-dependent routing (like attention). Mamba is the current state-of-the-art for long sequences, and it achieves this by combining the recurrent update with a learned selection mechanism.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt sheet run as a time-stepped simulation is exactly a state space model:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>State</b> = the set of all cell values at time t</li>
+      <li><b>Update</b> = one "tick" of cell evaluation</li>
+      <li><b>Selection</b> = which cells are evaluated this tick (only those whose inputs changed, like Mamba's selective scan)</li>
+    </ul>
+
+    <p>The reactive propagation in Quilt is Mamba's selection: only the affected cells are recomputed. This is what gives Quilt its efficiency on large sheets — adding a cell only recomputes a downstream neighborhood, not the whole graph.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>Diffusion models</h2>
+    <p>A diffusion model learns to reverse a noise process. Starting from pure noise, it iteratively denoises step by step, each step removing a small amount of noise predicted by a neural network, until a clean sample emerges.</p>
+
+    <div class="equation">
+      x<sub>t-1</sub> = 1/√α<sub>t</sub> · (x<sub>t</sub> - (1-α<sub>t</sub>)/√(1-ᾱ<sub>t</sub>) · ε<sub>θ</sub>(x<sub>t</sub>, t)) + √β̃<sub>t</sub> z
+    </div>
+
+    <p>The reverse process is a Markov chain. At each step, the model predicts the noise that was added in the forward process, then subtracts it. The trajectory from noise to data is the generation.</p>
+
+    <h3>In Quilt</h3>
+    <p>Time-stepped simulation in Quilt is a discrete-time reverse diffusion:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>Initial state = the "noise" (vibe-coded scene, or random characters)</li>
+      <li>Each tick = a denoising step (cells update based on inputs)</li>
+      <li>Final state = the "clean" output (a coherent scene after the dynamics play out)</li>
+    </ul>
+
+    <p>The crucial difference: in a diffusion model, the noise schedule is fixed and the denoising function is learned. In a Quilt sheet, the "schedule" is the dependency graph (which cells update when) and the "denoising function" is the cell kind (formula, LLM, etc.). The trajectory is determined by the sheet's structure, not by a learned noise schedule.</p>
+
+    <p>The "plinko" metaphor in the user's request: the puck is the system state, the pegs are the cells, and the trajectory is the propagation through the dependency graph. The end state matters less than watching the path.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">08</span>Neural ODEs</h2>
+    <p>A neural ODE specifies the derivative of the hidden state as a neural network: dh/dt = f(h, t, θ). The output is the solution of this ODE at time T, computed by a black-box differential equation solver. The solver chooses how many steps to take — "depth" is replaced by integration time.</p>
+
+    <div class="equation">
+      dh/dt = f(h, t, θ)<br>
+      h(T) = h(0) + ∫<sub>0</sub><sup>T</sup> f(h, t, θ) dt
+    </div>
+
+    <p>Memory cost is constant regardless of depth. The solver adaptively trades precision for speed.</p>
+
+    <h3>In Quilt</h3>
+    <p>Quilt's reactive propagation is a discrete-time analog of a neural ODE. The "depth" is the longest path in the dependency graph. The "integration time" is the number of ticks it takes for the system to reach a fixed point. The "solver" is the runtime's tick() function, which evaluates cells in topological order and stops when no more cells need to update.</p>
+
+    <p>Where Quilt differs: Quilt cells don't have to be continuous. They can be discrete (a router), string-valued (an LLM), or even absent (a deleted cell). The "ODE" is a discrete dynamical system with arbitrary state spaces and arbitrary update functions.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">09</span>Predictive coding (Friston)</h2>
+    <p>The brain, in the predictive coding framework, is a hierarchical prediction machine. Higher levels send predictions down; lower levels compute prediction errors and send them up. The system minimizes variational free energy — a tractable upper bound on the surprise of sensory observations.</p>
+
+    <div class="equation">
+      F = -log p(o | m) + D<sub>KL</sub>[q(θ) || p(θ | o, m)]<br>
+      <br>
+      min F ≡ min prediction error
+    </div>
+
+    <p>The free energy principle generalizes predictive coding to action (active inference): the agent acts to make its predictions come true, sampling the world to confirm its model. The system is self-organizing — it seeks states that minimize surprise.</p>
+
+    <h3>In Quilt</h3>
+    <p>A Quilt sheet naturally expresses predictive coding:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>Predictions</b> = formula cells that compute expected values from other cells</li>
+      <li><b>Prediction errors</b> = listener cells that fire when actual ≠ predicted</li>
+      <li><b>Top-down updates</b> = formula cells that propagate from higher levels to lower</li>
+      <li><b>Bottom-up updates</b> = sensor cells that bring in real-world data</li>
+    </ul>
+
+    <p>The <a href="tavern.html">tavern scene</a> is a worked example: the bard predicts the audience's mood; the audience's actual mood is the error; the bard's next song is updated to reduce the error. This is predictive coding in a spreadsheet.</p>
+
+    <p>More generally: a Quilt sheet where listeners fire on errors and downstream cells correct themselves is doing free energy minimization. The sheet converges to the configuration that best explains its inputs given its structure.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">10</span>Neural cellular automata (Mordvintsev et al., 2020)</h2>
+    <p>A neural cellular automaton is a grid of cells, each running a small neural network. The cells update in parallel, and each cell sees the state of its neighbors. The "rules" are learned, not programmed. The result: a self-organizing system that can grow a target pattern from a single seed cell, and self-repair when damaged.</p>
+
+    <div class="equation">
+      s<sub>i,j</sub><sup>t+1</sup> = s<sub>i,j</sub><sup>t</sup> + m · Δs<sub>i,j</sub><sup>t</sup><br>
+      Δs<sub>i,j</sub><sup>t</sup> = f<sub>θ</sub>(perception(s<sub>i,j</sub><sup>t</sup>, neighbors))
+    </div>
+
+    <p>The cell function f<sub>θ</sub> is a small MLP. The perception function uses Sobel filters to detect gradients. Stochastic masking (m is 0 or 1) prevents co-adaptation of neighboring cells. The result: a globally coherent pattern emerges from purely local rules.</p>
+
+    <h3>In Quilt</h3>
+    <p>Quilt cells <em>are</em> a generalized neural cellular automaton. The differences:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li>Quilt cells aren't on a fixed grid — the topology is arbitrary (a graph, not a lattice)</li>
+      <li>The cell function can be anything, not just a small MLP</li>
+      <li>Updates are reactive, not synchronous (only changed cells re-evaluate)</li>
+    </ul>
+    <p>A Quilt sheet can express an NCA: place cells in a grid, give each a formula that depends on its neighbors' states, and the system will self-organize according to whatever the formulas encode. The user's <a href="tavern.html">tavern</a> is an NCA where the cells are characters, the neighborhood is "who can hear whom", and the rule is "respond to what you hear".</p>
+  </section>
+
+  <section>
+    <h2><span class="num">11</span>The synthesis: Quilt as a meta-architecture</h2>
+    <p>Each of the architectures above is a special case of a more general pattern: <b>heterogeneous nodes passing structured information along weighted connections, with each node transforming the information according to a learned or specified function</b>. Quilt is a substrate that can express all of them, and any combination:</p>
+
+    <table class="arch-table">
+      <thead>
+        <tr><th>Architecture</th><th>Quilt analogue</th><th>What the cells are</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="arch">MPNN</td><td class="quilt">Formula + listener cells</td><td>Message-passing nodes with arbitrary functions</td></tr>
+        <tr><td class="arch">Hopfield</td><td class="quilt">Whole sheet (reactive propagation = energy descent)</td><td>Attractor dynamics on cell values</td></tr>
+        <tr><td class="arch">Transformer</td><td class="quilt">Listener cells with boolean conditions</td><td>Hard attention (vs. soft attention)</td></tr>
+        <tr><td class="arch">Mixture of Experts</td><td class="quilt">Router cell + N downstream cells</td><td>Explicit dispatch to specialized nodes</td></tr>
+        <tr><td class="arch">Capsule network</td><td class="quilt">Formula cells with agreement predicates</td><td>Routing by qualitative agreement</td></tr>
+        <tr><td class="arch">Mamba (SSM)</td><td class="quilt">Time-stepped simulation with reactive propagation</td><td>Selective state update along the dep graph</td></tr>
+        <tr><td class="arch">Diffusion</td><td class="quilt">Tick-by-tick simulation</td><td>Iterative refinement from initial state</td></tr>
+        <tr><td class="arch">Neural ODE</td><td class="quilt">Reactive propagation (discrete)</td><td>Adaptive evaluation to a fixed point</td></tr>
+        <tr><td class="arch">Predictive coding</td><td class="quilt">Listener-on-error cells</td><td>Hierarchical prediction error minimization</td></tr>
+        <tr><td class="arch">Neural CA</td><td class="quilt">Formula cells with neighbor refs</td><td>Self-organizing pattern formation</td></tr>
+        <tr><td class="arch">RLAIF / Evolution</td><td class="quilt"><a href="evolve.html">@quilt/evolve</a></td><td>LLM-driven mutation based on LLM-judged feedback</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <h4>The insight</h4>
+      <p>Quilt is what you get when you take the most general formulation of "nodes that pass messages" and lift the constraint that the node function must be a fixed weighted sum. You get an architecture that subsumes the others. The cost: you lose gradient-based training. The benefit: every node can be anything — including an LLM.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">12</span>The tavern: a worked example</h2>
+    <p>The <a href="tavern.html">tavern scene</a> is a small Quilt sheet that demonstrates most of the patterns above in one place:</p>
+
+    <div class="diagram">   ┌────────────────────────────────────────────────────┐
+   │  THE CROOKED TANKARD — a Quilt sheet                │
+   │                                                     │
+   │   Grumthor (dwarf, bartender)                        │
+   │   ┌──────────┐  noise annoyance  ┌──────────┐       │
+   │   │  mood    │ ◀──────────────── │  speech  │       │
+   │   │ (value)  │                   │  (ai.llm)│       │
+   │   └──────────┘                   └──────────┘       │
+   │        ▲                                │           │
+   │        │ overhears                       │ speaks    │
+   │        │                                ▼           │
+   │   ┌──────────┐                   ┌──────────┐       │
+   │   │ Pip      │ ◀─── listens ──── │ bard     │       │
+   │   │ (bard)   │                   │ speech   │       │
+   │   │ mood     │                   │ (ai.llm) │       │
+   │   │ (value)  │                   └──────────┘       │
+   │   └──────────┘                                       │
+   │        ▲                                             │
+   │   ┌──────────┐                                       │
+   │   │ Hooded   │  — observes all, speaks rarely       │
+   │   │ stranger │    (routing by agreement: only       │
+   │   │ mood     │     speaks when something agrees)    │
+   │   └──────────┘                                       │
+   │                                                     │
+   │   Each tick:                                         │
+   │     1. Bard generates a song (ai.llm)               │
+   │     2. Dwarf's mood drops (formula on bard.speech)  │
+   │     3. Dwarf grumbles (ai.llm)                      │
+   │     4. Stranger observes (formula + ai.llm)         │
+   │     5. If stranger's observations agree, it speaks  │
+   └────────────────────────────────────────────────────┘</div>
+
+    <p>This sheet is a multi-node system passing structured information (moods, speeches, observations). The patterns are:</p>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>MPNN-style</b>: each character's mood is updated by aggregating neighbors' states (their speeches)</li>
+      <li><b>Predictive coding</b>: each character predicts what others will say, then updates when the prediction is wrong</li>
+      <li><b>Routing by agreement</b>: the stranger only speaks when its observations "agree" (formula condition)</li>
+      <li><b>Diffusion-style</b>: the scene "denoises" turn by turn from initial silence to a coherent conversation</li>
+      <li><b>Reactive propagation</b>: only the cells whose inputs changed recompute</li>
+    </ul>
+
+    <p>What you see when you <a href="tavern.html">play the tavern</a> is a radio theater: the cells talk to each other, overhear each other, react to each other, and the conversation unfolds. The end state is the transcript, but the <em>trajectory</em> — the order of who says what when — is the actual product.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">13</span>Vibe-coding: building the substrate by talking</h2>
+    <p>The <a href="vibe.html">vibe-code interface</a> is the natural UI for this meta-architecture. The user describes a scene in natural language, and an LLM generates the cell structure: which cells exist, what they compute, how they connect. The user can then play the scene, edit the cells, and re-play. The sheet is the artifact; the trajectory is the simulation; the cell structure is the "intelligence" that emerges from the structured passing of information.</p>
+
+    <p>The deeper move: <a href="evolve.html">@quilt/evolve</a> is the learning loop. The user can describe a scene, watch it play, and have the loop improve the cells based on the trajectory. The system becomes the substrate for a kind of natural-language-driven differentiable programming — where the "gradients" are LLM-driven mutations, not chain-rule derivatives.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">14</span>Open questions</h2>
+    <ul style="color: var(--text-dim); padding-left: 24px; margin-bottom: 16px;">
+      <li><b>What is the right cell type for what task?</b> When is a formula enough, when is an LLM needed, when is a program? Empirically, formulas for compositional logic, LLMs for natural language, programs for novel computation. But the boundaries are fuzzy.</li>
+      <li><b>What is the right granularity?</b> One cell per character, or one cell per trait? Coarse cells are interpretable; fine cells are composable. The hierarchical scope abstraction lets you choose per-level.</li>
+      <li><b>How do we learn the topology?</b> Today, the topology is hand-designed or vibe-coded. Neural architecture search on the cell graph is an open direction.</li>
+      <li><b>How do we learn the cell functions?</b> @quilt/evolve is evolutionary and slow. A gradient-based approach would require making cells differentiable, which means formulas must be auto-diffable. A research direction.</li>
+      <li><b>How do we measure "intelligence"?</b> The free energy principle suggests surprise minimization. A Quilt sheet's "intelligence" could be measured by how much it reduces surprise on held-out observations. Tractable?</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where to go from here</h2>
+    <div class="next">
+      <a href="tavern.html">
+        <div class="l">Demo 1</div>
+        <div class="t">The Tavern</div>
+        <div class="d">A vibe-coded tavern scene with 3 characters, time-stepped simulation, cell graph. The plinko metaphor in action.</div>
+      </a>
+      <a href="vibe.html">
+        <div class="l">Demo 2</div>
+        <div class="t">Vibe-Code</div>
+        <div class="d">Describe a scene in natural language. The AI generates a Quilt sheet. You play it. You edit. You re-play.</div>
+      </a>
+      <a href="evolve.html">
+        <div class="l">Demo 3</div>
+        <div class="t">Evolve</div>
+        <div class="d">The self-improvement loop. The substrate learns from its own trajectories.</div>
+      </a>
+      <a href="https://github.com/SuperInstance/quilt" target="_blank">
+        <div class="l">Repo</div>
+        <div class="t">@quilt/core</div>
+        <div class="d">The substrate. 9 cell kinds, reactive propagation, AI cells, Cloudflare Workers, ESP32, mesh.</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Quilt · Neural Cells · A research synthesis</p>
+  <p style="margin-top: 8px;">
+    <a href="tavern.html">Tavern</a> ·
+    <a href="vibe.html">Vibe</a> ·
+    <a href="evolve.html">Evolve</a> ·
+    <a href="index.html">Home</a>
+  </p>
+</footer>
+
+</body>
+</html>
