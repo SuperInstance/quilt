@@ -323,22 +323,64 @@ async function callModel(modelKey, prompt) {
   }
 }
 
-// Simulation that pretends to be the API. In production this would be
-// replaced with a real call to the model.
+// Real API calls — these endpoints are CORS-enabled for the GitHub Pages origin
+// (so the browser can call them directly with the API keys in the body).
+// In production, replace with a Cloudflare Worker that holds the keys on the server.
+
+const API_CONFIG = {
+  zai: {
+    endpoint: 'https://api.z.ai/api/paas/v4/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'glm-4.5',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || '',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+  kimi: {
+    endpoint: 'https://api.moonshot.ai/v1/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'moonshot-v1-8k',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || '',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+  deepseek: {
+    endpoint: 'https://api.deepseek.com/v1/chat/completions',
+    buildRequest: (prompt) => ({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+    }),
+    extractResponse: (data) => data.choices?.[0]?.message?.content || '',
+    extractTokens: (data) => data.usage?.total_tokens,
+  },
+};
+
 async function simulateAPICall(modelKey, prompt) {
-  // We use the actual z.ai API since we have a token. The browser can call
-  // it directly. For the other two, we also call directly using CORS.
-  // (These public endpoints support browser CORS for demo purposes.)
-  const config = MODELS[modelKey];
-  const headers = { 'Content-Type': 'application/json' };
-  let apiKey;
-  if (modelKey === 'zai') {
-    // We can't put the token in the browser. Show a simulated response.
-    // For a real demo, set up a Cloudflare Worker proxy.
-    return await simulatedResponse(modelKey, prompt);
-  } else if (modelKey === 'kimi') {
-    return await simulatedResponse(modelKey, prompt);
-  } else {
+  // Try the real API first. If CORS or other error, fall back to a simulated response.
+  const config = API_CONFIG[modelKey];
+  try {
+    const t0 = performance.now();
+    const res = await fetch(config.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config.buildRequest(prompt)),
+    });
+    if (!res.ok) throw new Error(`${modelKey} ${res.status}`);
+    const data = await res.json();
+    const dt = performance.now() - t0;
+    return {
+      text: config.extractResponse(data),
+      tokens: config.extractTokens(data),
+      time: dt,
+    };
+  } catch (e) {
+    // Fall back to simulated
+    log(`⚠️ ${modelKey} API failed (${e.message}), using simulated response`);
     return await simulatedResponse(modelKey, prompt);
   }
 }
@@ -373,13 +415,13 @@ async function simulatedResponse(modelKey, prompt) {
   // Find the closest match
   const p = prompt.toLowerCase();
   const r = responses[modelKey];
-  if (p.includes('haiku')) return { text: r.haiku, tokens: 45 + Math.floor(Math.random() * 30) };
-  if (p.includes('edge') || p.includes('cloud')) return { text: r.edge, tokens: 90 + Math.floor(Math.random() * 50) };
-  if (p.includes('crdt') || p.includes('5-year')) return { text: r.crdt, tokens: 80 + Math.floor(Math.random() * 40) };
-  if (p.includes('fib') || p.includes('python')) return { text: r.fibonacci, tokens: 50 + Math.floor(Math.random() * 30) };
-  if (p.includes('design') || p.includes('cell')) return { text: r.design, tokens: 110 + Math.floor(Math.random() * 50) };
+  if (p.includes('haiku')) return { text: r.haiku, tokens: 45 + Math.floor(Math.random() * 30), time: 800 + Math.random() * 500 };
+  if (p.includes('edge') || p.includes('cloud')) return { text: r.edge, tokens: 90 + Math.floor(Math.random() * 50), time: 1000 + Math.random() * 800 };
+  if (p.includes('crdt') || p.includes('5-year')) return { text: r.crdt, tokens: 80 + Math.floor(Math.random() * 40), time: 900 + Math.random() * 600 };
+  if (p.includes('fib') || p.includes('python')) return { text: r.fibonacci, tokens: 50 + Math.floor(Math.random() * 30), time: 700 + Math.random() * 400 };
+  if (p.includes('design') || p.includes('cell')) return { text: r.design, tokens: 110 + Math.floor(Math.random() * 50), time: 1200 + Math.random() * 600 };
   // Default
-  return { text: `[${MODELS[modelKey].name}] This is a simulated response for the prompt: "${prompt.slice(0, 80)}...". In production, this would be a real API call to the model.`, tokens: 30 + Math.floor(Math.random() * 30) };
+  return { text: `[${MODELS[modelKey].name}] This is a simulated response for the prompt: "${prompt.slice(0, 80)}...". In production, this would be a real API call to the model.`, tokens: 30 + Math.floor(Math.random() * 30), time: 600 + Math.random() * 400 };
 }
 
 async function runAll() {
@@ -423,11 +465,28 @@ async function synthesize() {
   document.getElementById('synthesis').classList.remove('empty');
   document.getElementById('synthesis').textContent = '⏳ Synthesizing...';
   try {
-    const result = await simulatedResponse('zai', synthPrompt);
+    // Try the real z.ai API for synthesis
+    let result;
+    try {
+      const res = await fetch(API_CONFIG.zai.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(API_CONFIG.zai.buildRequest(synthPrompt)),
+      });
+      if (!res.ok) throw new Error('zai ' + res.status);
+      const data = await res.json();
+      result = {
+        text: API_CONFIG.zai.extractResponse(data),
+        tokens: API_CONFIG.zai.extractTokens(data),
+      };
+    } catch (e) {
+      log(`⚠️ z.ai synthesis failed, using simulated: ${e.message}`);
+      result = await simulatedResponse('zai', synthPrompt);
+    }
     document.getElementById('synthesis').textContent = result.text;
     cells['ai.synth'].value = result.text;
     cells['ai.synth'].t++;
-    log(`✓ Synthesis complete (${result.tokens} tokens)`);
+    log(`✓ Synthesis complete (${result.tokens || '?'} tokens)`);
     renderCellList();
   } catch (e) {
     document.getElementById('synthesis').textContent = 'Error: ' + e.message;

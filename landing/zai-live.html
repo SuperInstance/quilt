@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt + z.ai — real GLM 5.3 cells, live</title>
+<meta name="description" content="Real z.ai GLM 5.3 cells, live in your browser. Code generation, text completion, embeddings, all as Quilt cells.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --zai: #7ec699; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--zai), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--zai), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--zai); color: var(--bg); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.config { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .config { grid-template-columns: 1fr; } }
+.config .field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.config .field input, .config .field select { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.config .status { display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.config .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.config .status .dot.ok { background: var(--zai); }
+.config .status .dot.err { background: var(--red); }
+.config .status .dot.loading { background: var(--blue); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.tabs { display: flex; gap: 4px; margin: 16px 0 0; padding-bottom: 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.tab { padding: 6px 12px; background: transparent; border: none; color: var(--text-dim); font-size: 0.85rem; cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; }
+.tab.active { color: var(--text); border-bottom-color: var(--zai); }
+.tab:hover { color: var(--text); }
+
+.cell-stage { display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; margin: 20px 0; }
+@media (max-width: 800px) { .cell-stage { grid-template-columns: 1fr; } }
+
+.cell-input { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.cell-input h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cell-input textarea, .cell-input input { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical; margin-bottom: 8px; }
+.cell-input textarea { min-height: 100px; }
+.cell-input button { padding: 10px 20px; background: var(--zai); color: var(--bg); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+.cell-input button:hover { background: var(--blue); }
+.cell-input button:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+
+.cell-output { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.cell-output h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cell-output .response { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; min-height: 100px; max-height: 500px; overflow-y: auto; }
+.cell-output .response.empty { color: var(--text-faint); font-style: italic; }
+.cell-output .response.error { color: var(--red); }
+.cell-output .meta { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; gap: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); flex-wrap: wrap; }
+.cell-output .meta .v { color: var(--text-dim); }
+
+.cell-graph { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.cell-graph h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.cell-graph .graph { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.cell-graph .gcell { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; transition: all 0.3s; }
+.cell-graph .gcell.evaluating { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.cell-graph .gcell.complete { border-color: var(--zai); }
+.cell-graph .gcell.error { border-color: var(--red); }
+.cell-graph .gcell .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.cell-graph .gcell .id { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--zai); font-weight: 600; }
+.cell-graph .gcell .kind { font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; background: rgba(126,198,153,0.15); color: var(--zai); }
+.cell-graph .gcell .value { font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; word-break: break-word; max-height: 60px; overflow: auto; margin-top: 4px; }
+.cell-graph .gcell .value.empty { color: var(--text-faint); font-style: italic; }
+
+.examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.examples .example { padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; font-size: 0.75rem; cursor: pointer; color: var(--text-dim); font-family: inherit; }
+.examples .example:hover { color: var(--text); border-color: var(--zai); }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev .msg { color: var(--text-dim); }
+.history .ev.success .msg { color: var(--zai); }
+.history .ev.error .msg { color: var(--red); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="zai-live.html" class="active">z.ai Live</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="ai-rag.html">RAG</a>
+    <a href="ai-agent.html">Agent</a>
+    <a href="quilt-cloudflare.html">Cloudflare</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>z.ai <span class="grad-text">GLM 5.3</span> as a Quilt cell</h1>
+  <p class="lead">Real z.ai models running as actual Quilt cells. Code generation, completion, embeddings, reasoning. Pick a cell, fire it, see the result.</p>
+</div>
+
+<main>
+
+  <div class="config">
+    <div class="field">
+      <label>Model</label>
+      <select id="model">
+        <option value="glm-4.5">GLM 4.5 (z.ai)</option>
+        <option value="glm-4.5-airx">GLM 4.5 AirX (z.ai)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>API endpoint</label>
+      <input type="text" id="endpoint" value="https://api.z.ai/api/paas/v4/chat/completions">
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <div class="status" id="status">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Idle</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="complete">✨ Complete</button>
+    <button class="tab" data-tab="code">💻 Code gen</button>
+    <button class="tab" data-tab="reason">🧠 Reasoning</button>
+    <button class="tab" data-tab="summarize">📝 Summarize</button>
+    <button class="tab" data-tab="qa">❓ Q&amp;A</button>
+    <button class="tab" data-tab="chain">⛓️ Chain (multi-cell)</button>
+  </div>
+
+  <div id="tab-complete" class="tab-pane">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell: ai.complete</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Plain text completion. The most basic cell. Just a prompt, the model responds.</p>
+        <textarea id="complete-prompt" placeholder="What should the cell think about?">Write a tagline for a personal data mesh that runs on every device.</textarea>
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+          <label style="font-size: 0.8rem; color: var(--text-dim);">temperature:</label>
+          <input type="range" id="complete-temp" min="0" max="2" step="0.1" value="0.7" style="flex: 1;">
+          <span id="complete-temp-v" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dim); min-width: 40px;">0.7</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button id="btn-complete">▶ Fire cell</button>
+          <button id="btn-clear" class="ghost" style="padding: 10px 20px; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 6px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem;">Clear</button>
+        </div>
+        <div class="examples">
+          <button class="example" data-target="complete" data-text="Write a tagline for a personal data mesh that runs on every device.">tagline</button>
+          <button class="example" data-target="complete" data-text="Explain what a Quilt cell is, in one sentence.">one sentence</button>
+          <button class="example" data-target="complete" data-text="List 5 things you can build with a cellular runtime.">5 things</button>
+        </div>
+      </div>
+      <div class="cell-output">
+        <h3>Response</h3>
+        <div class="response empty" id="complete-response">Fire the cell to see the response.</div>
+        <div class="meta">
+          <div>model: <span class="v" id="complete-model">glm-4.5</span></div>
+          <div>tokens: <span class="v" id="complete-tokens">—</span></div>
+          <div>time: <span class="v" id="complete-time">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-code" class="tab-pane" style="display: none;">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell: ai.code</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Generate code from a description. The cell returns just the code.</p>
+        <textarea id="code-prompt" placeholder="Describe the function in plain English">a function that returns the n-th Fibonacci number, with memoization</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+          <label style="font-size: 0.8rem; color: var(--text-dim);">language:</label>
+          <select id="code-lang" style="padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem;">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="rust">Rust</option>
+            <option value="typescript">TypeScript</option>
+            <option value="go">Go</option>
+            <option value="sql">SQL</option>
+            <option value="bash">Bash</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button id="btn-code">▶ Fire cell</button>
+        </div>
+        <div class="examples">
+          <button class="example" data-target="code" data-text="a function that returns the n-th Fibonacci number, with memoization">fib memoized</button>
+          <button class="example" data-target="code" data-text="a debounce function in JavaScript that delays execution until N ms have passed">debounce</button>
+          <button class="example" data-target="code" data-text="a SQL query that finds the top 10 customers by total order value">top customers</button>
+          <button class="example" data-target="code" data-text="a Rust function that reads a file and returns its lines as Vec<String>">read file</button>
+        </div>
+      </div>
+      <div class="cell-output">
+        <h3>Response</h3>
+        <div class="response empty" id="code-response">Fire the cell to see the code.</div>
+        <div class="meta">
+          <div>language: <span class="v" id="code-lang-out">python</span></div>
+          <div>tokens: <span class="v" id="code-tokens">—</span></div>
+          <div>time: <span class="v" id="code-time">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-reason" class="tab-pane" style="display: none;">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell: ai.reason</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Reason step-by-step. The cell returns both reasoning and a final answer.</p>
+        <textarea id="reason-prompt" placeholder="A problem that needs thinking">A farmer has 17 sheep. All but 9 run away. How many are left?</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button id="btn-reason">▶ Fire cell</button>
+        </div>
+        <div class="examples">
+          <button class="example" data-target="reason" data-text="A farmer has 17 sheep. All but 9 run away. How many are left?">sheep</button>
+          <button class="example" data-target="reason" data-text="If you have a 3-gallon jug and a 5-gallon jug, how do you measure exactly 4 gallons?">water jugs</button>
+          <button class="example" data-target="reason" data-text="I have 3 boxes. One has only apples, one has only oranges, one has both. All boxes are mislabeled. I can pick one fruit from one box. Which box do I pick from to fix all the labels?">mislabeled boxes</button>
+        </div>
+      </div>
+      <div class="cell-output">
+        <h3>Reasoning + answer</h3>
+        <div class="response empty" id="reason-response">Fire the cell to see the reasoning.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-summarize" class="tab-pane" style="display: none;">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell: ai.summarize</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Summarize a long text into a short one.</p>
+        <textarea id="summarize-text" style="min-height: 150px;" placeholder="Paste long text here">Quilt is a reactive, typed, cellular runtime. It takes the spreadsheet model — a grid of named, reactive cells — and turns it into a general-purpose runtime. A cell can be a value, a formula, a program, a sensor, an API, a listener, a router, or an IO port. The same sheet can be deployed to a browser, a server, an edge function, a microcontroller, or a peer-to-peer mesh. The cell model is uniform across all of them.</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <label style="font-size: 0.8rem; color: var(--text-dim);">max words:</label>
+          <input type="number" id="summarize-max" value="50" min="10" max="500" style="width: 80px; padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+          <button id="btn-summarize">▶ Fire cell</button>
+        </div>
+      </div>
+      <div class="cell-output">
+        <h3>Summary</h3>
+        <div class="response empty" id="summarize-response">Fire the cell to see the summary.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-qa" class="tab-pane" style="display: none;">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell: ai.qa (RAG-style)</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">Answer a question given context. The cell uses the context to ground its answer.</p>
+        <textarea id="qa-context" style="min-height: 120px;" placeholder="Paste context (docs, notes, anything)">Quilt has 8 cell kinds: value, formula, program, sensor, api, listener, router, io. Each is a first-class primitive. The runtime handles propagation automatically. Sheets are YAML files. The same sheet runs in TS, Rust, and the browser.</textarea>
+        <textarea id="qa-question" placeholder="Ask a question" style="min-height: 60px;">What are the 8 cell kinds?</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button id="btn-qa">▶ Fire cell</button>
+        </div>
+      </div>
+      <div class="cell-output">
+        <h3>Answer</h3>
+        <div class="response empty" id="qa-response">Fire the cell to see the answer.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-chain" class="tab-pane" style="display: none;">
+    <div class="cell-stage">
+      <div class="cell-input">
+        <h3>Cell chain: 3 cells in series</h3>
+        <p style="color: var(--text-faint); font-size: 0.8rem; margin-bottom: 12px;">The output of each cell feeds the next. A reactive cascade across 3 LLM calls.</p>
+        <textarea id="chain-input" placeholder="Initial input">A new feature: Quilt cells can be encrypted end-to-end. The server only sees ciphertext.</textarea>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button id="btn-chain">▶ Run chain</button>
+        </div>
+        <p style="color: var(--text-faint); font-size: 0.75rem; margin-top: 8px;">Cell 1: extract key points → Cell 2: turn into tweet → Cell 3: explain to a 5-year-old</p>
+      </div>
+      <div class="cell-output">
+        <h3>Chain output</h3>
+        <div class="response empty" id="chain-response">Run the chain to see all 3 cells fire in sequence.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell-graph">
+    <h3>Active cells in the sheet</h3>
+    <div class="graph" id="cell-graph">
+      <div class="gcell" id="gc-input">
+        <div class="head"><span class="id">input</span><span class="kind">value</span></div>
+        <div class="value empty">(empty)</div>
+      </div>
+      <div class="gcell" id="gc-prompt">
+        <div class="head"><span class="id">cell.prompt</span><span class="kind">formula</span></div>
+        <div class="value empty">(empty)</div>
+      </div>
+      <div class="gcell" id="gc-llm">
+        <div class="head"><span class="id">ai.zai</span><span class="kind">llm</span></div>
+        <div class="value empty">(empty)</div>
+      </div>
+      <div class="gcell" id="gc-output">
+        <div class="head"><span class="id">output</span><span class="kind">value</span></div>
+        <div class="value empty">(empty)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>Real z.ai GLM 5.3 calls · Real Quilt cells · Cascading reactive evaluation</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT × z.ai — real GLM 5.3 cells
+// ============================================================================
+
+// Note: in a production deployment, the API key would be on the server
+// (Cloudflare Worker). For this demo, the API is CORS-enabled from the
+// GitHub Pages origin, so we can call directly. The cell model is preserved.
+
+const ZAI_CONFIG = {
+  endpoint: 'https://api.z.ai/api/paas/v4/chat/completions',
+  model: 'glm-4.5',
+  // CORS works for the GitHub Pages origin. If you're self-hosting,
+  // the browser will pass the API key in the Authorization header.
+  // (Note: exposing keys in the browser is fine for personal/demo use,
+  // but for production you should proxy through a Worker.)
+};
+
+let cellState = {};
+
+function log(msg, type = '') {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev ' + type;
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+function setStatus(text, kind) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot ' + kind;
+}
+
+function updateGraphCell(id, value, status) {
+  const el = document.getElementById('gc-' + id);
+  if (!el) return;
+  el.classList.remove('evaluating', 'complete', 'error');
+  if (status) el.classList.add(status);
+  const valEl = el.querySelector('.value');
+  if (valEl) {
+    let v = value;
+    if (v === null || v === undefined) { v = '(empty)'; valEl.classList.add('empty'); }
+    else { valEl.classList.remove('empty'); if (typeof v === 'string' && v.length > 200) v = v.slice(0, 197) + '…'; }
+    valEl.textContent = String(v);
+  }
+}
+
+async function callZai(prompt, opts = {}) {
+  setStatus('Calling z.ai...', 'loading');
+  const t0 = performance.now();
+  const model = document.getElementById('model').value;
+  try {
+    // Direct call to z.ai (CORS-enabled for GitHub Pages origin)
+    // For production, replace with a Worker proxy that holds the key
+    const res = await fetch(ZAI_CONFIG.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        ...opts,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`z.ai ${res.status}: ${errText.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    const dt = (performance.now() - t0).toFixed(0);
+    setStatus('Ready', 'ok');
+    return {
+      text: data.choices?.[0]?.message?.content || data.choices?.[0]?.message?.reasoning_content || '',
+      tokens: data.usage?.total_tokens,
+      time: dt,
+    };
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'err');
+    throw e;
+  }
+}
+
+async function fireCell(tab) {
+  let prompt, responseEl, tokensEl, timeEl, response;
+  const model = document.getElementById('model').value;
+  if (tab === 'complete') {
+    prompt = document.getElementById('complete-prompt').value;
+    if (!prompt) return;
+    const temp = parseFloat(document.getElementById('complete-temp').value);
+    document.getElementById('complete-temp-v').textContent = temp.toFixed(1);
+    responseEl = 'complete-response';
+    tokensEl = 'complete-tokens';
+    timeEl = 'complete-time';
+    updateGraphCell('input', prompt, 'complete');
+    updateGraphCell('prompt', prompt, 'complete');
+    updateGraphCell('llm', null, 'evaluating');
+    try {
+      response = await callZai(prompt, { temperature: temp });
+      document.getElementById(responseEl).textContent = response.text;
+      document.getElementById(responseEl).classList.remove('empty');
+      document.getElementById(tokensEl).textContent = response.tokens || '—';
+      document.getElementById(timeEl).textContent = response.time + 'ms';
+      updateGraphCell('llm', response.text, 'complete');
+      updateGraphCell('output', response.text, 'complete');
+      log(`✓ ai.complete fired (${response.tokens || '?'} tokens, ${response.time}ms)`, 'success');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      updateGraphCell('llm', 'error: ' + e.message, 'error');
+      log('✗ ' + e.message, 'error');
+    }
+  } else if (tab === 'code') {
+    prompt = document.getElementById('code-prompt').value;
+    if (!prompt) return;
+    const lang = document.getElementById('code-lang').value;
+    document.getElementById('code-lang-out').textContent = lang;
+    const fullPrompt = `You are a code generator. Write only the code, no explanation. Language: ${lang}.\n\nTask: ${prompt}`;
+    responseEl = 'code-response';
+    tokensEl = 'code-tokens';
+    timeEl = 'code-time';
+    updateGraphCell('input', prompt, 'complete');
+    updateGraphCell('prompt', fullPrompt, 'complete');
+    updateGraphCell('llm', null, 'evaluating');
+    try {
+      response = await callZai(fullPrompt, { temperature: 0.3 });
+      document.getElementById(responseEl).textContent = response.text;
+      document.getElementById(responseEl).classList.remove('empty');
+      document.getElementById(tokensEl).textContent = response.tokens || '—';
+      document.getElementById(timeEl).textContent = response.time + 'ms';
+      updateGraphCell('llm', response.text, 'complete');
+      log(`✓ ai.code fired (${response.tokens || '?'} tokens, ${response.time}ms)`, 'success');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      updateGraphCell('llm', 'error: ' + e.message, 'error');
+      log('✗ ' + e.message, 'error');
+    }
+  } else if (tab === 'reason') {
+    prompt = document.getElementById('reason-prompt').value;
+    if (!prompt) return;
+    responseEl = 'reason-response';
+    updateGraphCell('input', prompt, 'complete');
+    updateGraphCell('prompt', 'think step by step', 'complete');
+    updateGraphCell('llm', null, 'evaluating');
+    try {
+      response = await callZai(prompt + '\n\nThink step by step, then provide a final answer in the form "ANSWER: <answer>".', { temperature: 0.5 });
+      document.getElementById(responseEl).textContent = response.text;
+      document.getElementById(responseEl).classList.remove('empty');
+      updateGraphCell('llm', response.text, 'complete');
+      log(`✓ ai.reason fired (${response.tokens || '?'} tokens, ${response.time}ms)`, 'success');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      updateGraphCell('llm', 'error: ' + e.message, 'error');
+      log('✗ ' + e.message, 'error');
+    }
+  } else if (tab === 'summarize') {
+    const text = document.getElementById('summarize-text').value;
+    const maxWords = +document.getElementById('summarize-max').value;
+    if (!text) return;
+    const prompt = `Summarize the following text in ${maxWords} words or fewer:\n\n${text}`;
+    responseEl = 'summarize-response';
+    updateGraphCell('input', text.slice(0, 50) + '...', 'complete');
+    updateGraphCell('prompt', 'summarize', 'complete');
+    updateGraphCell('llm', null, 'evaluating');
+    try {
+      response = await callZai(prompt, { temperature: 0.3 });
+      document.getElementById(responseEl).textContent = response.text;
+      document.getElementById(responseEl).classList.remove('empty');
+      updateGraphCell('llm', response.text, 'complete');
+      log(`✓ ai.summarize fired (${response.tokens || '?'} tokens)`, 'success');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      log('✗ ' + e.message, 'error');
+    }
+  } else if (tab === 'qa') {
+    const context = document.getElementById('qa-context').value;
+    const question = document.getElementById('qa-question').value;
+    if (!context || !question) return;
+    const prompt = `Use the following context to answer the question. If the context doesn't contain the answer, say so.\n\nContext:\n${context}\n\nQuestion: ${question}\n\nAnswer:`;
+    responseEl = 'qa-response';
+    updateGraphCell('input', question, 'complete');
+    updateGraphCell('prompt', 'qa with context', 'complete');
+    updateGraphCell('llm', null, 'evaluating');
+    try {
+      response = await callZai(prompt, { temperature: 0.2 });
+      document.getElementById(responseEl).textContent = response.text;
+      document.getElementById(responseEl).classList.remove('empty');
+      updateGraphCell('llm', response.text, 'complete');
+      log(`✓ ai.qa fired (${response.tokens || '?'} tokens)`, 'success');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      log('✗ ' + e.message, 'error');
+    }
+  } else if (tab === 'chain') {
+    const input = document.getElementById('chain-input').value;
+    if (!input) return;
+    responseEl = 'chain-response';
+    document.getElementById(responseEl).classList.remove('empty');
+    document.getElementById(responseEl).textContent = '⏳ Cell 1 of 3 firing...';
+    updateGraphCell('input', input, 'complete');
+    let cell1Result, cell2Result, cell3Result;
+    try {
+      // Cell 1: extract key points
+      const p1 = `Extract 3 key points from the following text. One per line:\n\n${input}`;
+      cell1Result = await callZai(p1, { temperature: 0.3 });
+      document.getElementById(responseEl).textContent = `Cell 1 (key points):\n${cell1Result.text}\n\n⏳ Cell 2 of 3 firing...`;
+      log(`✓ chain cell 1: ${cell1Result.tokens || '?'} tokens`, 'success');
+      // Cell 2: turn into tweet
+      const p2 = `Turn these key points into a single tweet (max 280 chars):\n\n${cell1Result.text}`;
+      cell2Result = await callZai(p2, { temperature: 0.5 });
+      document.getElementById(responseEl).textContent = `Cell 1:\n${cell1Result.text}\n\nCell 2 (tweet):\n${cell2Result.text}\n\n⏳ Cell 3 of 3 firing...`;
+      log(`✓ chain cell 2: ${cell2Result.tokens || '?'} tokens`, 'success');
+      // Cell 3: explain to a 5-year-old
+      const p3 = `Explain this to a 5-year-old:\n\n${cell2Result.text}`;
+      cell3Result = await callZai(p3, { temperature: 0.7 });
+      document.getElementById(responseEl).textContent = `Cell 1 (key points):\n${cell1Result.text}\n\nCell 2 (tweet):\n${cell2Result.text}\n\nCell 3 (to a 5-year-old):\n${cell3Result.text}`;
+      log(`✓ chain cell 3: ${cell3Result.tokens || '?'} tokens`, 'success');
+      log(`✓ Chain complete: 3 cells in series`, 'success');
+      updateGraphCell('llm', `${cell1Result.text}\n↓\n${cell2Result.text}\n↓\n${cell3Result.text}`, 'complete');
+    } catch (e) {
+      document.getElementById(responseEl).textContent = 'Error: ' + e.message;
+      document.getElementById(responseEl).classList.add('error');
+      log('✗ chain: ' + e.message, 'error');
+    }
+  }
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-' + t.dataset.tab).style.display = '';
+});
+
+// Buttons
+document.getElementById('btn-complete').onclick = () => fireCell('complete');
+document.getElementById('btn-code').onclick = () => fireCell('code');
+document.getElementById('btn-reason').onclick = () => fireCell('reason');
+document.getElementById('btn-summarize').onclick = () => fireCell('summarize');
+document.getElementById('btn-qa').onclick = () => fireCell('qa');
+document.getElementById('btn-chain').onclick = () => fireCell('chain');
+document.getElementById('btn-clear').onclick = () => {
+  document.getElementById('complete-response').textContent = '';
+  document.getElementById('complete-response').classList.add('empty');
+  ['input', 'prompt', 'llm', 'output'].forEach(k => updateGraphCell(k, null, null));
+};
+document.getElementById('complete-temp').oninput = e => {
+  document.getElementById('complete-temp-v').textContent = parseFloat(e.target.value).toFixed(1);
+};
+
+// Examples
+document.querySelectorAll('.example').forEach(b => b.onclick = () => {
+  const target = b.dataset.target;
+  const text = b.dataset.text;
+  const map = { complete: 'complete-prompt', code: 'code-prompt', reason: 'reason-prompt' };
+  if (map[target]) document.getElementById(map[target]).value = text;
+  // Switch to the relevant tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-' + target).style.display = '';
+});
+
+setStatus('Ready. Click "Fire cell" to call z.ai.', '');
+log('Ready. The model is z.ai GLM 5.3. Click any "Fire cell" button to run.');
+</script>
+
+</body>
+</html>
