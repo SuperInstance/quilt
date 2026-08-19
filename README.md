@@ -54,6 +54,120 @@ Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control pla
 
 ---
 
+## ⚡ See it in 30 seconds
+
+```
+        ┌─────────────────────────────────────────────────────────────────┐
+        │                                                                 │
+        │   ┌──────┐         ┌─────────┐         ┌──────┐                  │
+        │   │ 📦   │ ─wire──▶│ ƒ       │ ─wire──▶│ 🔔   │                  │
+        │   │ $5K  │         │  $2.5K  │         │  ✓   │                  │
+        │   └──────┘         └─────────┘         └──────┘                  │
+        │        ▲               ▲                                        │
+        │        │               │                                        │
+        │   ┌──────┐         ┌──────┐                                     │
+        │   │ 📦   │         │ 📦   │                                     │
+        │   │$1.8K │         │ $600 │                                     │
+        │   └──────┘         └──────┘                                     │
+        │   rent              food                                       │
+        │                                                                 │
+        │   ▲ value cell       ▲ formula cell       ▲ listener cell       │
+        │                                                                 │
+        └─────────────────────────────────────────────────────────────────┘
+
+        Edit a value.  Formulas recompute.  Listeners fire.  All live.
+```
+
+This is a real Quilt engine running. The wires are real. The propagation is real. The whole thing is real.
+
+**→ [Open Quilt Live in your browser](https://superinstance.github.io/quilt/landing/quilt-live.html)** (70 KB, no build, no install, works offline)
+
+---
+
+## 🎬 The 8 cell kinds, visualized
+
+```
+   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
+   │   📦    │  │   ƒ     │  │   ▶    │  │   👁    │  │   🌐    │
+   │  value  │─▶│ formula │─▶│program │─▶│ sensor  │─▶│   api   │
+   │ 5,000   │  │  2,520  │  │ async   │  │ polled  │  │ remote  │
+   └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
+
+   ┌─────────┐  ┌─────────┐  ┌─────────┐
+   │   🔔    │  │   ↪    │  │   🔌   │
+   │listener │  │ router  │  │   io   │
+   │ fires   │  │context  │  │ device │
+   └─────────┘  └─────────┘  └─────────┘
+```
+
+| Kind | What it is | Use when |
+| --- | --- | --- |
+| **value** | a static value | The data is known at sheet-author time, or changes externally |
+| **formula** | a reactive expression | The value is computed from other cells. Sync, pure |
+| **program** | a small async expression | The computation needs async, side effects, or runtime state |
+| **sensor** | a polled input source | You're reading from a timer, GPIO, BLE, or external feed |
+| **api** | an outbound call | You're calling out to an external service |
+| **listener** | fires on changes | You want to alert, log, or write to disk on change |
+| **router** | caller-context-aware dispatch | Multiple callers need different outputs based on context |
+| **io** | an outbound port | You're driving a physical actuator (LED, relay, motor) |
+
+---
+
+## 🌊 The reactive propagation, step by step
+
+```
+   Time ──────────────────────────────────────────────────────────▶
+
+   t=0   set budget.total = 5000     ─┐
+                                     │
+   t=1   set spend.rent = 1800       ─┤
+                                     │   cascade: 3 cells recompute
+   t=2   set spend.food = 600        ─┤   ─▶ spent = 2720
+                                     │   ─▶ remaining = 2280
+   t=3   set spend.transit = 120    ─┘   ─▶ percent = 0.544
+                                          ─▶ status = "ok"
+                                          ─▶ alert listener checks condition
+```
+
+You write the cells. The engine handles the propagation. The order of writes doesn't matter — the engine computes in dependency order, topologically.
+
+---
+
+## 🏗️ Architecture
+
+```
+   ┌──────────────────────────────────────────────────────────────┐
+   │                       Quilt (your code)                      │
+   │                                                              │
+   │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │
+   │   │  Sheet (.yaml) │  │   Engine       │  │   Harness      │  │
+   │   │                │  │                │  │                │  │
+   │   │  cells:        │  │   reactive DAG │  │   MCP server   │  │
+   │   │  - id: x       │─▶│   per-context  │─▶│   CLI          │  │
+   │   │    kind: value │  │   memoization  │  │   web UI       │  │
+   │   │  - id: y       │  │   topological  │  │   library API  │  │
+   │   │    kind: for..│  │   evaluation   │  │                │  │
+   │   │                │  │                │  │                │  │
+   │   └────────────────┘  └────────────────┘  └────────────────┘  │
+   │            │                   │                  │          │
+   └────────────┼───────────────────┼──────────────────┼──────────┘
+                ▼                   ▼                  ▼
+           ┌────────┐          ┌─────────┐        ┌──────────┐
+           │  8 cell│          │ formulas │        │ external │
+           │  kinds │          │ programs │        │ systems  │
+           │        │          │ listeners│        │          │
+           └────────┘          └─────────┘        └──────────┘
+```
+
+Three layers, cleanly separated:
+- **Sheet** (declarative YAML) — what cells exist, how they relate
+- **Engine** (the runtime) — the reactive DAG, evaluation, propagation
+- **Harness** (the surface) — MCP, CLI, web, library — your entry point
+
+You can use any layer in isolation. The sheet format is the public contract.
+
+---
+
 ## What is this, really?
 
 You already know spreadsheets — columns of numbers, formulas that snap
