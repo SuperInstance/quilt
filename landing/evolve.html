@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Evolve — self-improvement loops, live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --evolve: #bb7ec6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--evolve); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--evolve), var(--blue), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--evolve), var(--blue), var(--green)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 640px; margin: 0 auto; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+
+.config { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 800px) { .config { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .config { grid-template-columns: 1fr; } }
+.config .field label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.config .field input, .config .field select { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+
+.run-btn { display: block; margin: 20px auto; padding: 14px 32px; background: var(--evolve); color: var(--bg); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; font-family: inherit; }
+.run-btn:hover { background: var(--blue); }
+.run-btn:disabled { background: var(--bg-elev); color: var(--text-faint); cursor: not-allowed; }
+
+.chart { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.chart h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.chart .canvas { width: 100%; height: 240px; background: var(--bg); border-radius: 6px; }
+
+.iterations { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.iterations h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.iteration { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin: 8px 0; }
+.iteration.current { border-color: var(--evolve); box-shadow: 0 0 0 1px var(--evolve); }
+.iteration .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.iteration .head .n { font-family: 'JetBrains Mono', monospace; color: var(--evolve); font-weight: 600; font-size: 0.9rem; }
+.iteration .head .score { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.iteration .head .score .v { color: var(--text); }
+.iteration .head .arrow { color: var(--text-faint); }
+.iteration .head .delta { font-size: 0.75rem; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+.iteration .head .delta.up { background: rgba(126, 198, 153, 0.15); color: var(--green); }
+.iteration .head .delta.down { background: rgba(198, 126, 126, 0.15); color: var(--red); }
+.iteration .head .delta.same { background: rgba(112, 112, 112, 0.15); color: var(--text-dim); }
+.iteration .details { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--text-dim); }
+.iteration.expanded .details { display: block; }
+.iteration .sample { background: var(--bg-elev); border-radius: 4px; padding: 8px 10px; margin: 4px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.iteration .sample .l { color: var(--text-faint); display: inline-block; min-width: 70px; }
+.iteration .sample .v { color: var(--text-dim); }
+.iteration .mut { color: var(--blue); margin-top: 4px; }
+.iteration .toggle { font-size: 0.7rem; color: var(--text-faint); cursor: pointer; user-select: none; }
+.iteration .toggle:hover { color: var(--text); }
+
+.summary { background: linear-gradient(135deg, rgba(187, 126, 198, 0.1), rgba(95, 168, 211, 0.05)); border: 1px solid var(--evolve); border-radius: 12px; padding: 20px; margin: 20px 0; }
+.summary h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--evolve); margin-bottom: 12px; }
+.summary .big { font-size: 2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.summary .lbl { color: var(--text-faint); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+.summary .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+@media (max-width: 600px) { .summary .stats { grid-template-columns: 1fr 1fr; } }
+
+.legend { display: flex; gap: 16px; margin: 8px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.legend .item { display: flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 12px; height: 12px; border-radius: 2px; }
+
+.history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 20px; max-height: 180px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.history .ev { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.history .ev:last-child { border-bottom: none; }
+.history .ev .ts { color: var(--text-faint); }
+.history .ev.success .msg { color: var(--green); }
+.history .ev.error .msg { color: var(--red); }
+.history .ev.info .msg { color: var(--blue); }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="zai-live.html">z.ai</a>
+    <a href="ai-playground.html">Playground</a>
+    <a href="ai-architecture.html">AI Docs</a>
+    <a href="evolve.html" style="color: var(--evolve);">⚡ Evolve</a>
+    <a href="quilt-live.html" style="background: var(--green); color: var(--bg);">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt <span class="grad-text">Evolve</span></h1>
+  <p class="lead">Self-improvement loops. LLMs generate adversarial inputs, your system processes them, an LLM judges the output, and a mutator improves the system. The loop runs at any scope — a cell, an organ, or the whole organism.</p>
+</div>
+
+<main>
+
+  <div class="config">
+    <div class="field">
+      <label>System</label>
+      <select id="system">
+        <option value="summarizer">Summarizer (improve prompt)</option>
+        <option value="classifier">Sentiment classifier (improve prompt)</option>
+        <option value="translator">Translator (improve prompt + temp)</option>
+        <option value="router">Router (improve routing rules)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Iterations</label>
+      <input type="number" id="iterations" value="5" min="1" max="20">
+    </div>
+    <div class="field">
+      <label>Population</label>
+      <input type="number" id="population" value="3" min="1" max="10">
+    </div>
+    <div class="field">
+      <label>Model</label>
+      <select id="model">
+        <option value="glm-4.5">z.ai GLM 5.3</option>
+        <option value="deepseek-chat">DeepSeek V3 Flash</option>
+        <option value="moonshot-v1-8k">Kimi 8k</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="run-btn" id="run-btn" onclick="runEvolution()">▶ Run evolution loop</button>
+
+  <div class="summary" id="summary" style="display: none;">
+    <h3>Result</h3>
+    <div style="display: flex; gap: 32px; align-items: flex-end;">
+      <div>
+        <div class="big" id="summary-final">—</div>
+        <div class="lbl">final score</div>
+      </div>
+      <div>
+        <div class="big" id="summary-delta" style="font-size: 1.2rem;">—</div>
+        <div class="lbl">change</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div>
+        <div class="big" id="summary-iters" style="font-size: 1.2rem;">—</div>
+        <div class="lbl">iterations</div>
+      </div>
+      <div>
+        <div class="big" id="summary-mutations" style="font-size: 1.2rem;">—</div>
+        <div class="lbl">mutations</div>
+      </div>
+      <div>
+        <div class="big" id="summary-time" style="font-size: 1.2rem;">—</div>
+        <div class="lbl">wall time</div>
+      </div>
+      <div>
+        <div class="big" id="summary-tokens" style="font-size: 1.2rem;">—</div>
+        <div class="lbl">total tokens</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <h3>Score progression</h3>
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background: var(--evolve);"></span>average score</div>
+      <div class="item"><span class="swatch" style="background: var(--green);"></span>best score</div>
+      <div class="item"><span class="swatch" style="background: var(--red); opacity: 0.6;"></span>worst score</div>
+    </div>
+    <canvas id="chart" class="canvas" width="800" height="240"></canvas>
+  </div>
+
+  <div class="iterations" id="iterations-list" style="display: none;">
+    <h3>Iterations</h3>
+    <div id="iterations-content"></div>
+  </div>
+
+  <div class="history" id="history"></div>
+
+</main>
+
+<footer>
+  <p>Quilt Evolve · self-improvement loops · live z.ai / DeepSeek / Kimi</p>
+</footer>
+
+<script>
+// ============================================================================
+// QUILT EVOLVE — the loop, in the browser
+// ============================================================================
+// This is a working demonstration of the @quilt/evolve loop. Real LLM calls.
+// Each iteration: generate → run → judge → mutate.
+
+const API_CONFIG = {
+  zai: { endpoint: 'https://api.z.ai/api/paas/v4/chat/completions', provider: 'zai' },
+  deepseek: { endpoint: 'https://api.deepseek.com/v1/chat/completions', provider: 'deepseek' },
+  kimi: { endpoint: 'https://api.moonshot.ai/v1/chat/completions', provider: 'kimi' },
+};
+
+function log(msg, type = 'info') {
+  const el = document.getElementById('history');
+  const ev = document.createElement('div');
+  ev.className = 'ev ' + type;
+  ev.innerHTML = `<span class="ts">[${new Date().toLocaleTimeString().slice(0,8)}]</span><span class="msg">${msg}</span>`;
+  el.insertBefore(ev, el.firstChild);
+  if (el.children.length > 40) el.removeChild(el.lastChild);
+}
+
+function getConfig() {
+  return API_CONFIG[document.getElementById('model').value === 'glm-4.5' ? 'zai'
+    : document.getElementById('model').value === 'deepseek-chat' ? 'deepseek' : 'kimi'];
+}
+
+let callStats = { calls: 0, tokens: 0 };
+
+async function callLLM(prompt, opts = {}) {
+  const cfg = getConfig();
+  const model = document.getElementById('model').value;
+  const t0 = performance.now();
+  const res = await fetch(cfg.endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], max_tokens: opts.max_tokens || 800, temperature: opts.temperature ?? 0.7 }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`${cfg.provider} ${res.status}: ${errText.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const dt = performance.now() - t0;
+  callStats.calls++;
+  callStats.tokens += data.usage?.total_tokens || 0;
+  return {
+    text: data.choices?.[0]?.message?.content || '',
+    tokens: data.usage?.total_tokens,
+    time: dt,
+  };
+}
+
+// ============================================================================
+// SYSTEMS — the things being evolved
+// ============================================================================
+
+const SYSTEMS = {
+  summarizer: {
+    name: 'Summarizer',
+    task: 'Summarize the input text in 30 words or fewer',
+    initialPrompt: 'Summarize the following text in 30 words or fewer:',
+    initialTemperature: 0.5,
+    run: async (input, sys) => {
+      const r = await callLLM(`${sys.prompt}\n\n${input.text}`, { temperature: sys.temperature, max_tokens: 200 });
+      return { summary: r.text, tokens: r.tokens };
+    },
+    expected: (input, output) => output.summary.split(/\s+/).length <= 35 && output.summary.length > 5,
+  },
+  classifier: {
+    name: 'Sentiment classifier',
+    task: 'Classify the input text as POSITIVE, NEGATIVE, or NEUTRAL',
+    initialPrompt: 'Classify the sentiment of the following text as POSITIVE, NEGATIVE, or NEUTRAL. Respond with just the label:\n\nText:',
+    initialTemperature: 0,
+    run: async (input, sys) => {
+      const r = await callLLM(`${sys.prompt} ${input.text}\n\nLabel:`, { temperature: sys.temperature, max_tokens: 10 });
+      return { label: r.text.trim().toUpperCase() };
+    },
+    expected: (input, output) => ['POSITIVE', 'NEGATIVE', 'NEUTRAL'].includes(output.label),
+  },
+  translator: {
+    name: 'Translator',
+    task: 'Translate English to French',
+    initialPrompt: 'Translate the following English text to French:',
+    initialTemperature: 0.3,
+    run: async (input, sys) => {
+      const r = await callLLM(`${sys.prompt}\n\n${input.text}`, { temperature: sys.temperature, max_tokens: 300 });
+      return { translation: r.text };
+    },
+    expected: (input, output) => output.translation.length > 0 && /[a-zA-ZàâäéèêëïîôöùûüÿçÀÂÄÉÈÊËÏÎÔÖÙÛÜŸÇ]/.test(output.translation),
+  },
+  router: {
+    name: 'Router',
+    task: 'Route the request to the correct handler (translate, summarize, code)',
+    initialPrompt: 'What kind of task is this? Respond with one word: TRANSLATE, SUMMARIZE, or CODE.\n\nRequest:',
+    initialTemperature: 0,
+    run: async (input, sys) => {
+      const r = await callLLM(`${sys.prompt} ${input.text}\n\nTask:`, { temperature: sys.temperature, max_tokens: 20 });
+      return { route: r.text.trim().toUpperCase() };
+    },
+    expected: (input, output) => ['TRANSLATE', 'SUMMARIZE', 'CODE'].includes(output.route),
+  },
+};
+
+// ============================================================================
+// SEED INPUTS — what the generator builds on
+// ============================================================================
+
+const SEED_INPUTS = {
+  summarizer: [
+    { text: "Quilt is a reactive, typed, cellular runtime. It takes the spreadsheet model — a grid of named, reactive cells — and turns it into a general-purpose runtime. A cell can be a value, a formula, a program, a sensor, an API, a listener, a router, or an IO port. The same sheet can be deployed to a browser, a server, an edge function, a microcontroller, or a peer-to-peer mesh." },
+    { text: "The factory pattern is a creational design pattern that uses factory methods to create objects. Instead of calling a constructor directly, you call a function that returns a new object. This decouples object creation from the specific class." },
+    { text: "Climate change is accelerating. Global average temperatures have risen 1.1°C since pre-industrial times, with severe consequences for ecosystems and human societies. Reducing emissions requires coordinated action across governments, businesses, and individuals." },
+  ],
+  classifier: [
+    { text: "This product changed my life, I love it!" },
+    { text: "It's okay, nothing special." },
+    { text: "Worst purchase ever. Total waste of money." },
+    { text: "Pretty good, would recommend." },
+    { text: "I'm not sure how I feel about this." },
+  ],
+  translator: [
+    { text: "Hello, how are you today?" },
+    { text: "The quick brown fox jumps over the lazy dog." },
+    { text: "I would like a cup of coffee, please." },
+  ],
+  router: [
+    { text: "translate hello to french" },
+    { text: "summarize this article about climate change" },
+    { text: "write a function that reverses a string" },
+    { text: "give me a python hello world" },
+  ],
+};
+
+// ============================================================================
+// MAIN LOOP
+// ============================================================================
+
+let currentState = null;
+
+async function runEvolution() {
+  const sysKey = document.getElementById('system').value;
+  const numIter = +document.getElementById('iterations').value;
+  const numPop = +document.getElementById('population').value;
+  const sys = SYSTEMS[sysKey];
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  callStats = { calls: 0, tokens: 0 };
+
+  // Initialize state (what the loop mutates)
+  currentState = {
+    prompt: sys.initialPrompt,
+    temperature: sys.initialTemperature,
+  };
+
+  const iterResults = [];
+  const allInputs = [...SEED_INPUTS[sysKey]];
+  const t0 = performance.now();
+
+  try {
+    for (let i = 0; i < numIter; i++) {
+      log(`iter ${i}: generating inputs...`, 'info');
+      const inputs = i === 0 ? allInputs.slice(0, numPop) : await generateAdversarial(sysKey, allInputs, iterResults.at(-1));
+
+      log(`iter ${i}: running system on ${inputs.length} inputs...`, 'info');
+      const outputs = [];
+      for (const input of inputs) {
+        try {
+          const out = await sys.run(input, currentState);
+          outputs.push(out);
+        } catch (e) {
+          outputs.push({ error: e.message });
+        }
+      }
+
+      log(`iter ${i}: judging...`, 'info');
+      const scores = outputs.map((out, j) => {
+        if (out.error) return { value: 0, reasoning: 'error: ' + out.error };
+        const correct = sys.expected(inputs[j], out);
+        return { value: correct ? 1 : 0, reasoning: correct ? 'passed' : 'failed' };
+      });
+
+      const avg = scores.reduce((s, x) => s + x.value, 0) / scores.length;
+      const best = Math.max(...scores.map(s => s.value));
+
+      const iterResult = {
+        iteration: i,
+        inputs,
+        outputs,
+        scores,
+        averageScore: avg,
+        bestScore: best,
+        mutations: [],
+        stateBefore: { ...currentState },
+      };
+      iterResults.push(iterResult);
+
+      log(`iter ${i}: avg=${avg.toFixed(2)} best=${best.toFixed(2)}`, avg > (iterResults.at(-2)?.averageScore || 0) ? 'success' : 'info');
+
+      // Mutate
+      if (i < numIter - 1 && avg < 1.0) {
+        const newState = await mutate(sys, currentState, inputs, outputs, scores);
+        if (newState) {
+          iterResult.mutations.push({ description: 'changed prompt', path: 'prompt', before: currentState.prompt, after: newState.prompt });
+          currentState = newState;
+          log(`iter ${i}: mutated (${iterResult.mutations.length} change)`, 'info');
+        }
+      }
+    }
+
+    const dt = Date.now() - t0;
+    renderResults(iterResults, dt);
+    log(`✓ Done. ${iterResults.length} iterations, ${callStats.calls} calls, ${callStats.tokens} tokens, ${dt}ms`, 'success');
+  } catch (e) {
+    log('✗ ' + e.message, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run evolution loop';
+}
+
+async function generateAdversarial(sysKey, allInputs, prev) {
+  const cfg = getConfig();
+  const model = document.getElementById('model').value;
+  const numPop = +document.getElementById('population').value;
+  const sys = SYSTEMS[sysKey];
+
+  let context = '';
+  if (prev) {
+    context = `\n\nPREVIOUS ITERATION:\n`;
+    for (let i = 0; i < Math.min(prev.inputs.length, 3); i++) {
+      const s = prev.scores[i];
+      const inText = JSON.stringify(prev.inputs[i]).slice(0, 100);
+      const outText = JSON.stringify(prev.outputs[i]).slice(0, 100);
+      context += `- Input: ${inText}\n  Output: ${outText}\n  Score: ${s.value.toFixed(2)} — ${s.reasoning}\n`;
+    }
+    context += `\nGenerate ${numPop} NEW inputs that probe the weak areas. Each should be distinct and challenging.`;
+  } else {
+    context = `\n\nGenerate ${numPop} diverse test inputs.`;
+  }
+
+  const prompt = `You are an adversarial input generator for a system that performs: ${sys.task}.
+
+The system takes inputs of this format: ${JSON.stringify(allInputs[0]).slice(0, 80)}.
+
+SEED INPUTS:
+${allInputs.slice(0, 3).map(i => '- ' + JSON.stringify(i).slice(0, 150)).join('\n')}
+${context}
+
+RESPOND with ONLY a JSON array of ${numPop} inputs (objects or strings, matching the seed format). No markdown, no explanation. Example: [${JSON.stringify(allInputs[0]).slice(0, 50)}, ...]`;
+
+  try {
+    const r = await callLLM(prompt, { max_tokens: 1000, temperature: 0.9 });
+    const match = r.text.match(/\[[\s\S]*\]/);
+    if (match) {
+      const arr = JSON.parse(match[0]);
+      if (Array.isArray(arr)) return arr.slice(0, numPop);
+    }
+  } catch (e) {
+    log('⚠️ generate failed, using seeds', 'error');
+  }
+  return allInputs.slice(0, numPop);
+}
+
+async function mutate(sys, state, inputs, outputs, scores) {
+  const failures = scores.filter(s => s.value < 1).length;
+  if (failures === 0) return null;  // no mutation needed
+
+  const examples = scores.map((s, i) => `- ${JSON.stringify(inputs[i]).slice(0, 80)} → ${JSON.stringify(outputs[i]).slice(0, 80)} (${s.value === 1 ? '✓' : '✗'})`).join('\n');
+
+  const prompt = `You are improving a prompt for a system that: ${sys.task}
+
+CURRENT PROMPT:
+"""
+${state.prompt}
+"""
+
+CURRENT TEMPERATURE: ${state.temperature}
+
+ITERATION RESULTS (showing failures):
+${examples}
+
+Failures: ${failures}/${scores.length}
+
+Generate an IMPROVED version of the prompt that would handle the failure cases better. Keep the core structure but make it more specific, more constrained, or add helpful examples. If the temperature seems wrong (too high → inconsistency, too low → no creativity), adjust it.
+
+RESPOND with ONLY a JSON object (no markdown, no explanation):
+{ "prompt": "<new prompt>", "temperature": <float 0-1>, "reasoning": "<1 sentence>" }`;
+
+  try {
+    const r = await callLLM(prompt, { max_tokens: 600, temperature: 0.5 });
+    const match = r.text.match(/\{[\s\S]*\}/);
+    if (match) {
+      const obj = JSON.parse(match[0]);
+      if (obj.prompt && obj.prompt !== state.prompt) {
+        return {
+          prompt: obj.prompt,
+          temperature: obj.temperature ?? state.temperature,
+        };
+      }
+    }
+  } catch (e) {
+    log('⚠️ mutate failed: ' + e.message, 'error');
+  }
+  return null;
+}
+
+// ============================================================================
+// RENDERING
+// ============================================================================
+
+function renderResults(iterResults, totalTime) {
+  // Summary
+  document.getElementById('summary').style.display = '';
+  const first = iterResults[0]?.averageScore || 0;
+  const last = iterResults[iterResults.length - 1]?.averageScore || 0;
+  const delta = last - first;
+  document.getElementById('summary-final').textContent = last.toFixed(3);
+  document.getElementById('summary-delta').textContent = (delta >= 0 ? '+' : '') + delta.toFixed(3);
+  document.getElementById('summary-delta').style.color = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--text-dim)';
+  document.getElementById('summary-iters').textContent = iterResults.length;
+  document.getElementById('summary-mutations').textContent = iterResults.reduce((n, i) => n + i.mutations.length, 0);
+  document.getElementById('summary-time').textContent = totalTime + 'ms';
+  document.getElementById('summary-tokens').textContent = callStats.tokens;
+
+  // Chart
+  drawChart(iterResults);
+
+  // Iterations
+  const iterEl = document.getElementById('iterations-list');
+  iterEl.style.display = '';
+  const content = document.getElementById('iterations-content');
+  content.innerHTML = iterResults.map((r, idx) => {
+    const prev = idx > 0 ? iterResults[idx - 1].averageScore : r.averageScore;
+    const delta = r.averageScore - prev;
+    const deltaClass = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'same';
+    const deltaText = delta > 0.01 ? '↑ ' + delta.toFixed(2) : delta < -0.01 ? '↓ ' + (-delta).toFixed(2) : '= same';
+    return `
+      <div class="iteration ${idx === iterResults.length - 1 ? 'current' : ''}" data-idx="${idx}">
+        <div class="head">
+          <span class="n">iter ${r.iteration}</span>
+          <span class="toggle">▸ expand</span>
+          <span class="score">avg <span class="v">${r.averageScore.toFixed(2)}</span> · best ${r.bestScore.toFixed(2)}</span>
+          <span class="delta ${deltaClass}">${deltaText}</span>
+        </div>
+        <div class="details">
+          ${r.inputs.slice(0, 3).map((inp, j) => `
+            <div class="sample">
+              <span class="l">in ${j}:</span><span class="v">${JSON.stringify(inp).slice(0, 100)}</span><br>
+              <span class="l">out:</span><span class="v">${JSON.stringify(r.outputs[j]).slice(0, 100)}</span><br>
+              <span class="l">score:</span><span class="v">${r.scores[j].value.toFixed(2)} (${r.scores[j].reasoning || ''})</span>
+            </div>
+          `).join('')}
+          ${r.mutations.length > 0 ? `<div class="mut">↻ ${r.mutations[0].description}: ${(r.mutations[0].before || '').slice(0, 60)} → ${(r.mutations[0].after || '').slice(0, 60)}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Click to toggle
+  content.querySelectorAll('.iteration').forEach(el => {
+    el.querySelector('.head').onclick = () => {
+      el.classList.toggle('expanded');
+      el.querySelector('.toggle').textContent = el.classList.contains('expanded') ? '▾ collapse' : '▸ expand';
+    };
+  });
+}
+
+function drawChart(iterResults) {
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (iterResults.length === 0) return;
+
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const plotW = w - padding.left - padding.right;
+  const plotH = h - padding.top - padding.bottom;
+
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (plotH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + plotW, y);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillText((1 - i * 0.25).toFixed(2), 8, y + 3);
+  }
+
+  const xStep = iterResults.length === 1 ? 0 : plotW / (iterResults.length - 1);
+  const xFor = (i) => padding.left + xStep * i;
+  const yFor = (v) => padding.top + plotH * (1 - v);
+
+  // Worst score (red, faded)
+  ctx.strokeStyle = 'rgba(198, 126, 126, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  iterResults.forEach((r, i) => {
+    const worst = Math.min(...r.scores.map(s => s.value));
+    if (i === 0) ctx.moveTo(xFor(i), yFor(worst));
+    else ctx.lineTo(xFor(i), yFor(worst));
+  });
+  ctx.stroke();
+
+  // Best score (green)
+  ctx.strokeStyle = '#7ec699';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  iterResults.forEach((r, i) => {
+    if (i === 0) ctx.moveTo(xFor(i), yFor(r.bestScore));
+    else ctx.lineTo(xFor(i), yFor(r.bestScore));
+  });
+  ctx.stroke();
+
+  // Average score (purple, thick)
+  ctx.strokeStyle = '#bb7ec6';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  iterResults.forEach((r, i) => {
+    if (i === 0) ctx.moveTo(xFor(i), yFor(r.averageScore));
+    else ctx.lineTo(xFor(i), yFor(r.averageScore));
+  });
+  ctx.stroke();
+
+  // Dots for average
+  iterResults.forEach((r, i) => {
+    ctx.fillStyle = '#bb7ec6';
+    ctx.beginPath();
+    ctx.arc(xFor(i), yFor(r.averageScore), 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // X-axis labels
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '10px JetBrains Mono';
+  iterResults.forEach((r, i) => {
+    ctx.fillText(String(i), xFor(i) - 4, h - 10);
+  });
+}
+
+log('Ready. Pick a system and click "Run evolution loop".');
+</script>
+
+</body>
+</html>
