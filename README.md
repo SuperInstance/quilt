@@ -14,7 +14,7 @@
 [![Status](https://img.shields.io/badge/status-v0.2.0-brightgreen)](https://github.com/superinstance/quilt)
 [![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen)](https://github.com/superinstance/quilt)
 
-**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Simulator](https://superinstance.github.io/quilt/landing/simulator.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
+**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Playground ▶](https://superinstance.github.io/quilt/landing/playground.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[IDE 🛠](https://superinstance.github.io/quilt/landing/ide.html)** · **[Synoptic 🎬](https://superinstance.github.io/quilt/landing/synoptic.html)** · **[3D View](https://superinstance.github.io/quilt/landing/synoptic3d.html)** · **[Patterns 📚](https://superinstance.github.io/quilt/landing/patterns.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Compare ⚖](https://superinstance.github.io/quilt/landing/compare.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
 
 ---
 

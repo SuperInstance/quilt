@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Playground — write, run, share</title>
+<meta name="description" content="A live coding environment for Quilt. Write a sheet in YAML, run it, see the cells come alive. No build, no install, just open and play.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-elev: #131313; --bg-elev-2: #1a1a1a; --bg-elev-3: #232323; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --gray: #888; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.5; height: 100%; overflow: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Nav */
+nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.95rem; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; font-size: 0.85rem; }
+.nav-links a { padding: 4px 10px; color: var(--text-dim); border-radius: 4px; }
+.nav-links a:hover { background: var(--bg-elev-2); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+/* Layout */
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+
+/* Editor + viz */
+.main { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; overflow: hidden; }
+@media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+.editor-pane { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; min-width: 0; }
+.editor-header { padding: 8px 16px; background: var(--bg-elev-2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.editor-header .title { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); }
+.editor-header .actions { display: flex; gap: 4px; }
+.editor-header .actions button { padding: 4px 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; font-family: inherit; }
+.editor-header .actions button:hover { color: var(--text); }
+.editor-header .actions button.primary { background: var(--green); color: var(--bg); border-color: var(--green); }
+.editor-header .actions button.primary:hover { background: var(--blue); border-color: var(--blue); }
+.editor { flex: 1; display: grid; grid-template-columns: 48px 1fr; min-height: 0; }
+.editor-gutter { background: var(--bg-elev); border-right: 1px solid var(--border); padding: 8px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-faint); text-align: right; user-select: none; overflow: hidden; }
+.editor-gutter .ln { padding: 0 8px; }
+.editor-gutter .ln.active { color: var(--green); }
+.editor-textarea { background: var(--bg); color: var(--text); border: none; outline: none; padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; resize: none; tab-size: 2; }
+.editor-textarea::selection { background: rgba(126,198,153,0.3); }
+
+.viz-pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.viz-tabs { display: flex; background: var(--bg-elev-2); border-bottom: 1px solid var(--border); }
+.viz-tab { padding: 8px 16px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; }
+.viz-tab:hover { color: var(--text); }
+.viz-tab.active { color: var(--text); border-bottom-color: var(--green); background: var(--bg-elev); }
+.viz-content { flex: 1; overflow: auto; min-height: 0; }
+
+/* Cell list */
+.cell-list { padding: 16px; }
+.cell { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; transition: all 0.15s; }
+.cell:hover { border-color: var(--border-strong); }
+.cell.error { border-color: var(--red); }
+.cell.changed { border-color: var(--yellow); }
+.cell-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.cell-id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--green); font-weight: 600; }
+.cell-kind { font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.cell-kind.value { background: rgba(126,198,153,0.15); color: var(--green); }
+.cell-kind.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.cell-kind.program { background: rgba(187,126,198,0.15); color: var(--purple); }
+.cell-kind.sensor { background: rgba(198,168,126,0.15); color: var(--tan); }
+.cell-kind.api { background: rgba(198,126,126,0.15); color: var(--red); }
+.cell-kind.listener { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.cell-kind.router { background: rgba(126,198,198,0.15); color: var(--cyan); }
+.cell-kind.io { background: rgba(136,136,136,0.15); color: var(--gray); }
+.cell-status { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+.cell-status.ready { color: var(--green); }
+.cell-status.evaluating { color: var(--blue); }
+.cell-status.error { color: var(--red); }
+.cell-status.pending { color: var(--text-faint); }
+.cell-value { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dim); word-break: break-all; }
+.cell-error { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--red); margin-top: 4px; }
+
+/* Console */
+.console { padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.console-line { padding: 2px 0; display: flex; gap: 8px; }
+.console-line .ts { color: var(--text-faint); }
+.console-line .lvl { font-weight: 600; min-width: 50px; }
+.console-line.info .lvl { color: var(--blue); }
+.console-line.success .lvl { color: var(--green); }
+.console-line.error .lvl { color: var(--red); }
+.console-line.warn .lvl { color: var(--yellow); }
+.console-line .msg { color: var(--text-dim); }
+.console-prompt { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.console-prompt .arrow { color: var(--green); }
+.console-prompt input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: inherit; font-size: 0.85rem; }
+
+/* Graph */
+.graph-container { position: relative; width: 100%; height: 100%; }
+#graph-canvas { width: 100%; height: 100%; display: block; }
+
+/* Status */
+.statusbar { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; background: var(--bg-elev); border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-dim); flex-shrink: 0; }
+.statusbar .left, .statusbar .right { display: flex; gap: 16px; }
+.statusbar .v { color: var(--green); font-weight: 600; }
+
+/* Snippets panel */
+.snippets { padding: 16px; }
+.snippet { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+.snippet:hover { border-color: var(--green); background: var(--bg-elev-2); }
+.snippet-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+.snippet-desc { font-size: 0.8rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav>
+    <a href="index.html" class="brand"><span class="mark"></span><span>Quilt Playground</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="studio.html">Studio</a>
+      <a href="ide.html">IDE</a>
+      <a href="synoptic.html">Synoptic</a>
+      <a href="patterns.html">Patterns</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="quilt-live.html" class="cta">Open Live</a>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- LEFT: editor -->
+    <div class="editor-pane">
+      <div class="editor-header">
+        <span class="title">sheet.yaml</span>
+        <div class="actions">
+          <button id="btn-snippets">📚 Snippets</button>
+          <button id="btn-reset">↻ Reset</button>
+          <button id="btn-share" class="primary">▶ Run (Ctrl+Enter)</button>
+        </div>
+      </div>
+      <div class="editor">
+        <div class="editor-gutter" id="gutter"></div>
+        <textarea class="editor-textarea" id="editor" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <!-- RIGHT: viz -->
+    <div class="viz-pane">
+      <div class="viz-tabs">
+        <div class="viz-tab active" data-viz="cells">📦 Cells</div>
+        <div class="viz-tab" data-viz="graph">◯ Graph</div>
+        <div class="viz-tab" data-viz="console">▶ Console</div>
+        <div class="viz-tab" data-viz="snippets">📚 Snippets</div>
+      </div>
+      <div class="viz-content" id="viz-cells">
+        <div class="cell-list" id="cell-list"></div>
+      </div>
+      <div class="viz-content" id="viz-graph" style="display:none; height: 100%;">
+        <div class="graph-container">
+          <canvas id="graph-canvas"></canvas>
+        </div>
+      </div>
+      <div class="viz-content" id="viz-console" style="display:none;">
+        <div class="console" id="console-out"></div>
+        <div class="console-prompt">
+          <span class="arrow">›</span>
+          <input id="console-input" placeholder="Type 'help' for commands" />
+        </div>
+      </div>
+      <div class="viz-content" id="viz-snippets" style="display:none;">
+        <div class="snippets" id="snippets"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <div class="left">
+      <div>📄 sheet.yaml</div>
+      <div>UTF-8</div>
+      <div>YAML</div>
+    </div>
+    <div class="right">
+      <div>cells: <span class="v" id="sb-cells">0</span></div>
+      <div>edges: <span class="v" id="sb-edges">0</span></div>
+      <div>evals: <span class="v" id="sb-evals">0</span></div>
+      <div>last eval: <span class="v" id="sb-time">0ms</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+//  QUILT PLAYGROUND — live coding environment
+// ============================================================================
+
+const SNIPPETS = [
+  {
+    title: "Hello, world",
+    desc: "A minimal sheet with a single value cell.",
+    yaml: `id: hello
+title: "Hello, world"
+version: 0.1.0
+cells:
+  - id: greeting
+    kind: value
+    value: "Hello, world!"`,
+  },
+  {
+    title: "Reactive cascade",
+    desc: "Watch how a value flows through three formulas.",
+    yaml: `id: cascade
+title: "Reactive cascade"
+version: 0.1.0
+cells:
+  - id: raw
+    kind: value
+    value: 100
+  - id: half
+    kind: formula
+    expr: "raw / 2"
+  - id: quarter
+    kind: formula
+    expr: "half / 2"
+  - id: eighth
+    kind: formula
+    expr: "quarter / 2"`,
+  },
+  {
+    title: "Sensor + alert",
+    desc: "A sensor that fires a listener when a threshold is crossed.",
+    yaml: `id: temp-monitor
+title: "Temperature monitor"
+version: 0.1.0
+cells:
+  - id: sensor.temp
+    kind: sensor
+    source: dht22
+    default: 22
+  - id: fahrenheit
+    kind: formula
+    expr: "sensor.temp * 1.8 + 32"
+  - id: heat_index
+    kind: formula
+    expr: "sensor.temp + 0.5 * 0.05"
+  - id: status
+    kind: formula
+    expr: 'heat_index < 26 ? "cool" : (heat_index < 30 ? "warm" : "hot")'
+  - id: alert
+    kind: listener
+    watch: status
+    condition: 'status === "hot"'
+    action: 'console.log("⚠️  Temperature is hot!")'`,
+  },
+  {
+    title: "Budget tracker",
+    desc: "Compute remaining budget and alert when over.",
+    yaml: `id: budget
+title: "Monthly budget"
+version: 0.1.0
+cells:
+  - id: total
+    kind: value
+    value: 5000
+  - id: rent
+    kind: value
+    value: 1800
+  - id: food
+    kind: value
+    value: 600
+  - id: transit
+    kind: value
+    value: 120
+  - id: fun
+    kind: value
+    value: 200
+  - id: spent
+    kind: formula
+    expr: "rent + food + transit + fun"
+  - id: remaining
+    kind: formula
+    expr: "total - spent"
+  - id: percent
+    kind: formula
+    expr: "spent / total"
+  - id: status
+    kind: formula
+    expr: 'percent > 0.9 ? "danger" : (percent > 0.7 ? "warning" : "ok")'`,
+  },
+  {
+    title: "Counter + toggle",
+    desc: "Two stateful reactive patterns.",
+    yaml: `id: state
+title: "Counter & toggle"
+version: 0.1.0
+cells:
+  - id: counter
+    kind: value
+    value: 0
+  - id: counter_doubled
+    kind: formula
+    expr: "counter * 2"
+  - id: toggle
+    kind: value
+    value: false
+  - id: toggle_status
+    kind: formula
+    expr: 'toggle ? "ON" : "OFF"'
+  - id: toggle_count
+    kind: value
+    value: 0
+  - id: total_changes
+    kind: formula
+    expr: "counter + toggle_count"`,
+  },
+  {
+    title: "Math playground",
+    desc: "Trig, log, exponential — the math you remember from school.",
+    yaml: `id: math
+title: "Math playground"
+version: 0.1.0
+cells:
+  - id: x
+    kind: value
+    value: 1.5
+  - id: sin_x
+    kind: formula
+    expr: "Math.sin(x)"
+  - id: cos_x
+    kind: formula
+    expr: "Math.cos(x)"
+  - id: squared
+    kind: formula
+    expr: "x * x"
+  - id: magnitude
+    kind: formula
+    expr: "Math.sqrt(sin_x * sin_x + cos_x * cos_x)"
+  - id: radians_to_deg
+    kind: formula
+    expr: "x * 180 / Math.PI"`,
+  },
+  {
+    title: "List operations",
+    desc: "Map, filter, reduce on a list of values.",
+    yaml: `id: lists
+title: "List operations"
+version: 0.1.0
+cells:
+  - id: numbers
+    kind: value
+    value: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  - id: doubled
+    kind: formula
+    expr: "numbers.map(n => n * 2)"
+  - id: evens
+    kind: formula
+    expr: "doubled.filter(n => n % 2 === 0)"
+  - id: sum
+    kind: formula
+    expr: "evens.reduce((a, b) => a + b, 0)"
+  - id: average
+    kind: formula
+    expr: "sum / evens.length"`,
+  },
+  {
+    title: "Time-of-day greeter",
+    desc: "A formula that returns a greeting based on the hour.",
+    yaml: `id: greeter
+title: "Time-of-day greeter"
+version: 0.1.0
+cells:
+  - id: hour
+    kind: value
+    value: 14
+  - id: greeting
+    kind: formula
+    expr: 'hour < 5 ? "Working late?" : (hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : (hour < 22 ? "Good evening" : "Good night")))'
+  - id: activity
+    kind: formula
+    expr: 'hour < 9 ? "sleeping" : (hour < 12 ? "morning routine" : (hour < 13 ? "lunch" : (hour < 18 ? "work" : "dinner")))'`,
+  },
+];
+
+// ============== State ==============
+const state = {
+  cells: [],
+  edges: [],
+  values: {},
+  errors: {},
+  evals: 0,
+  selectedTab: 'cells',
+  selectedSnippet: 0,
+  snippetText: '',
+};
+
+// ============== Elements ==============
+const editor = document.getElementById('editor');
+const gutter = document.getElementById('gutter');
+const cellList = document.getElementById('cell-list');
+const consoleOut = document.getElementById('console-out');
+const consoleInput = document.getElementById('console-input');
+const snippetsEl = document.getElementById('snippets');
+
+// ============== Editor ==============
+editor.addEventListener('input', updateGutter);
+editor.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart, en = editor.selectionEnd;
+    editor.value = editor.value.substring(0, s) + '  ' + editor.value.substring(en);
+    editor.selectionStart = editor.selectionEnd = s + 2;
+    updateGutter();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runSheet();
+  }
+});
+
+function updateGutter() {
+  const lines = editor.value.split('\n').length;
+  let html = '';
+  for (let i = 1; i <= lines; i++) html += `<div class="ln">${i}</div>`;
+  gutter.innerHTML = html;
+}
+
+// ============== YAML parser (simple subset) ==============
+function parseSheet(yaml) {
+  const cells = [];
+  const lines = yaml.split('\n');
+  let current = null;
+  let pendingExpr = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+
+    // New cell starts with "- id:"
+    const idMatch = line.match(/^\s*-\s*id:\s*(.+?)\s*$/);
+    if (idMatch) {
+      if (current) cells.push(current);
+      current = { id: idMatch[1].replace(/^["']|["']$/g, ''), kind: 'value', config: {} };
+      continue;
+    }
+
+    // Otherwise a key-value within a cell
+    if (current) {
+      // kind:
+      const km = line.match(/^\s+kind:\s*(.+?)\s*$/);
+      if (km) { current.kind = km[1].trim(); continue; }
+
+      // expr: (multiline, starts with | or >)
+      const em = line.match(/^\s+expr:\s*[|>]\s*$/);
+      if (em) {
+        const indent = line.match(/^(\s+)/)[1].length;
+        let ml = '';
+        i++;
+        while (i < lines.length) {
+          const l = lines[i];
+          const m = l.match(/^(\s+)(.*)$/);
+          if (!m || m[1].length <= indent || !m[2].trim()) {
+            if (m && !m[2].trim()) { i++; continue; }
+            break;
+          }
+          ml += m[2] + '\n';
+          i++;
+        }
+        i--;
+        current.config.expr = ml.trim();
+        continue;
+      }
+
+      // expr: (single line)
+      const esm = line.match(/^\s+expr:\s*(.+?)\s*$/);
+      if (esm) { current.config.expr = esm[1].replace(/^["']|["']$/g, ''); continue; }
+
+      // code: (multiline, starts with | or >)
+      const cm = line.match(/^\s+code:\s*[|>]\s*$/);
+      if (cm) {
+        const indent = line.match(/^(\s+)/)[1].length;
+        let ml = '';
+        i++;
+        while (i < lines.length) {
+          const l = lines[i];
+          const m = l.match(/^(\s+)(.*)$/);
+          if (!m || m[1].length <= indent || !m[2].trim()) {
+            if (m && !m[2].trim()) { i++; continue; }
+            break;
+          }
+          ml += m[2] + '\n';
+          i++;
+        }
+        i--;
+        current.config.code = ml.trim();
+        continue;
+      }
+
+      // action: (multiline, starts with | or >)
+      const am = line.match(/^\s+action:\s*[|>]\s*$/);
+      if (am) {
+        const indent = line.match(/^(\s+)/)[1].length;
+        let ml = '';
+        i++;
+        while (i < lines.length) {
+          const l = lines[i];
+          const m = l.match(/^(\s+)(.*)$/);
+          if (!m || m[1].length <= indent || !m[2].trim()) {
+            if (m && !m[2].trim()) { i++; continue; }
+            break;
+          }
+          ml += m[2] + '\n';
+          i++;
+        }
+        i--;
+        current.config.action = ml.trim();
+        continue;
+      }
+
+      // value: (JSON or scalar)
+      const vm = line.match(/^\s+value:\s*(.+?)\s*$/);
+      if (vm) {
+        let v = vm[1];
+        if (v === 'true') v = true;
+        else if (v === 'false') v = false;
+        else if (v === 'null') v = null;
+        else if (!isNaN(v) && v !== '') v = Number(v);
+        else { v = v.replace(/^["']|["']$/g, ''); }
+        current.config.value = v;
+        continue;
+      }
+
+      // default: (number)
+      const dm = line.match(/^\s+default:\s*(.+?)\s*$/);
+      if (dm) {
+        let v = dm[1];
+        if (v === 'true') v = true;
+        else if (v === 'false') v = false;
+        else if (v === 'null') v = null;
+        else if (!isNaN(v) && v !== '') v = Number(v);
+        current.config.default = v;
+        continue;
+      }
+
+      // source: (string)
+      const sm = line.match(/^\s+source:\s*(.+?)\s*$/);
+      if (sm) { current.config.source = sm[1].replace(/^["']|["']$/g, ''); continue; }
+
+      // watch: (string)
+      const wm = line.match(/^\s+watch:\s*(.+?)\s*$/);
+      if (wm) { current.config.watch = wm[1].replace(/^["']|["']$/g, ''); continue; }
+
+      // condition: (string)
+      const cdm = line.match(/^\s+condition:\s*(.+?)\s*$/);
+      if (cdm) { current.config.condition = cdm[1].replace(/^["']|["']$/g, ''); continue; }
+
+      // action: (single line)
+      const asm = line.match(/^\s+action:\s*(.+?)\s*$/);
+      if (asm) { current.config.action = asm[1].replace(/^["']|["']$/g, ''); continue; }
+    }
+  }
+  if (current) cells.push(current);
+
+  // Edges from formula deps
+  const edges = [];
+  for (const cell of cells) {
+    if (cell.config.expr) {
+      for (const other of cells) {
+        if (other.id === cell.id) continue;
+        const re = new RegExp('\\b' + other.id.replace(/\./g, '\\.') + '\\b');
+        if (re.test(cell.config.expr)) {
+          edges.push([other.id, cell.id]);
+        }
+      }
+    }
+    if (cell.config.watch && cell.config.watch !== cell.id) {
+      edges.push([cell.config.watch, cell.id]);
+    }
+  }
+  return { cells, edges };
+}
+
+// ============== Engine ==============
+async function runSheet() {
+  const start = performance.now();
+  const { cells, edges } = parseSheet(editor.value);
+  state.cells = cells;
+  state.edges = edges;
+  state.errors = {};
+  log('info', '⏵ Running sheet…');
+
+  // Topological sort
+  const inDeg = new Map(cells.map(c => [c.id, 0]));
+  for (const [from, to] of edges) inDeg.set(to, (inDeg.get(to) || 0) + 1);
+  const queue = cells.filter(c => inDeg.get(c.id) === 0);
+  const order = [];
+  while (queue.length) {
+    const c = queue.shift();
+    order.push(c);
+    for (const [from, to] of edges) {
+      if (from === c.id) {
+        inDeg.set(to, inDeg.get(to) - 1);
+        if (inDeg.get(to) === 0) {
+          const next = cells.find(x => x.id === to);
+          if (next) queue.push(next);
+        }
+      }
+    }
+  }
+  if (order.length < cells.length) {
+    log('error', 'Cycle detected in cell graph');
+    return;
+  }
+
+  // Evaluate in order
+  for (const cell of order) {
+    try {
+      if (cell.config.value !== undefined) {
+        state.values[cell.id] = cell.config.value;
+      } else if (cell.config.default !== undefined && state.values[cell.id] === undefined) {
+        state.values[cell.id] = cell.config.default;
+      }
+      if (cell.kind === 'formula' && cell.config.expr) {
+        // Build env from deps
+        const env = {};
+        for (const [from, to] of edges) {
+          if (to === cell.id) {
+            const key = from.replace(/\./g, '_');
+            env[key] = state.values[from];
+          }
+        }
+        // Replace dot.id with underscore_id in expression
+        const expr = cell.config.expr.replace(/([a-zA-Z_][a-zA-Z0-9_.]*)/g, m => {
+          if (m.includes('.')) return m.replace(/\./g, '_');
+          return m;
+        });
+        // Also map the underscored env names
+        for (const [from] of edges) {
+          if (from === cell.id) continue;
+        }
+        const fn = new Function('Math', 'with(arguments[0]) { return (' + expr + '); }');
+        state.values[cell.id] = fn.call(null, Math, env);
+      } else if (cell.kind === 'program' && cell.config.code) {
+        try {
+          // Synthesize a "runtime" with the cells map and call
+          const cellsMap = new Proxy(state.values, {
+            get: (_, k) => state.values[k],
+            set: (_, k, v) => { state.values[k] = v; return true; },
+          });
+          const runtime = {
+            get: (id) => ({ data: state.values[id] }),
+            set: (id, v) => { state.values[id] = v; },
+            call: async (id, args) => { return state.values[id]; },
+            cells: cellsMap,
+          };
+          const fn = new Function('runtime', 'return (async () => { ' + cell.config.code + ' })()');
+          const result = await fn(runtime);
+          if (result !== undefined) state.values[cell.id] = result;
+        } catch (e) { state.errors[cell.id] = e.message; log('error', cell.id + ': ' + e.message); }
+      } else if (cell.kind === 'listener' && cell.config.condition) {
+        const env = {};
+        for (const [from, to] of edges) {
+          if (to === cell.id) {
+            const key = from.replace(/\./g, '_');
+            env[key] = state.values[from];
+          }
+        }
+        const expr = cell.config.condition.replace(/([a-zA-Z_][a-zA-Z0-9_.]*)/g, m => m.includes('.') ? m.replace(/\./g, '_') : m);
+        const fn = new Function('Math', 'with(arguments[0]) { return (' + expr + '); }');
+        if (fn.call(null, Math, env)) {
+          // Fire action
+          if (cell.config.action) {
+            const am = cell.config.action.match(/console\.log\(["'](.+)["']\)/);
+            if (am) log('warn', '🔔 ' + cell.id + ': ' + am[1]);
+            else {
+              try {
+                const fn2 = new Function('return (' + cell.config.action + ')');
+                fn2();
+              } catch (e) { log('warn', '🔔 ' + cell.id + ' (action error: ' + e.message + ')'); }
+            }
+          }
+        }
+      } else if (cell.kind === 'sensor' && cell.config.source === 'dht22') {
+        // Simulate sensor with small noise
+        const base = 22 + (Math.random() - 0.5) * 4;
+        state.values[cell.id] = base;
+      } else if (cell.kind === 'api') {
+        // Mock API response
+        state.values[cell.id] = { status: 200, data: { mocked: true } };
+      }
+    } catch (e) {
+      state.errors[cell.id] = e.message;
+      log('error', cell.id + ': ' + e.message);
+    }
+  }
+
+  const dt = (performance.now() - start).toFixed(1);
+  state.evals++;
+  log('success', `✓ Evaluated ${cells.length} cells in ${dt}ms`);
+  document.getElementById('sb-cells').textContent = cells.length;
+  document.getElementById('sb-edges').textContent = edges.length;
+  document.getElementById('sb-evals').textContent = state.evals;
+  document.getElementById('sb-time').textContent = dt + 'ms';
+  renderCells();
+  renderGraph();
+}
+
+function log(level, msg) {
+  const t = new Date().toLocaleTimeString();
+  const line = document.createElement('div');
+  line.className = 'console-line ' + level;
+  line.innerHTML = `<span class="ts">${t.slice(0,8)}</span><span class="lvl">${level.toUpperCase()}</span><span class="msg">${escapeHtml(msg)}</span>`;
+  consoleOut.appendChild(line);
+  consoleOut.scrollTop = consoleOut.scrollHeight;
+}
+
+function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function renderCells() {
+  cellList.innerHTML = state.cells.map(c => {
+    const value = state.values[c.id];
+    const err = state.errors[c.id];
+    const valueStr = err ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+    return `<div class="cell ${err ? 'error' : ''}">
+      <div class="cell-header">
+        <span class="cell-id">${escapeHtml(c.id)}</span>
+        <span class="cell-kind ${c.kind}">${c.kind}</span>
+        <span class="cell-status ${err ? 'error' : 'ready'}">${err ? '✗' : '✓ ready'}</span>
+      </div>
+      ${c.config.expr ? `<div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); margin: 4px 0;">${escapeHtml(c.config.expr)}</div>` : ''}
+      ${c.config.value !== undefined ? `<div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); margin: 4px 0;">value: ${escapeHtml(JSON.stringify(c.config.value))}</div>` : ''}
+      <div class="cell-value">${valueStr}</div>
+      ${err ? `<div class="cell-error">✗ ${escapeHtml(err)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ============== Graph ==============
+let graphCanvas, graphCtx;
+let positions = new Map();
+
+function initGraph() {
+  graphCanvas = document.getElementById('graph-canvas');
+  graphCtx = graphCanvas.getContext('2d');
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    graphCanvas.width = graphCanvas.offsetWidth * dpr;
+    graphCanvas.height = graphCanvas.offsetHeight * dpr;
+    graphCtx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+}
+
+function renderGraph() {
+  if (!graphCtx) return;
+  const w = graphCanvas.offsetWidth, h = graphCanvas.offsetHeight;
+  graphCtx.fillStyle = '#0a0a0a';
+  graphCtx.fillRect(0, 0, w, h);
+  const n = state.cells.length;
+  if (n === 0) return;
+  if (positions.size !== n) {
+    positions.clear();
+    state.cells.forEach((c, i) => {
+      const a = (i / n) * Math.PI * 2;
+      positions.set(c.id, { x: w/2 + Math.cos(a) * Math.min(w, h) * 0.3, y: h/2 + Math.sin(a) * Math.min(w, h) * 0.3, vx: 0, vy: 0 });
+    });
+  }
+  // Force
+  for (let iter = 0; iter < 20; iter++) {
+    for (const a of state.cells) {
+      const pa = positions.get(a.id);
+      for (const b of state.cells) {
+        if (a.id === b.id) continue;
+        const pb = positions.get(b.id);
+        const dx = pa.x - pb.x, dy = pa.y - pb.y;
+        const d2 = dx*dx + dy*dy + 0.1;
+        const f = 4000 / d2;
+        pa.vx += (dx / Math.sqrt(d2)) * f;
+        pa.vy += (dy / Math.sqrt(d2)) * f;
+      }
+    }
+    for (const [from, to] of state.edges) {
+      const pf = positions.get(from), pt = positions.get(to);
+      if (!pf || !pt) continue;
+      const dx = pt.x - pf.x, dy = pt.y - pf.y;
+      const d = Math.sqrt(dx*dx + dy*dy) + 0.1;
+      const f = (d - 120) * 0.02;
+      pf.vx += (dx/d) * f; pf.vy += (dy/d) * f;
+      pt.vx -= (dx/d) * f; pt.vy -= (dy/d) * f;
+    }
+    for (const c of state.cells) {
+      const p = positions.get(c.id);
+      p.x += p.vx * 0.005;
+      p.y += p.vy * 0.005;
+      p.x = Math.max(40, Math.min(w - 40, p.x));
+      p.y = Math.max(40, Math.min(h - 40, p.y));
+      p.vx *= 0.7; p.vy *= 0.7;
+    }
+  }
+  // Draw edges
+  graphCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+  graphCtx.lineWidth = 1;
+  for (const [from, to] of state.edges) {
+    const pf = positions.get(from), pt = positions.get(to);
+    if (!pf || !pt) continue;
+    graphCtx.beginPath();
+    graphCtx.moveTo(pf.x, pf.y);
+    graphCtx.lineTo(pt.x, pt.y);
+    graphCtx.stroke();
+  }
+  // Draw cells
+  const COLORS = { value: '#7ec699', formula: '#5fa8d3', program: '#bb7ec6', sensor: '#c6a87e', api: '#c67e7e', listener: '#c6c67e', router: '#7ec6c6', io: '#888' };
+  for (const c of state.cells) {
+    const p = positions.get(c.id);
+    const color = COLORS[c.kind];
+    graphCtx.beginPath();
+    graphCtx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+    graphCtx.fillStyle = color + '22';
+    graphCtx.fill();
+    graphCtx.strokeStyle = color;
+    graphCtx.lineWidth = 2;
+    graphCtx.stroke();
+    graphCtx.font = '11px JetBrains Mono';
+    graphCtx.textAlign = 'center';
+    graphCtx.textBaseline = 'top';
+    graphCtx.fillStyle = '#a0a0a0';
+    graphCtx.fillText(c.id, p.x, p.y + 22);
+  }
+}
+
+// ============== Tabs ==============
+document.querySelectorAll('.viz-tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.viz-tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  state.selectedTab = t.dataset.viz;
+  ['cells', 'graph', 'console', 'snippets'].forEach(v => {
+    document.getElementById('viz-' + v).style.display = v === state.selectedTab ? '' : 'none';
+  });
+  if (state.selectedTab === 'graph') { setTimeout(renderGraph, 0); }
+});
+
+// ============== Console input ==============
+consoleInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const cmd = consoleInput.value.trim();
+    if (!cmd) return;
+    log('info', '> ' + cmd);
+    if (cmd === 'help') log('info', 'commands: cells, edges, get <id>, set <id> <v>, run, clear, snippets');
+    else if (cmd === 'cells') state.cells.forEach(c => log('info', c.id + ' (' + c.kind + ') = ' + JSON.stringify(state.values[c.id])));
+    else if (cmd === 'edges') state.edges.forEach(([a, b]) => log('info', a + ' → ' + b));
+    else if (cmd === 'run') runSheet();
+    else if (cmd === 'clear') { consoleOut.innerHTML = ''; return; }
+    else if (cmd === 'snippets') { state.selectedTab = 'snippets'; document.querySelectorAll('.viz-tab').forEach(x => x.classList.remove('active')); document.querySelector('[data-viz="snippets"]').classList.add('active'); ['cells', 'graph', 'console', 'snippets'].forEach(v => { document.getElementById('viz-' + v).style.display = v === 'snippets' ? '' : 'none'; }); return; }
+    else if (cmd.startsWith('get ')) { const id = cmd.slice(4); log('info', id + ' = ' + JSON.stringify(state.values[id])); }
+    else if (cmd.startsWith('set ')) {
+      const m = cmd.match(/^set (\S+) (.+)$/);
+      if (m) {
+        const id = m[1], v = isNaN(m[2]) ? m[2] : Number(m[2]);
+        const c = state.cells.find(x => x.id === id);
+        if (c) { c.config.value = v; runSheet(); log('success', 'set ' + id + ' = ' + v); }
+        else log('error', 'cell not found: ' + id);
+      }
+    } else log('error', 'unknown: ' + cmd);
+    consoleInput.value = '';
+  }
+});
+
+// ============== Snippets ==============
+function renderSnippets() {
+  snippetsEl.innerHTML = SNIPPETS.map((s, i) =>
+    `<div class="snippet" data-idx="${i}">
+      <div class="snippet-title">${s.title}</div>
+      <div class="snippet-desc">${s.desc}</div>
+    </div>`).join('');
+  snippetsEl.querySelectorAll('.snippet').forEach(el => {
+    el.onclick = () => {
+      editor.value = SNIPPETS[el.dataset.idx].yaml;
+      updateGutter();
+      runSheet();
+      log('info', 'Loaded snippet: ' + SNIPPETS[el.dataset.idx].title);
+      // Switch to cells tab
+      state.selectedTab = 'cells';
+      document.querySelectorAll('.viz-tab').forEach(x => x.classList.remove('active'));
+      document.querySelector('[data-viz="cells"]').classList.add('active');
+      ['cells', 'graph', 'console', 'snippets'].forEach(v => {
+        document.getElementById('viz-' + v).style.display = v === 'cells' ? '' : 'none';
+      });
+    };
+  });
+}
+
+// ============== Buttons ==============
+document.getElementById('btn-share').onclick = runSheet;
+document.getElementById('btn-reset').onclick = () => {
+  editor.value = SNIPPETS[0].yaml;
+  updateGutter();
+  runSheet();
+};
+document.getElementById('btn-snippets').onclick = () => {
+  state.selectedTab = 'snippets';
+  document.querySelectorAll('.viz-tab').forEach(x => x.classList.remove('active'));
+  document.querySelector('[data-viz="snippets"]').classList.add('active');
+  ['cells', 'graph', 'console', 'snippets'].forEach(v => {
+    document.getElementById('viz-' + v).style.display = v === 'snippets' ? '' : 'none';
+  });
+};
+
+// ============== Boot ==============
+editor.value = SNIPPETS[3].yaml;  // budget
+updateGutter();
+renderSnippets();
+initGraph();
+runSheet();
+log('info', 'Welcome to Quilt Playground. Press Ctrl+Enter to run. Type "help" for commands.');
+</script>
+
+</body>
+</html>

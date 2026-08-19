@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Synoptic 3D — the cafeteria, in three dimensions</title>
+<meta name="description" content="The Quilt cell graph in three dimensions. Every cell is a living thing, every wire is a stream of messages, every propagation is a visible shockwave.">
+<style>
+:root { --bg: #050505; --bg-elev: #0a0a0a; --bg-elev-2: #131313; --border: rgba(255,255,255,0.1); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; height: 100%; }
+canvas { display: block; }
+#c { position: absolute; inset: 0; }
+a { color: var(--text); text-decoration: none; }
+
+/* Top toolbar */
+.toolbar { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 10; }
+.toolbar > * { pointer-events: auto; }
+.brand { display: flex; align-items: center; gap: 10px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; backdrop-filter: blur(20px); font-size: 0.85rem; }
+.brand .mark { width: 18px; height: 18px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 3px; }
+.brand .small { color: var(--text-dim); font-size: 0.75rem; }
+.nav { display: flex; gap: 4px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 999px; padding: 4px; backdrop-filter: blur(20px); }
+.nav a { padding: 4px 10px; font-size: 0.75rem; color: var(--text-dim); border-radius: 999px; }
+.nav a:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.nav a.cta { background: var(--green); color: var(--bg); }
+.nav a.cta:hover { background: var(--blue); }
+
+/* Side panel */
+.panel { position: fixed; left: 12px; top: 64px; bottom: 80px; width: 280px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 12px; backdrop-filter: blur(20px); padding: 16px; overflow-y: auto; z-index: 5; }
+.panel h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin: 16px 0 8px; }
+.panel h3:first-child { margin-top: 0; }
+.sheet-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.sheet-tab { padding: 4px 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 4px; font-size: 0.7rem; color: var(--text-dim); cursor: pointer; font-family: 'JetBrains Mono', monospace; }
+.sheet-tab:hover { color: var(--text); }
+.sheet-tab.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+.kind-filter { display: flex; flex-wrap: wrap; gap: 4px; }
+.kind { display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 999px; font-size: 0.7rem; cursor: pointer; user-select: none; }
+.kind.on { background: rgba(126,198,153,0.1); border-color: var(--green); }
+.kind .dot { width: 8px; height: 8px; border-radius: 50%; }
+.btn { display: block; width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 0.8rem; cursor: pointer; text-align: left; margin-bottom: 4px; }
+.btn:hover { background: rgba(255,255,255,0.1); }
+.btn.primary { background: var(--green); color: var(--bg); border-color: var(--green); }
+.btn.primary:hover { background: var(--blue); border-color: var(--blue); }
+
+/* Right panel — events */
+.events { position: fixed; right: 12px; top: 64px; bottom: 80px; width: 280px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 12px; backdrop-filter: blur(20px); padding: 16px; overflow: hidden; z-index: 5; display: flex; flex-direction: column; }
+.events h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 8px; }
+.event-list { flex: 1; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+.event { padding: 4px 6px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: center; }
+.event .ts { color: var(--text-faint); }
+.event .id { color: var(--green); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event .v { color: var(--text-dim); }
+
+/* Bottom HUD */
+.hud { position: fixed; bottom: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 5; }
+.hud > * { pointer-events: auto; }
+.stats { display: flex; gap: 16px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; backdrop-filter: blur(20px); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.stats .item { display: flex; align-items: center; gap: 6px; }
+.stats .k { color: var(--text-faint); }
+.stats .v { color: var(--green); font-weight: 600; }
+.controls { display: flex; gap: 4px; background: rgba(10,10,10,0.7); border: 1px solid var(--border); border-radius: 999px; padding: 4px; backdrop-filter: blur(20px); }
+.controls button { padding: 4px 10px; background: transparent; border: none; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; border-radius: 999px; font-family: inherit; }
+.controls button:hover { color: var(--text); }
+.controls button.on { background: var(--green); color: var(--bg); }
+.controls .sep { width: 1px; background: var(--border); margin: 4px 0; }
+
+/* Hover tooltip */
+#tooltip { position: fixed; pointer-events: none; background: rgba(10,10,10,0.9); border: 1px solid var(--green); border-radius: 4px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; z-index: 100; opacity: 0; transition: opacity 0.2s; }
+#tooltip .k { color: var(--text-faint); }
+#tooltip .v { color: var(--green); }
+
+/* Loading screen */
+#loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; gap: 20px; }
+#loader.gone { opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+#loader .spin { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loader .text { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dim); }
+
+/* Help */
+.help-btn { position: fixed; top: 12px; right: 12px; pointer-events: auto; z-index: 20; }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spin"></div>
+  <div class="text">Initializing 3D cell space…</div>
+</div>
+
+<canvas id="c"></canvas>
+<div id="tooltip"><div class="k" id="tt-k"></div><div class="v" id="tt-v"></div></div>
+
+<div class="toolbar">
+  <div class="brand">
+    <span class="mark"></span>
+    <span>Quilt Synoptic <span class="small">3D</span></span>
+  </div>
+  <div class="nav">
+    <a href="index.html">Home</a>
+    <a href="synoptic.html">2D</a>
+    <a href="studio.html">Studio</a>
+    <a href="ide.html">IDE</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub ↗</a>
+    <a href="quilt-live.html" class="cta">Open Live →</a>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Sheet</h3>
+  <div class="sheet-tabs" id="sheet-tabs"></div>
+
+  <h3>Cell kinds</h3>
+  <div class="kind-filter" id="kind-filter"></div>
+
+  <h3>View</h3>
+  <button class="btn" id="btn-shuffle">🎲 Shuffle positions</button>
+  <button class="btn" id="btn-recenter">⊙ Recenter camera</button>
+  <button class="btn primary" id="btn-spike">⚡ Spike all sensors</button>
+  <button class="btn" id="btn-reset">↻ Reset values</button>
+
+  <h3>Controls</h3>
+  <div style="font-size: 0.7rem; color: var(--text-faint); line-height: 1.6; font-family: 'JetBrains Mono', monospace;">
+    drag — rotate<br>
+    scroll — zoom<br>
+    right-drag — pan<br>
+    click cell — inspect<br>
+  </div>
+</div>
+
+<div class="events">
+  <h3>Live events</h3>
+  <div class="event-list" id="event-list"></div>
+</div>
+
+<div class="hud">
+  <div class="stats">
+    <div class="item"><span class="k">cells</span><span class="v" id="hud-cells">0</span></div>
+    <div class="item"><span class="k">edges</span><span class="v" id="hud-edges">0</span></div>
+    <div class="item"><span class="k">evals</span><span class="v" id="hud-evals">0</span></div>
+    <div class="item"><span class="k">events/s</span><span class="v" id="hud-eps">0</span></div>
+    <div class="item"><span class="k">fps</span><span class="v" id="hud-fps">60</span></div>
+  </div>
+  <div class="controls">
+    <button id="btn-play" class="on">⏵ play</button>
+    <button id="btn-slow">0.5×</button>
+    <button id="btn-fast">2×</button>
+    <div class="sep"></div>
+    <button id="btn-labels" class="on">labels</button>
+    <button id="btn-wires" class="on">wires</button>
+    <button id="btn-particles" class="on">particles</button>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+//  QUILT SYNOPTIC 3D — pure WebGL implementation
+// ============================================================================
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+// ================== MATH ==================
+const m4 = {
+  identity: () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
+  multiply: (a, b) => {
+    const out = new Float32Array(16);
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 4; j++) {
+        let s = 0;
+        for (let k = 0; k < 4; k++) s += a[k*4+j] * b[i*4+k];
+        out[i*4+j] = s;
+      }
+    return out;
+  },
+  perspective: (fovy, aspect, near, far) => {
+    const f = 1 / Math.tan(fovy/2);
+    const nf = 1 / (near - far);
+    return new Float32Array([
+      f/aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far+near)*nf, -1,
+      0, 0, 2*far*near*nf, 0,
+    ]);
+  },
+  lookAt: (eye, target, up) => {
+    const z = [eye[0]-target[0], eye[1]-target[1], eye[2]-target[2]];
+    let zl = Math.hypot(...z); z = z.map(c => c/zl);
+    const x = [up[1]*z[2] - up[2]*z[1], up[2]*z[0] - up[0]*z[2], up[0]*z[1] - up[1]*z[0]];
+    let xl = Math.hypot(...x); const xn = x.map(c => c/xl);
+    const y = [z[1]*xn[2] - z[2]*xn[1], z[2]*xn[0] - z[0]*xn[2], z[0]*xn[1] - z[1]*xn[0]];
+    return new Float32Array([
+      xn[0], y[0], z[0], 0,
+      xn[1], y[1], z[1], 0,
+      xn[2], y[2], z[2], 0,
+      -xn[0]*eye[0] - xn[1]*eye[1] - xn[2]*eye[2],
+      -y[0]*eye[0] - y[1]*eye[1] - y[2]*eye[2],
+      -z[0]*eye[0] - z[1]*eye[1] - z[2]*eye[2], 1,
+    ]);
+  },
+  translate: (x, y, z) => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]),
+  scale: (s) => new Float32Array([s,0,0,0, 0,s,0,0, 0,0,s,0, 0,0,0,1]),
+  rotateX: (a) => { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]); },
+  rotateY: (a) => { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); },
+};
+
+// ================== SHADERS ==================
+const SHADER = {
+  // 3D cell as a glowing icosphere
+  cellVS: `
+    attribute vec3 aPos;
+    attribute vec3 aNorm;
+    uniform mat4 uMVP;
+    uniform mat4 uModel;
+    uniform mat3 uNorm;
+    varying vec3 vNorm;
+    varying vec3 vPos;
+    void main() {
+      vec4 worldPos = uModel * vec4(aPos, 1.0);
+      vPos = worldPos.xyz;
+      vNorm = normalize(uNorm * aNorm);
+      gl_Position = uMVP * vec4(aPos, 1.0);
+    }
+  `,
+  cellFS: `
+    precision mediump float;
+    varying vec3 vNorm;
+    varying vec3 vPos;
+    uniform vec3 uColor;
+    uniform vec3 uCamPos;
+    uniform float uPulse;
+    void main() {
+      vec3 N = normalize(vNorm);
+      vec3 L = normalize(vec3(1.0, 1.0, 1.5));
+      vec3 V = normalize(uCamPos - vPos);
+      vec3 H = normalize(L + V);
+      float diff = max(dot(N, L), 0.0);
+      float spec = pow(max(dot(N, H), 0.0), 32.0);
+      float rim = pow(1.0 - max(dot(N, V), 0.0), 2.0);
+      vec3 col = uColor * (0.3 + 0.7 * diff) + spec * 0.5 + uColor * rim * 0.4;
+      col += uColor * uPulse * 1.5;
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+  wireVS: `
+    attribute vec3 aPos;
+    attribute float aT;
+    uniform mat4 uMVP;
+    varying float vT;
+    void main() {
+      vT = aT;
+      gl_Position = uMVP * vec4(aPos, 1.0);
+    }
+  `,
+  wireFS: `
+    precision mediump float;
+    varying float vT;
+    uniform vec3 uColor;
+    uniform float uTime;
+    void main() {
+      float pulse = sin(vT * 6.28 - uTime * 2.0) * 0.5 + 0.5;
+      vec3 col = uColor * (0.2 + 0.6 * pulse);
+      gl_FragColor = vec4(col, 0.5);
+    }
+  `,
+  particleVS: `
+    attribute vec3 aPos;
+    attribute float aSize;
+    attribute vec3 aColor;
+    uniform mat4 uMVP;
+    varying vec3 vColor;
+    varying float vSize;
+    void main() {
+      vColor = aColor;
+      vSize = aSize;
+      gl_Position = uMVP * vec4(aPos, 1.0);
+      gl_PointSize = aSize;
+    }
+  `,
+  particleFS: `
+    precision mediump float;
+    varying vec3 vColor;
+    void main() {
+      vec2 c = gl_PointCoord - vec2(0.5);
+      float d = length(c);
+      float a = smoothstep(0.5, 0.1, d);
+      gl_FragColor = vec4(vColor, a * 0.9);
+    }
+  `,
+  textVS: `
+    attribute vec3 aPos;
+    attribute vec2 aUV;
+    uniform mat4 uMVP;
+    varying vec2 vUV;
+    void main() {
+      vUV = aUV;
+      gl_Position = uMVP * vec4(aPos, 1.0);
+    }
+  `,
+  textFS: `
+    precision mediump float;
+    varying vec2 vUV;
+    uniform vec3 uColor;
+    uniform sampler2D uTex;
+    void main() {
+      float a = texture2D(uTex, vUV).a;
+      gl_FragColor = vec4(uColor, a);
+    }
+  `,
+};
+
+// ================== ICOSAHEDRON ==================
+const ICOSAHEDRON = (() => {
+  const t = (1 + Math.sqrt(5)) / 2;
+  const verts = [
+    -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t, 0,
+    0, -1, t, 0, 1, t, 0, -1, -t, 0, 1, -t,
+    t, 0, -1, t, 0, 1, -t, 0, -1, -t, 0, 1,
+  ];
+  const idx = [
+    0,11,5, 0,5,1, 0,1,7, 0,7,10, 0,10,11,
+    1,5,9, 5,11,4, 11,10,2, 10,7,6, 7,1,8,
+    3,9,4, 3,4,2, 3,2,6, 3,6,8, 3,8,9,
+    4,9,5, 2,4,11, 6,2,10, 8,6,7, 9,8,1,
+  ];
+  // Subdivide
+  let positions = verts.slice();
+  let indices = idx.slice();
+  for (let s = 0; s < 1; s++) {
+    const newIdx = [];
+    const midCache = {};
+    function mid(a, b) {
+      const k = Math.min(a,b) + '_' + Math.max(a,b);
+      if (midCache[k] !== undefined) return midCache[k];
+      const va = positions.slice(a*3, a*3+3);
+      const vb = positions.slice(b*3, b*3+3);
+      const m = [(va[0]+vb[0])/2, (va[1]+vb[1])/2, (va[2]+vb[2])/2];
+      const l = Math.hypot(...m);
+      const n = m.map(c => c/l);
+      positions.push(...n);
+      const idx = positions.length/3 - 1;
+      midCache[k] = idx;
+      return idx;
+    }
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = indices[i], b = indices[i+1], c = indices[i+2];
+      const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a);
+      newIdx.push(a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca);
+    }
+    indices = newIdx;
+  }
+  // Compute normals
+  const normals = new Float32Array(positions.length);
+  for (let i = 0; i < indices.length; i += 3) {
+    const a = indices[i]*3, b = indices[i+1]*3, c = indices[i+2]*3;
+    const ax=positions[a],ay=positions[a+1],az=positions[a+2];
+    const bx=positions[b],by=positions[b+1],bz=positions[b+2];
+    const cx=positions[c],cy=positions[c+1],cz=positions[c+2];
+    const ux=bx-ax, uy=by-ay, uz=bz-az;
+    const vx=cx-ax, vy=cy-ay, vz=cz-az;
+    const nx = uy*vz - uz*vy;
+    const ny = uz*vx - ux*vz;
+    const nz = ux*vy - uy*vx;
+    normals[a]+=nx; normals[a+1]+=ny; normals[a+2]+=nz;
+    normals[b]+=nx; normals[b+1]+=ny; normals[b+2]+=nz;
+    normals[c]+=nx; normals[c+1]+=ny; normals[c+2]+=nz;
+  }
+  for (let i = 0; i < normals.length; i += 3) {
+    const l = Math.hypot(normals[i], normals[i+1], normals[i+2]) || 1;
+    normals[i]/=l; normals[i+1]/=l; normals[i+2]/=l;
+  }
+  return {
+    pos: new Float32Array(positions),
+    nrm: new Float32Array(normals),
+    idx: new Uint16Array(indices),
+  };
+})();
+
+// ================== TEXTURE ATLAS for labels ==================
+function buildLabelTexture(text) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  ctx.fillRect(0, 0, 256, 64);
+  ctx.font = 'bold 24px JetBrains Mono, monospace';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 128, 32);
+  return c;
+}
+
+// ================== ENGINE STATE ==================
+const COLORS = {
+  value:    [0.494, 0.776, 0.600], // green
+  formula:  [0.373, 0.659, 0.827], // blue
+  program:  [0.733, 0.494, 0.776], // purple
+  sensor:   [0.776, 0.659, 0.494], // tan
+  api:      [0.776, 0.494, 0.494], // red
+  listener: [0.776, 0.776, 0.494], // yellow
+  router:   [0.494, 0.776, 0.776], // cyan
+  io:       [0.533, 0.533, 0.533], // gray
+};
+
+const SHEETS = {
+  weather: {
+    cells: [
+      { id: 'sensor.temp', kind: 'sensor', v: 22 },
+      { id: 'sensor.humid', kind: 'sensor', v: 50 },
+      { id: 'sensor.press', kind: 'sensor', v: 1013 },
+      { id: 'fahrenheit', kind: 'formula', v: 71.6, expr: 'temp*1.8+32' },
+      { id: 'heat_index', kind: 'formula', v: 24, expr: 'temp+humid*0.05' },
+      { id: 'comfort', kind: 'formula', v: 'cool', expr: 'comfort' },
+      { id: 'fan.speed', kind: 'formula', v: 0, expr: 'fan' },
+      { id: 'led.color', kind: 'io', v: 'green' },
+      { id: 'alert', kind: 'listener', v: false },
+    ],
+    edges: [
+      ['sensor.temp', 'fahrenheit'],
+      ['sensor.temp', 'heat_index'],
+      ['sensor.humid', 'heat_index'],
+      ['heat_index', 'comfort'],
+      ['heat_index', 'fan.speed'],
+      ['heat_index', 'alert'],
+      ['comfort', 'led.color'],
+      ['fan.speed', 'led.color'],
+    ],
+  },
+  budget: {
+    cells: [
+      { id: 'budget.total', kind: 'value', v: 5000 },
+      { id: 'spend.rent', kind: 'value', v: 1800 },
+      { id: 'spend.food', kind: 'value', v: 600 },
+      { id: 'spend.transit', kind: 'value', v: 120 },
+      { id: 'spend.fun', kind: 'value', v: 200 },
+      { id: 'spend.utilities', kind: 'value', v: 150 },
+      { id: 'spent', kind: 'formula', v: 2870 },
+      { id: 'remaining', kind: 'formula', v: 2130 },
+      { id: 'percent', kind: 'formula', v: 0.574 },
+      { id: 'status', kind: 'formula', v: 'ok' },
+      { id: 'alert', kind: 'listener', v: false },
+    ],
+    edges: [
+      ['spend.rent', 'spent'],
+      ['spend.food', 'spent'],
+      ['spend.transit', 'spent'],
+      ['spend.fun', 'spent'],
+      ['spend.utilities', 'spent'],
+      ['spent', 'remaining'],
+      ['budget.total', 'remaining'],
+      ['spent', 'percent'],
+      ['budget.total', 'percent'],
+      ['percent', 'status'],
+      ['status', 'alert'],
+    ],
+  },
+  agent: {
+    cells: [
+      { id: 'input.task', kind: 'value', v: 'Research' },
+      { id: 'memory.short', kind: 'value', v: [] },
+      { id: 'memory.long', kind: 'value', v: [] },
+      { id: 'tool.search', kind: 'api', v: null },
+      { id: 'tool.llm', kind: 'api', v: null },
+      { id: 'tool.calc', kind: 'api', v: null },
+      { id: 'reasoning.prompt', kind: 'formula', v: '' },
+      { id: 'reasoning.thought', kind: 'program', v: null },
+      { id: 'output', kind: 'formula', v: '' },
+    ],
+    edges: [
+      ['input.task', 'reasoning.prompt'],
+      ['memory.short', 'reasoning.prompt'],
+      ['memory.long', 'reasoning.prompt'],
+      ['reasoning.prompt', 'reasoning.thought'],
+      ['tool.llm', 'reasoning.thought'],
+      ['tool.search', 'reasoning.thought'],
+      ['reasoning.thought', 'output'],
+    ],
+  },
+  home: {
+    cells: [
+      { id: 'sensor.front_door', kind: 'sensor', v: false },
+      { id: 'sensor.motion', kind: 'sensor', v: false },
+      { id: 'sensor.living_temp', kind: 'sensor', v: 22 },
+      { id: 'sensor.outside_temp', kind: 'sensor', v: 18 },
+      { id: 'sensor.sunlight', kind: 'sensor', v: 500 },
+      { id: 'lights.living', kind: 'io', v: false },
+      { id: 'lights.kitchen', kind: 'io', v: false },
+      { id: 'hvac.heat', kind: 'io', v: false },
+      { id: 'hvac.cool', kind: 'io', v: false },
+      { id: 'hvac.duty', kind: 'formula', v: 0 },
+      { id: 'hvac.mode', kind: 'formula', v: 'off' },
+      { id: 'security.alert', kind: 'listener', v: false },
+      { id: 'energy.total', kind: 'formula', v: 0 },
+    ],
+    edges: [
+      ['sensor.front_door', 'security.alert'],
+      ['sensor.motion', 'security.alert'],
+      ['sensor.motion', 'lights.living'],
+      ['sensor.sunlight', 'lights.living'],
+      ['sensor.living_temp', 'hvac.duty'],
+      ['sensor.outside_temp', 'hvac.duty'],
+      ['hvac.duty', 'hvac.heat'],
+      ['hvac.duty', 'hvac.cool'],
+      ['sensor.living_temp', 'hvac.mode'],
+      ['hvac.heat', 'energy.total'],
+      ['hvac.cool', 'energy.total'],
+      ['lights.living', 'energy.total'],
+      ['lights.kitchen', 'energy.total'],
+    ],
+  },
+};
+
+let state = {
+  sheet: 'weather',
+  cells: [],
+  edges: [],
+  positions: [],
+  velocities: [],
+  basePositions: [],
+  cellKinds: [],
+  cellValues: [],
+  pulses: [],
+  selectedId: null,
+  hoverId: null,
+  playing: true,
+  speed: 1,
+  showLabels: true,
+  showWires: true,
+  showParticles: true,
+  visibleKinds: new Set(['value', 'formula', 'program', 'sensor', 'api', 'listener', 'router', 'io']),
+  evals: 0,
+  events: [],
+  camera: { rotX: 0.4, rotY: 0.3, dist: 30, target: [0, 0, 0] },
+  mouse: { down: false, lastX: 0, lastY: 0, btn: 0 },
+  particles: [],
+};
+
+// ================== GL SETUP ==================
+const canvas = $('#c');
+const gl = canvas.getContext('webgl', { antialias: true, alpha: false });
+if (!gl) { $('#loader .text').textContent = 'WebGL not supported'; }
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function compileShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error('Shader error:', gl.getShaderInfoLog(s));
+    return null;
+  }
+  return s;
+}
+function makeProgram(vs, fs) {
+  const v = compileShader(gl.VERTEX_SHADER, vs);
+  const f = compileShader(gl.FRAGMENT_SHADER, fs);
+  const p = gl.createProgram();
+  gl.attachShader(p, v); gl.attachShader(p, f);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    console.error('Link error:', gl.getProgramInfoLog(p));
+  }
+  return p;
+}
+
+const cellProg = makeProgram(SHADER.cellVS, SHADER.cellFS);
+const wireProg = makeProgram(SHADER.wireVS, SHADER.wireFS);
+const particleProg = makeProgram(SHADER.particleVS, SHADER.particleFS);
+
+// ================== BUFFERS ==================
+// Cells
+const cellVao = gl.createVertexArray();
+const cellPosBuf = gl.createBuffer();
+gl.bindVertexArray(cellVao);
+gl.bindBuffer(gl.ARRAY_BUFFER, cellPosBuf);
+gl.bufferData(gl.ARRAY_BUFFER, ICOSAHEDRON.pos.byteLength * 4, gl.DYNAMIC_DRAW);
+const cellPosLoc = gl.getAttribLocation(cellProg, 'aPos');
+gl.enableVertexAttribArray(cellPosLoc);
+gl.vertexAttribPointer(cellPosLoc, 3, gl.FLOAT, false, 0, 0);
+
+const cellNrmBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, cellNrmBuf);
+gl.bufferData(gl.ARRAY_BUFFER, ICOSAHEDRON.nrm, gl.STATIC_DRAW);
+const cellNrmLoc = gl.getAttribLocation(cellProg, 'aNorm');
+gl.enableVertexAttribArray(cellNrmLoc);
+gl.vertexAttribPointer(cellNrmLoc, 3, gl.FLOAT, false, 0, 0);
+
+const cellIbo = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cellIbo);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ICOSAHEDRON.idx, gl.STATIC_DRAW);
+
+const cellMVP = gl.getUniformLocation(cellProg, 'uMVP');
+const cellModel = gl.getUniformLocation(cellProg, 'uModel');
+const cellNorm = gl.getUniformLocation(cellProg, 'uNorm');
+const cellColor = gl.getUniformLocation(cellProg, 'uColor');
+const cellCam = gl.getUniformLocation(cellProg, 'uCamPos');
+const cellPulse = gl.getUniformLocation(cellProg, 'uPulse');
+
+// Wires
+const wireVao = gl.createVertexArray();
+const wirePosBuf = gl.createBuffer();
+const wireTLoc = gl.getAttribLocation(wireProg, 'aT');
+gl.bindVertexArray(wireVao);
+gl.bindBuffer(gl.ARRAY_BUFFER, wirePosBuf);
+const wirePosLoc = gl.getAttribLocation(wireProg, 'aPos');
+gl.enableVertexAttribArray(wirePosLoc);
+gl.vertexAttribPointer(wirePosLoc, 3, gl.FLOAT, false, 16, 0);
+gl.enableVertexAttribArray(wireTLoc);
+gl.vertexAttribPointer(wireTLoc, 1, gl.FLOAT, false, 16, 12);
+const wireColor = gl.getUniformLocation(wireProg, 'uColor');
+const wireMVP = gl.getUniformLocation(wireProg, 'uMVP');
+const wireTime = gl.getUniformLocation(wireProg, 'uTime');
+
+// Particles
+const partVao = gl.createVertexArray();
+const partBuf = gl.createBuffer();
+gl.bindVertexArray(partVao);
+const partPosLoc = gl.getAttribLocation(particleProg, 'aPos');
+const partSizeLoc = gl.getAttribLocation(particleProg, 'aSize');
+const partColorLoc = gl.getAttribLocation(particleProg, 'aColor');
+gl.enableVertexAttribArray(partPosLoc);
+gl.vertexAttribPointer(partPosLoc, 3, gl.FLOAT, false, 28, 0);
+gl.enableVertexAttribArray(partSizeLoc);
+gl.vertexAttribPointer(partSizeLoc, 1, gl.FLOAT, false, 28, 12);
+gl.enableVertexAttribArray(partColorLoc);
+gl.vertexAttribPointer(partColorLoc, 3, gl.FLOAT, false, 28, 16);
+
+const partMVP = gl.getUniformLocation(particleProg, 'uMVP');
+
+// ================== SHEET LOADING ==================
+function loadSheet(name) {
+  const sheet = SHEETS[name];
+  state.cells = sheet.cells;
+  state.edges = sheet.edges;
+  state.cellKinds = sheet.cells.map(c => c.kind);
+  state.cellValues = sheet.cells.map(c => c.v);
+  state.pulses = new Array(sheet.cells.length).fill(0);
+
+  // Compute 3D positions — force-directed initial
+  const n = sheet.cells.length;
+  state.positions = new Array(n);
+  state.velocities = new Array(n);
+  state.basePositions = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const r = 5 + Math.random() * 5;
+    const y = (Math.random() - 0.5) * 10;
+    state.positions[i] = [Math.cos(a) * r, y, Math.sin(a) * r];
+    state.velocities[i] = [0, 0, 0];
+    state.basePositions[i] = state.positions[i].slice();
+  }
+  // Run a few iterations of force layout
+  for (let iter = 0; iter < 60; iter++) {
+    for (let i = 0; i < n; i++) {
+      state.velocities[i] = [0, 0, 0];
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        const dx = state.positions[i][0] - state.positions[j][0];
+        const dy = state.positions[i][1] - state.positions[j][1];
+        const dz = state.positions[i][2] - state.positions[j][2];
+        const d2 = dx*dx + dy*dy + dz*dz + 0.1;
+        const f = 200 / d2;
+        state.velocities[i][0] += (dx / Math.sqrt(d2)) * f;
+        state.velocities[i][1] += (dy / Math.sqrt(d2)) * f;
+        state.velocities[i][2] += (dz / Math.sqrt(d2)) * f;
+      }
+    }
+    for (const [from, to] of state.edges) {
+      const fi = state.cells.findIndex(c => c.id === from);
+      const ti = state.cells.findIndex(c => c.id === to);
+      if (fi < 0 || ti < 0) continue;
+      const dx = state.positions[ti][0] - state.positions[fi][0];
+      const dy = state.positions[ti][1] - state.positions[fi][1];
+      const dz = state.positions[ti][2] - state.positions[fi][2];
+      const d = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.1;
+      const f = (d - 8) * 0.1;
+      state.velocities[fi][0] += (dx/d) * f;
+      state.velocities[fi][1] += (dy/d) * f;
+      state.velocities[fi][2] += (dz/d) * f;
+      state.velocities[ti][0] -= (dx/d) * f;
+      state.velocities[ti][1] -= (dy/d) * f;
+      state.velocities[ti][2] -= (dz/d) * f;
+    }
+    for (let i = 0; i < n; i++) {
+      state.positions[i][0] += state.velocities[i][0] * 0.02;
+      state.positions[i][1] += state.velocities[i][1] * 0.02;
+      state.positions[i][2] += state.velocities[i][2] * 0.02;
+    }
+  }
+  // Update wire buffer
+  rebuildWires();
+  // Update label textures
+  rebuildLabels();
+  // Update HUD
+  $('#hud-cells').textContent = n;
+  $('#hud-edges').textContent = state.edges.length;
+  // Update sheets
+  $$('#sheet-tabs .sheet-tab').forEach(t => t.classList.toggle('active', t.dataset.sheet === name));
+}
+
+// ================== WIRES ==================
+let wireData = [];
+function rebuildWires() {
+  wireData = [];
+  for (const [from, to] of state.edges) {
+    const fi = state.cells.findIndex(c => c.id === from);
+    const ti = state.cells.findIndex(c => c.id === to);
+    if (fi < 0 || ti < 0) continue;
+    const f = state.positions[fi], t = state.positions[ti];
+    const N = 24;
+    for (let i = 0; i < N; i++) {
+      const t1 = i / N, t2 = (i + 1) / N;
+      const p1 = bezier(f, t, t1, [0, 3, 0]);
+      const p2 = bezier(f, t, t2, [0, 3, 0]);
+      wireData.push(...p1, t1);
+      wireData.push(...p2, t2);
+    }
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, wirePosBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(wireData), gl.DYNAMIC_DRAW);
+}
+function bezier(a, b, t, ctrl) {
+  const x = (1-t)*(1-t)*a[0] + 2*(1-t)*t*ctrl[0] + t*t*b[0];
+  const y = (1-t)*(1-t)*a[1] + 2*(1-t)*t*ctrl[1] + t*t*b[1];
+  const z = (1-t)*(1-t)*a[2] + 2*(1-t)*t*ctrl[2] + t*t*b[2];
+  return [x, y, z];
+}
+
+// ================== LABELS ==================
+let labelTextures = [];
+function rebuildLabels() {
+  labelTextures = state.cells.map(c => {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const cnv = buildLabelTexture(c.id);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cnv);
+    return tex;
+  });
+}
+
+// ================== KIND FILTER ==================
+function rebuildKindFilter() {
+  const el = $('#kind-filter');
+  el.innerHTML = '';
+  for (const [k, c] of Object.entries(COLORS)) {
+    const div = document.createElement('div');
+    div.className = 'kind' + (state.visibleKinds.has(k) ? ' on' : '');
+    div.innerHTML = `<span class="dot" style="background: rgb(${c.map(x => x*255).join(',')})"></span><span>${k}</span>`;
+    div.onclick = () => {
+      if (state.visibleKinds.has(k)) state.visibleKinds.delete(k);
+      else state.visibleKinds.add(k);
+      rebuildKindFilter();
+    };
+    el.appendChild(div);
+  }
+}
+
+function rebuildSheets() {
+  const el = $('#sheet-tabs');
+  el.innerHTML = '';
+  for (const k of Object.keys(SHEETS)) {
+    const b = document.createElement('button');
+    b.className = 'sheet-tab' + (k === state.sheet ? ' active' : '');
+    b.textContent = k;
+    b.dataset.sheet = k;
+    b.onclick = () => { state.sheet = k; loadSheet(k); rebuildSheets(); };
+    el.appendChild(b);
+  }
+}
+
+// ================== EVENTS ==================
+function logEvent(id, value) {
+  const e = document.createElement('div');
+  e.className = 'event';
+  const t = new Date().toLocaleTimeString();
+  const v = typeof value === 'number' ? value.toFixed(2) : JSON.stringify(value);
+  e.innerHTML = `<span class="ts">${t.slice(0,8)}</span><span class="id">${id}</span><span class="v">${v}</span>`;
+  const list = $('#event-list');
+  list.insertBefore(e, list.firstChild);
+  if (list.children.length > 30) list.removeChild(list.lastChild);
+  state.events.push({ id, value, t: Date.now() });
+}
+
+function spike() {
+  for (let i = 0; i < state.cells.length; i++) {
+    const c = state.cells[i];
+    if (c.kind === 'sensor') {
+      const oldV = state.cellValues[i];
+      const newV = (typeof oldV === 'number') ? oldV + (Math.random() - 0.5) * 20 : oldV;
+      state.cellValues[i] = newV;
+      c.v = newV;
+      state.pulses[i] = 1.0;
+      logEvent(c.id, newV);
+      // Propagate
+      propagateFrom(c.id);
+    }
+  }
+  state.evals++;
+  $('#hud-evals').textContent = state.evals;
+}
+
+function propagateFrom(cellId) {
+  const idx = state.cells.findIndex(c => c.id === cellId);
+  if (idx < 0) return;
+  for (const [from, to] of state.edges) {
+    if (from === cellId) {
+      // Spawn particle
+      state.particles.push({
+        from: state.positions[idx].slice(),
+        to: state.positions[state.cells.findIndex(c => c.id === to)].slice(),
+        ctrl: [0, 3, 0],
+        t: 0,
+        color: COLORS[state.cells.find(c => c.id === to).kind],
+        size: 8,
+      });
+      // Set pulse on target
+      const ti = state.cells.findIndex(c => c.id === to);
+      state.pulses[ti] = 1.0;
+      // Recurse
+      setTimeout(() => propagateFrom(to), 100);
+    }
+  }
+}
+
+function shufflePositions() {
+  for (let i = 0; i < state.positions.length; i++) {
+    state.basePositions[i] = [
+      (Math.random() - 0.5) * 16,
+      (Math.random() - 0.5) * 10,
+      (Math.random() - 0.5) * 16,
+    ];
+  }
+}
+
+function resetValues() {
+  const sheet = SHEETS[state.sheet];
+  for (let i = 0; i < sheet.cells.length; i++) {
+    state.cellValues[i] = sheet.cells[i].v;
+  }
+  loadSheet(state.sheet);
+}
+
+// ================== INTERACTION ==================
+canvas.addEventListener('mousedown', (e) => {
+  state.mouse.down = true;
+  state.mouse.lastX = e.clientX;
+  state.mouse.lastY = e.clientY;
+  state.mouse.btn = e.button;
+});
+canvas.addEventListener('mousemove', (e) => {
+  const dx = e.clientX - state.mouse.lastX;
+  const dy = e.clientY - state.mouse.lastY;
+  state.mouse.lastX = e.clientX;
+  state.mouse.lastY = e.clientY;
+  if (state.mouse.down) {
+    if (state.mouse.btn === 0) {
+      state.camera.rotY += dx * 0.01;
+      state.camera.rotX += dy * 0.01;
+    } else if (state.mouse.btn === 2) {
+      state.camera.target[0] -= dx * 0.05;
+      state.camera.target[1] += dy * 0.05;
+    }
+  }
+  // Hover detection
+  updateHover(e.clientX, e.clientY);
+});
+canvas.addEventListener('mouseup', () => state.mouse.down = false);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  state.camera.dist += e.deltaY * 0.05;
+  state.camera.dist = Math.max(10, Math.min(80, state.camera.dist));
+}, { passive: false });
+canvas.addEventListener('click', (e) => {
+  // Pick
+  const x = (e.clientX / window.innerWidth) * 2 - 1;
+  const y = -(e.clientY / window.innerHeight) * 2 + 1;
+  // For simplicity, find nearest cell in screen space
+  let minD = Infinity, minI = -1;
+  for (let i = 0; i < state.cells.length; i++) {
+    if (!state.visibleKinds.has(state.cells[i].kind)) continue;
+    const p = projectToScreen(state.positions[i]);
+    const dx = p[0] - x, dy = p[1] - y;
+    const d = dx*dx + dy*dy;
+    if (d < minD) { minD = d; minI = i; }
+  }
+  if (minD < 0.01) {
+    state.selectedId = state.cells[minI].id;
+    logEvent('SELECTED', state.cells[minI].id);
+  } else {
+    state.selectedId = null;
+  }
+});
+
+const tooltip = $('#tooltip');
+const ttK = $('#tt-k'), ttV = $('#tt-v');
+function updateHover(x, y) {
+  const sx = (x / window.innerWidth) * 2 - 1;
+  const sy = -(y / window.innerHeight) * 2 + 1;
+  let minD = Infinity, minI = -1;
+  for (let i = 0; i < state.cells.length; i++) {
+    if (!state.visibleKinds.has(state.cells[i].kind)) continue;
+    const p = projectToScreen(state.positions[i]);
+    const dx = p[0] - sx, dy = p[1] - sy;
+    const d = dx*dx + dy*dy;
+    if (d < minD) { minD = d; minI = i; }
+  }
+  if (minD < 0.005 && minI >= 0) {
+    state.hoverId = state.cells[minI].id;
+    const c = state.cells[minI];
+    ttK.textContent = c.id;
+    ttV.textContent = c.kind + ' · ' + JSON.stringify(state.cellValues[minI]);
+    tooltip.style.left = (x + 14) + 'px';
+    tooltip.style.top = (y + 14) + 'px';
+    tooltip.style.opacity = 1;
+    canvas.style.cursor = 'pointer';
+  } else {
+    state.hoverId = null;
+    tooltip.style.opacity = 0;
+    canvas.style.cursor = state.mouse.down ? 'grabbing' : 'grab';
+  }
+}
+
+// ================== RENDER ==================
+let cameraPos = [0, 0, 30];
+function updateCamera() {
+  const cy = state.camera.rotY;
+  const cx = state.camera.rotX;
+  cameraPos = [
+    state.camera.target[0] + Math.sin(cy) * Math.cos(cx) * state.camera.dist,
+    state.camera.target[1] + Math.sin(cx) * state.camera.dist,
+    state.camera.target[2] + Math.cos(cy) * Math.cos(cx) * state.camera.dist,
+  ];
+}
+
+function projectToScreen(p) {
+  updateCamera();
+  const view = m4.lookAt(cameraPos, state.camera.target, [0, 1, 0]);
+  const proj = m4.perspective(0.8, canvas.width/canvas.height, 0.1, 200);
+  const mvp = m4.multiply(proj, view);
+  const out = [p[0], p[1], p[2], 1];
+  // Apply mvp
+  const x = mvp[0]*out[0] + mvp[4]*out[1] + mvp[8]*out[2] + mvp[12];
+  const y = mvp[1]*out[0] + mvp[5]*out[1] + mvp[9]*out[2] + mvp[13];
+  const w = mvp[3]*out[0] + mvp[7]*out[1] + mvp[11]*out[2] + mvp[15];
+  return [x/w, y/w, (mvp[2]*out[0] + mvp[6]*out[1] + mvp[10]*out[2] + mvp[14])/w];
+}
+
+let frameCount = 0;
+let lastFpsTime = performance.now();
+let epsCount = 0;
+let lastEpsTime = performance.now();
+
+function render(now) {
+  if (!state.playing && state.particles.length === 0) {
+    requestAnimationFrame(render);
+    return;
+  }
+  const dt = Math.min(0.05, (now - lastTime) / 1000) * state.speed;
+  lastTime = now;
+
+  // FPS
+  frameCount++;
+  if (now - lastFpsTime > 500) {
+    $('#hud-fps').textContent = (frameCount * 1000 / (now - lastFpsTime)).toFixed(0);
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+  if (now - lastEpsTime > 1000) {
+    $('#hud-eps').textContent = epsCount;
+    epsCount = 0;
+    lastEpsTime = now;
+  }
+
+  // Update particles
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.t += dt * 1.5;
+    if (p.t > 1) {
+      state.particles.splice(i, 1);
+      epsCount++;
+    }
+  }
+
+  // Decay pulses
+  for (let i = 0; i < state.pulses.length; i++) {
+    state.pulses[i] = Math.max(0, state.pulses[i] - dt * 1.5);
+  }
+
+  // Auto shuffle occasionally
+  if (state.playing && Math.random() < 0.005) {
+    const idx = Math.floor(Math.random() * state.cells.length);
+    const c = state.cells[idx];
+    if (c.kind === 'sensor' || c.kind === 'value') {
+      if (typeof c.v === 'number') {
+        const nv = c.v + (Math.random() - 0.5) * 5;
+        state.cellValues[idx] = nv;
+        c.v = nv;
+        state.pulses[idx] = 1.0;
+        logEvent(c.id, nv);
+        propagateFrom(c.id);
+        state.evals++;
+        $('#hud-evals').textContent = state.evals;
+      }
+    }
+  }
+
+  // Smoothly interpolate positions
+  for (let i = 0; i < state.positions.length; i++) {
+    state.positions[i][0] += (state.basePositions[i][0] - state.positions[i][0]) * 0.05;
+    state.positions[i][1] += (state.basePositions[i][1] - state.positions[i][1]) * 0.05 + Math.sin(now*0.001 + i) * 0.01;
+    state.positions[i][2] += (state.basePositions[i][2] - state.positions[i][2]) * 0.05;
+  }
+
+  rebuildWires();
+
+  // ============= DRAW =============
+  gl.clearColor(0.02, 0.02, 0.02, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  updateCamera();
+  const view = m4.lookAt(cameraPos, state.camera.target, [0, 1, 0]);
+  const proj = m4.perspective(0.8, canvas.width/canvas.height, 0.1, 200);
+  const mvp = m4.multiply(proj, view);
+
+  // Wires
+  if (state.showWires) {
+    gl.useProgram(wireProg);
+    gl.uniformMatrix4fv(wireMVP, false, mvp);
+    gl.uniform1f(wireTime, now * 0.001);
+    gl.uniform3f(wireColor, 0.4, 0.4, 0.4);
+    gl.bindVertexArray(wireVao);
+    gl.drawArrays(gl.LINES, 0, wireData.length / 4);
+  }
+
+  // Cells
+  gl.useProgram(cellProg);
+  gl.uniformMatrix4fv(cellMVP, false, mvp);
+  gl.uniform3f(cellCam, cameraPos[0], cameraPos[1], cameraPos[2]);
+
+  for (let i = 0; i < state.cells.length; i++) {
+    if (!state.visibleKinds.has(state.cellKinds[i])) continue;
+    const c = state.cells[i];
+    const p = state.positions[i];
+    const color = COLORS[c.kind];
+    const isSelected = state.selectedId === c.id;
+    const isHover = state.hoverId === c.id;
+    const r = (isSelected ? 1.4 : isHover ? 1.2 : 1.0) + state.pulses[i] * 0.5;
+
+    const model = m4.multiply(m4.translate(p[0], p[1], p[2]), m4.scale(r));
+    gl.uniformMatrix4fv(cellModel, false, model);
+    gl.uniformMatrix3fv(cellNorm, false, new Float32Array([1,0,0, 0,1,0, 0,0,1]));
+    gl.uniform3f(cellColor, color[0], color[1], color[2]);
+    gl.uniform1f(cellPulse, state.pulses[i]);
+    gl.bindVertexArray(cellVao);
+    gl.drawElements(gl.TRIANGLES, ICOSAHEDRON.idx.length, gl.UNSIGNED_SHORT, 0);
+  }
+
+  // Particles
+  if (state.showParticles && state.particles.length > 0) {
+    gl.useProgram(particleProg);
+    gl.uniformMatrix4fv(partMVP, false, mvp);
+    const data = new Float32Array(state.particles.length * 7);
+    for (let i = 0; i < state.particles.length; i++) {
+      const p = state.particles[i];
+      const pos = bezier(p.from, p.to, p.t, p.ctrl);
+      data[i*7] = pos[0];
+      data[i*7+1] = pos[1];
+      data[i*7+2] = pos[2];
+      data[i*7+3] = 8 + Math.sin(p.t * 10) * 4;
+      data[i*7+4] = p.color[0];
+      data[i*7+5] = p.color[1];
+      data[i*7+6] = p.color[2];
+    }
+    gl.bindVertexArray(partVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, partBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    gl.drawArrays(gl.POINTS, 0, state.particles.length);
+  }
+
+  requestAnimationFrame(render);
+}
+let lastTime = performance.now();
+
+// ================== UI ==================
+$('#btn-shuffle').onclick = shufflePositions;
+$('#btn-recenter').onclick = () => { state.camera.rotX = 0.4; state.camera.rotY = 0.3; state.camera.dist = 30; state.camera.target = [0,0,0]; };
+$('#btn-spike').onclick = spike;
+$('#btn-reset').onclick = resetValues;
+$('#btn-play').onclick = (e) => { state.playing = !state.playing; e.target.classList.toggle('on', state.playing); e.target.textContent = state.playing ? '⏸ pause' : '⏵ play'; };
+$('#btn-slow').onclick = () => { state.speed = 0.5; };
+$('#btn-fast').onclick = () => { state.speed = 2; };
+$('#btn-labels').onclick = (e) => { state.showLabels = !state.showLabels; e.target.classList.toggle('on', state.showLabels); };
+$('#btn-wires').onclick = (e) => { state.showWires = !state.showWires; e.target.classList.toggle('on', state.showWires); };
+$('#btn-particles').onclick = (e) => { state.showParticles = !state.showParticles; e.target.classList.toggle('on', state.showParticles); };
+
+// ================== BOOT ==================
+rebuildSheets();
+rebuildKindFilter();
+loadSheet('weather');
+$('#loader').classList.add('gone');
+requestAnimationFrame(render);
+</script>
+
+</body>
+</html>

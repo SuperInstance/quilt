@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt vs the world — honest comparisons</title>
+<meta name="description" content="How Quilt compares to spreadsheets, reactive frameworks, databases, and config languages. An honest look at where Quilt wins, where it loses, and where it's the only option.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-card-hover: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --green-bg: rgba(126,198,153,0.1); --red-bg: rgba(198,126,126,0.1); --yellow-bg: rgba(198,198,126,0.1); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Nav */
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+section { margin-bottom: 60px; }
+section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+section .desc { color: var(--text-dim); margin-bottom: 24px; }
+
+.compare-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+.compare-block h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+.compare-block .tagline { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+
+.row-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin: 16px 0; }
+.row-grid > div { background: var(--bg); padding: 12px 16px; }
+.row-grid .label { background: var(--bg-elev, var(--bg-card)); font-weight: 600; color: var(--text-dim); font-size: 0.85rem; }
+.row-grid .quilt { background: var(--green-bg); }
+.row-grid .other { background: var(--bg-card); }
+.row-grid .other-name { font-size: 0.85rem; color: var(--text-faint); }
+.row-grid .verdict { padding: 12px 16px; background: var(--bg-elev, var(--bg-card)); }
+
+.verdict-grid { display: grid; grid-template-columns: 100px 1fr 80px; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); align-items: center; }
+.verdict-grid:last-child { border-bottom: none; }
+.verdict-grid .verdict-label { font-weight: 600; color: var(--text); }
+.verdict-grid .verdict-other { color: var(--text-dim); font-size: 0.9rem; }
+.verdict-grid .verdict-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; font-family: 'JetBrains Mono', monospace; text-align: center; }
+.verdict-tag.win { background: var(--green-bg); color: var(--green); }
+.verdict-tag.lose { background: var(--red-bg); color: var(--red); }
+.verdict-tag.draw { background: var(--yellow-bg); color: var(--yellow); }
+.verdict-tag.unique { background: rgba(187,126,198,0.15); color: var(--purple); }
+
+pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 12px 0; }
+code.inline { background: var(--bg-card); padding: 1px 6px; border-radius: 3px; font-size: 0.85em; }
+
+.take { padding: 12px 16px; background: var(--green-bg); border: 1px solid var(--green); border-radius: 6px; font-size: 0.9rem; margin: 12px 0; }
+.take strong { color: var(--green); }
+.take.lose { background: var(--red-bg); border-color: var(--red); }
+.take.lose strong { color: var(--red); }
+.take.draw { background: var(--yellow-bg); border-color: var(--yellow); }
+.take.draw strong { color: var(--yellow); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="showcase.html">Showcase</a>
+    <a href="studio.html">Studio</a>
+    <a href="ide.html">IDE</a>
+    <a href="synoptic.html">Synoptic</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt vs <span class="grad-text">the world</span></h1>
+  <p class="lead">An honest look at where Quilt wins, where it loses, and where it's the only option. With code, not slogans.</p>
+</div>
+
+<main>
+
+  <!-- ============== SPREADSHEETS ============== -->
+  <section id="spreadsheets">
+    <h2>vs Spreadsheets (Excel, Google Sheets)</h2>
+    <p class="desc">The closest cousin. Spreadsheets made reactive programming visual. Quilt is what spreadsheets would be if they were designed today.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <p class="tagline">A spreadsheet is a grid. Quilt is a graph.</p>
+      <pre>Excel:                Quilt:
+A1 = 10              - id: budget.total
+A2 = 20                kind: value
+A3 = A1 + A2           value: 5000
+                     - id: spent
+                       kind: formula
+                       expr: "rent + food + transit"</pre>
+      <p>The grid is a constraint of the UI, not the model. Quilt's cells have stable addresses (<code class="inline">budget.savings</code>) that don't change when you insert a row.</p>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Reactivity</div>
+      <div class="verdict-other">Spreadsheets: cell formulas. Quilt: same, plus listeners, programs, and async.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Types</div>
+      <div class="verdict-other">Spreadsheets: implicit coercion. Quilt: explicit, with kinds (value, formula, program, sensor…).</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Addressability</div>
+      <div class="verdict-other">Spreadsheets: row+col, fragile. Quilt: stable names, hierarchical.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Visual editor</div>
+      <div class="verdict-other">Spreadsheets: built-in, mature. Quilt: Quilt Studio (drag-drop), but younger.</div>
+      <div class="verdict-tag lose">Sheets win</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Audience</div>
+      <div class="verdict-other">Spreadsheets: anyone. Quilt: developers (for now).</div>
+      <div class="verdict-tag lose">Sheets win</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">MCP</div>
+      <div class="verdict-other">Spreadsheets: no. Quilt: every cell is an MCP tool.</div>
+      <div class="verdict-tag unique">Quilt unique</div>
+    </div>
+  </section>
+
+  <!-- ============== REACTIVE FRAMEWORKS ============== -->
+  <section id="react">
+    <h2>vs Reactive frameworks (React, Vue, Svelte)</h2>
+    <p class="desc">These frameworks made reactivity mainstream. Quilt is a different shape of the same idea — a runtime, not a UI library.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>React/Vue:              Quilt:
+function App() {        - id: count
+  const [n, setN] =      kind: value
+    useState(0)          value: 0
+  return (              - id: doubled
+    &lt;div&gt;{n * 2}&lt;/div&gt;     kind: formula
+  )                       expr: "count * 2"
+}</pre>
+      <p>UI libraries are component graphs. Quilt is a cell graph. Both reactive, but Quilt is data-first, not DOM-first. A Quilt sheet has no UI; you give it one.</p>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Reactivity unit</div>
+      <div class="verdict-other">React: component. Vue/Svelte: ref. Quilt: cell (named, addressable, inspectable).</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Visual feedback</div>
+      <div class="verdict-other">UI libs: immediate (it's the UI). Quilt: deferred (you bring the UI).</div>
+      <div class="verdict-tag win">UI libs win</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">MCP / agent use</div>
+      <div class="verdict-other">UI libs: awkward. Quilt: every cell is an MCP tool, naturally.</div>
+      <div class="verdict-tag unique">Quilt unique</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Ecosystem</div>
+      <div class="verdict-other">React: massive. Quilt: 1 day old.</div>
+      <div class="verdict-tag lose">React wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Learning curve</div>
+      <div class="verdict-other">React: hooks, JSX, components. Quilt: 8 cell kinds. Same order.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Server / Edge</div>
+      <div class="verdict-other">UI libs: client-only. Quilt: runs on a $3 chip, in WASM, in the browser, on a server.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+  </section>
+
+  <!-- ============== DATABASES ============== -->
+  <section id="databases">
+    <h2>vs Databases (Postgres, Redis, SQLite)</h2>
+    <p class="desc">Quilt is not a database. But it has cells, persistence (via time travel), and queries (via formulas). The lines are blurring.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>SQL:                     Quilt:
+CREATE TABLE users (     - id: users.alice.name
+  name TEXT,               kind: value
+  age INT                  value: "Alice"
+);                       - id: users.alice.age
+INSERT INTO users          kind: value
+  VALUES ('Alice', 30);    value: 30
+SELECT name FROM users;   get('users.*.name')  # implicit</pre>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">ACID</div>
+      <div class="verdict-other">DBs: yes. Quilt: not yet (would use time travel for durability).</div>
+      <div class="verdict-tag lose">DBs win</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Reactive queries</div>
+      <div class="verdict-other">DBs: views, triggers, but not first-class. Quilt: formulas are the query layer.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Scale</div>
+      <div class="verdict-other">DBs: millions of rows. Quilt: hundreds of cells (for now).</div>
+      <div class="verdict-tag lose">DBs win</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Distribution</div>
+      <div class="verdict-other">DBs: replicas, sharding. Quilt: mesh (peer-to-peer, CRDT).</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Compute on data</div>
+      <div class="verdict-other">DBs: stored procs, triggers. Quilt: formulas, programs, listeners — all in one model.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+  </section>
+
+  <!-- ============== CONFIG LANGUAGES ============== -->
+  <section id="config">
+    <h2>vs Config languages (YAML, TOML, JSON)</h2>
+    <p class="desc">Quilt uses YAML as its wire format. But it's not just data — it's an executable document.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>YAML (data):            Quilt (executable):
+database:               - id: database.host
+  host: localhost         kind: value
+  port: 5432              value: localhost
+                        - id: database.url
+                          kind: formula
+                          expr: "'postgres://' + database.host"</pre>
+      <p>A config file is data. A Quilt sheet is a <strong>program</strong> that happens to be data-shaped. The line between code and config dissolves.</p>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Executable?</div>
+      <div class="verdict-other">Configs: no. Quilt: yes — formulas, programs, listeners, sensors.</div>
+      <div class="verdict-tag unique">Quilt unique</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Reactive?</div>
+      <div class="verdict-other">Configs: static. Quilt: every change propagates.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Validation?</div>
+      <div class="verdict-other">Configs: schema. Quilt: types per cell kind, plus runtime checks.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+  </section>
+
+  <!-- ============== WORKFLOW TOOLS ============== -->
+  <section id="workflow">
+    <h2>vs Workflow tools (Airflow, Prefect, Temporal)</h2>
+    <p class="desc">These tools orchestrate work. Quilt is reactive, not orchestrated — the cells react, the system doesn't direct.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>Airflow:                    Quilt:
+@task                      - id: extract
+def extract():               kind: program
+  return fetch()             code: "return await fetch()"
+                            - id: transform
+@dag(...)                    kind: formula
+def pipeline():              expr: "JSON.parse(extract)"
+  extract() >> transform()</pre>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Trigger model</div>
+      <div class="verdict-other">Workflow tools: schedule / event. Quilt: reactive — change propagates automatically.</div>
+      <div class="verdict-tag unique">Quilt unique</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Visibility</div>
+      <div class="verdict-other">Workflow tools: dashboards, logs. Quilt: cell graph, synoptic view, time travel.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Long-running</div>
+      <div class="verdict-other">Workflow tools: days. Quilt: designed for stateful, always-on.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Maturity</div>
+      <div class="verdict-other">Workflow tools: 10+ years. Quilt: 1 day.</div>
+      <div class="verdict-tag lose">Workflow tools win</div>
+    </div>
+  </section>
+
+  <!-- ============== PROGRAMMABLE LOGIC ============== -->
+  <section id="plc">
+    <h2>vs PLCs / SCADA (industrial automation)</h2>
+    <p class="desc">Programmable Logic Controllers have been running factories on a cell-graph model since the 1970s. Quilt is the spreadsheet descendant of the same idea.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>PLC ladder logic:             Quilt:
+|---[temp]----(fan)---|       - id: sensor.temp
+                                 kind: sensor
+                              - id: motor.fan
+                                 kind: io
+                              - id: control
+                                 kind: formula
+                                 expr: "sensor.temp > 25"</pre>
+      <p>PLCs invented the reactive cell. Quilt brings the model to software, the cloud, the browser, and the $3 chip — anywhere there's a CPU.</p>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Reactive</div>
+      <div class="verdict-other">PLCs: yes, the foundational model. Quilt: yes, same model, modern tools.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Hardware</div>
+      <div class="verdict-other">PLCs: industrial IO. Quilt: software + ESP32 (cheaper, more flexible).</div>
+      <div class="verdict-tag unique">Quilt unique</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Visual</div>
+      <div class="verdict-other">PLCs: ladder diagrams. Quilt: cell graph, synoptic, IDE.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Determinism</div>
+      <div class="verdict-other">PLCs: hard real-time. Quilt: best-effort.</div>
+      <div class="verdict-tag lose">PLCs win</div>
+    </div>
+  </section>
+
+  <!-- ============== NOTEBOOKS ============== -->
+  <section id="notebook">
+    <h2>vs Notebooks (Jupyter, Observable)</h2>
+    <p class="desc">Notebooks made reactive programming narrative. Quilt is a notebook where every cell is named, addressable, and persistent.</p>
+
+    <div class="compare-block">
+      <h3>The mental model</h3>
+      <pre>Jupyter:                          Quilt:
+[1]: x = 10                      - id: x
+[2]: y = x * 2                     kind: value
+[3]: z = y + 1                     value: 10
+                                 - id: y
+                                   kind: formula
+                                   expr: "x * 2"
+                                 - id: z
+                                   kind: formula
+                                   expr: "y + 1"</pre>
+      <p>Notebooks are linear. Quilt is a graph. The dependency is explicit. The order doesn't matter. The cells have names.</p>
+    </div>
+
+    <div class="verdict-grid">
+      <div class="verdict-label">Order</div>
+      <div class="verdict-other">Notebooks: linear, manual. Quilt: topological, automatic.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Names</div>
+      <div class="verdict-other">Notebooks: numbered. Quilt: named.</div>
+      <div class="verdict-tag win">Quilt wins</div>
+    </div>
+    <div class="verdict-grid">
+      <div class="verdict-label">Explore data</div>
+      <div class="verdict-other">Notebooks: rich, mature. Quilt: simpler, but inspectable.</div>
+      <div class="verdict-tag draw">Draw</div>
+    </div>
+  </section>
+
+  <!-- ============== THE BOTTOM LINE ============== -->
+  <section>
+    <h2>The bottom line</h2>
+    <p class="desc">When to use Quilt, when not to, and when it's the only option.</p>
+
+    <div class="take"><strong>Use Quilt</strong> when you have data that flows, computed values, sensors, agents, or anything that fits the "name → reactive value" model. Especially when the data is small enough to fit in your head, big enough to need organization, and important enough to be inspectable.</div>
+
+    <div class="take lose"><strong>Don't use Quilt</strong> when you're building a traditional web app (use a UI framework), a high-throughput database (use Postgres), or a deterministic real-time controller (use a PLC). Quilt is the runtime, not the entire stack.</div>
+
+    <div class="take draw"><strong>Use Quilt when it's the only option</strong> when you need all of: reactivity, persistence, time travel, mesh sync, encryption, and visualization — in one model, on one cell, with one YAML file. No other tool gives you that.</div>
+
+    <div class="take"><strong>Quilt's unfair advantage</strong> is the cell model itself. By making every cell a live, addressable, typed, reactive capability, the spreadsheet becomes the runtime. The sheet is the program. The cell is the function. The wire is the data flow. You don't have to invent any of that — it's all the same primitive.</div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Honest comparisons, made better by your feedback. <a href="https://github.com/SuperInstance/quilt/blob/main/docs/comparison.md">Discuss on GitHub</a></p>
+</footer>
+
+</body>
+</html>

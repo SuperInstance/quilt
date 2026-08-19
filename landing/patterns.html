@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Patterns — the cookbook for cell graphs</title>
+<meta name="description" content="A visual cookbook of Quilt patterns. The 20 idioms that solve 80% of problems. Fork, customize, ship.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-card-hover: #1a1a1a; --bg-elev: #232323; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.5; overflow-x: hidden; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* Nav */
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+.nav-links a.cta:hover { background: var(--blue); }
+
+/* Hero */
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; }
+
+/* TOC sidebar */
+.layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1300px; margin: 0 auto; padding: 0 24px; gap: 40px; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .toc { display: none; } }
+.toc { position: sticky; top: 80px; align-self: start; max-height: calc(100vh - 100px); overflow-y: auto; padding: 16px 0; }
+.toc h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin: 12px 0 4px; padding: 0 8px; }
+.toc a { display: block; padding: 4px 8px; color: var(--text-dim); font-size: 0.85rem; border-radius: 4px; }
+.toc a:hover { background: var(--bg-card); color: var(--text); }
+.toc a .num { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; margin-right: 6px; font-size: 0.75rem; }
+
+/* Main content */
+main { padding-bottom: 80px; }
+
+.category { margin-bottom: 60px; }
+.category h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.category .desc { color: var(--text-dim); margin-bottom: 24px; }
+
+.pattern { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+.pattern:hover { border-color: var(--border-strong); }
+.pattern h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.pattern h3 .num { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 400; }
+.pattern .tagline { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+.pattern .diagram { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.4; }
+.pattern .code { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); overflow-x: auto; }
+.pattern .use { color: var(--text-dim); font-size: 0.85rem; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.pattern .use strong { color: var(--text); }
+
+/* Cell kind tags */
+.k { display: inline-block; padding: 1px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600; margin: 0 2px; }
+.k.value { background: rgba(126,198,153,0.15); color: var(--green); }
+.k.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.k.program { background: rgba(187,126,198,0.15); color: var(--purple); }
+.k.sensor { background: rgba(198,168,126,0.15); color: var(--tan); }
+.k.api { background: rgba(198,126,126,0.15); color: var(--red); }
+.k.listener { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.k.router { background: rgba(126,198,198,0.15); color: var(--cyan); }
+.k.io { background: rgba(136,136,136,0.15); color: var(--gray, #888); }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="showcase.html">Showcase</a>
+    <a href="studio.html">Studio</a>
+    <a href="ide.html">IDE</a>
+    <a href="synoptic.html">Synoptic</a>
+    <a href="synoptic3d.html">3D</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="docs.html">Docs</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt <span class="grad-text">Patterns</span></h1>
+  <p class="lead">A visual cookbook of the 20 idioms that solve 80% of problems. Every pattern is a small cell graph that you can fork, customize, and ship. Each diagram is a real Quilt sheet.</p>
+</div>
+
+<div class="layout">
+  <aside class="toc">
+    <h3>Foundations</h3>
+    <a href="#p1"><span class="num">01</span>Hello, cell</a>
+    <a href="#p2"><span class="num">02</span>Reactive cascade</a>
+    <a href="#p3"><span class="num">03</span>Sensor &amp; actuator</a>
+    <a href="#p4"><span class="num">04</span>Listener &amp; alert</a>
+    <a href="#p5"><span class="num">05</span>API call</a>
+
+    <h3>State</h3>
+    <a href="#p6"><span class="num">06</span>State machine</a>
+    <a href="#p7"><span class="num">07</span>Counter</a>
+    <a href="#p8"><span class="num">08</span>Toggle / latch</a>
+    <a href="#p9"><span class="num">09</span>Debounce</a>
+    <a href="#p10"><span class="num">10</span>Throttle</a>
+
+    <h3>Data</h3>
+    <a href="#p11"><span class="num">11</span>Transform pipeline</a>
+    <a href="#p12"><span class="num">12</span>Filter &amp; map</a>
+    <a href="#p13"><span class="num">13</span>Reducer</a>
+    <a href="#p14"><span class="num">14</span>Cache</a>
+    <a href="#p15"><span class="num">15</span>Time series</a>
+
+    <h3>Composition</h3>
+    <a href="#p16"><span class="num">16</span>Router</a>
+    <a href="#p17"><span class="num">17</span>Sub-sheet</a>
+    <a href="#p18"><span class="num">18</span>Retry / fallback</a>
+    <a href="#p19"><span class="num">19</span>Rate limit</a>
+    <a href="#p20"><span class="num">20</span>Audit log</a>
+  </aside>
+
+  <main>
+
+    <!-- ============== FOUNDATIONS ============== -->
+    <section class="category">
+      <h2>Foundations</h2>
+      <p class="desc">The five patterns that every Quilt sheet is built from. Master these and the rest is composition.</p>
+
+      <!-- P1: Hello, cell -->
+      <div class="pattern" id="p1">
+        <h3><span class="num">01.</span> Hello, cell</h3>
+        <p class="tagline">The smallest possible sheet: a value cell.</p>
+        <div class="diagram">
+<pre>     ┌─────────┐
+     │  📦     │
+     │  "hi"   │
+     └─────────┘
+   <span style="color: var(--green);">value cell</span>
+</pre>
+        </div>
+        <div class="code">- id: greeting
+  kind: value
+  value: "hi"</div>
+        <p class="use"><strong>Use when</strong> you just need a named value. A constant, a setting, a label. The atom of the spreadsheet model.</p>
+      </div>
+
+      <!-- P2: Reactive cascade -->
+      <div class="pattern" id="p2">
+        <h3><span class="num">02.</span> Reactive cascade</h3>
+        <p class="tagline">One value flows through a chain of formulas. Change the input, every dependent updates.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ƒ   │────────▶│  ƒ   │
+   │ raw  │         │ norm │         │ final│
+   └──────┘         └──────┘         └──────┘
+   <span style="color: var(--green);">value</span>          <span style="color: var(--blue);">formula</span>         <span style="color: var(--blue);">formula</span>
+
+   <span style="color: var(--text-faint);">wire: raw → norm → final</span>
+   <span style="color: var(--text-faint);">change raw, both formulas recompute</span>
+</pre>
+        </div>
+        <div class="code">- id: raw
+  kind: value
+  value: 100
+
+- id: norm
+  kind: formula
+  expr: "(raw - 0) / 100"
+
+- id: final
+  kind: formula
+  expr: "norm * 10"</div>
+        <p class="use"><strong>Use when</strong> you have a value that needs transformation. The reactive engine handles the propagation order. You just write the math.</p>
+      </div>
+
+      <!-- P3: Sensor & actuator -->
+      <div class="pattern" id="p3">
+        <h3><span class="num">03.</span> Sensor &amp; actuator</h3>
+        <p class="tagline">Read the world, decide, act on the world. The cyber-physical loop.</p>
+        <div class="diagram">
+<pre>   ┌──────────┐         ┌──────┐         ┌──────┐
+   │   👁     │────────▶│  ƒ   │────────▶│  🔌  │
+   │ sensor   │         │ logic│         │ motor│
+   │ .temp    │         │      │         │      │
+   └──────────┘         └──────┘         └──────┘
+   <span style="color: var(--tan);">sensor</span>          <span style="color: var(--blue);">formula</span>       <span style="color: var(--gray);">io</span>
+
+   <span style="color: var(--text-faint);">read temp → decide → drive motor</span>
+</pre>
+        </div>
+        <div class="code">- id: sensor.temp
+  kind: sensor
+  source: dht22
+  default: 22
+
+- id: logic
+  kind: formula
+  expr: 'sensor.temp > 25 ? 100 : 0'
+
+- id: motor.fan
+  kind: io
+  port: "gpio2"
+  direction: out</div>
+        <p class="use"><strong>Use when</strong> you're reading from the physical world (sensors, APIs, user input) and driving something back (LEDs, motors, HTTP). The fundamental input → process → output loop.</p>
+      </div>
+
+      <!-- P4: Listener & alert -->
+      <div class="pattern" id="p4">
+        <h3><span class="num">04.</span> Listener &amp; alert</h3>
+        <p class="tagline">React to changes by firing side effects. The "if X then Y" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐
+   │  ƒ   │────────▶│  🔔  │
+   │ temp │         │alert │
+   └──────┘         └──────┘
+   <span style="color: var(--blue);">formula</span>     <span style="color: var(--yellow);">listener</span>
+
+   <span style="color: var(--text-faint);">when temp changes, fire if condition</span>
+</pre>
+        </div>
+        <div class="code">- id: temp
+  kind: value
+  value: 22
+
+- id: alert
+  kind: listener
+  watch: temp
+  condition: "temp > 30"
+  action: "console.log('⚠️ hot!')"</div>
+        <p class="use"><strong>Use when</strong> you need to act on a change, not just see a value. Notifications, logging, audit, external side effects.</p>
+      </div>
+
+      <!-- P5: API call -->
+      <div class="pattern" id="p5">
+        <h3><span class="num">05.</span> API call</h3>
+        <p class="tagline">Call out to the world. An outbound HTTP call as a cell.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  🌐  │────────▶│  ƒ   │
+   │  url │         │  api  │         │ parse│
+   │      │         │       │         │      │
+   └──────┘         └──────┘         └──────┘
+   <span style="color: var(--green);">value</span>          <span style="color: var(--red);">api</span>          <span style="color: var(--blue);">formula</span>
+
+   <span style="color: var(--text-faint);">build url → fetch → parse response</span>
+</pre>
+        </div>
+        <div class="code">- id: url
+  kind: value
+  value: "https://api.example.com/users"
+
+- id: response
+  kind: api
+  endpoint: "https://api.example.com/users"
+  method: GET
+
+- id: user_count
+  kind: formula
+  expr: "response.length"</div>
+        <p class="use"><strong>Use when</strong> the data you need isn't in your sheet. APIs, webhooks, microservices. The cell model is uniform, so the engine doesn't care if the data is local or remote.</p>
+      </div>
+    </section>
+
+    <!-- ============== STATE ============== -->
+    <section class="category">
+      <h2>State</h2>
+      <p class="desc">How to manage state in a reactive system. The patterns that turn a sheet into a finite-state machine.</p>
+
+      <!-- P6: State machine -->
+      <div class="pattern" id="p6">
+        <h3><span class="num">06.</span> State machine</h3>
+        <p class="tagline">A cell whose value is constrained to a finite set of named states.</p>
+        <div class="diagram">
+<pre>        ┌────────┐
+   ┌───▶│ idle   │◀────┐
+   │    └────────┘     │
+   │         │         │
+   │    start│    stop │
+   │         ▼         │
+   │    ┌────────┐     │
+   │    │ running│─────┘
+   │    └────────┘
+   │
+   current_state: <span style="color: var(--green);">formula</span> (one of: idle, running)
+   transitions:   <span style="color: var(--purple);">program</span> (validate + apply)
+</pre>
+        </div>
+        <div class="code">- id: current_state
+  kind: value
+  value: "idle"
+  enum: [idle, running, paused, error]
+
+- id: transition
+  kind: program
+  code: |
+    const valid = { idle: ['running'], running: ['paused', 'idle'], paused: ['running'] };
+    if (valid[runtime.get('current_state').data]?.includes(runtime.get('next_state').data)) {
+      return runtime.set('current_state', runtime.get('next_state').data);
+    }
+    return runtime.get('current_state').data;
+
+- id: next_state
+  kind: value
+  value: "running"</div>
+        <p class="use"><strong>Use when</strong> you have a system with discrete states (UI modes, workflow stages, protocol states). A cell as a finite-state machine is cleaner than nested if-else.</p>
+      </div>
+
+      <!-- P7: Counter -->
+      <div class="pattern" id="p7">
+        <h3><span class="num">07.</span> Counter</h3>
+        <p class="tagline">A cell that increments. The simplest possible stateful reactive system.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ▶   │────────▶│  📦  │
+   │  0   │         │ incr │         │  N   │
+   └──────┘         └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">on increment: count = count + 1</span>
+</pre>
+        </div>
+        <div class="code">- id: count
+  kind: value
+  value: 0
+
+- id: increment
+  kind: listener
+  watch: count
+  condition: "false"   # external trigger
+  action: "runtime.set('count', runtime.get('count').data + 1)"</div>
+        <p class="use"><strong>Use when</strong> you need to count events, clicks, requests, anything. The pattern is universal — it's the "how many?" question, encoded in cells.</p>
+      </div>
+
+      <!-- P8: Toggle / latch -->
+      <div class="pattern" id="p8">
+        <h3><span class="num">08.</span> Toggle / latch</h3>
+        <p class="tagline">A boolean that flips on each trigger. The "is it on?" question.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ƒ   │────────▶│  📦  │
+   │ false│         │ NOT  │         │ true │
+   └──────┘         └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">on trigger: state = !state</span>
+</pre>
+        </div>
+        <div class="code">- id: state
+  kind: value
+  value: false
+
+- id: toggle
+  kind: listener
+  watch: state
+  condition: "false"
+  action: "runtime.set('state', !runtime.get('state').data)"</div>
+        <p class="use"><strong>Use when</strong> you have a binary state (on/off, enabled/disabled, show/hide). A toggle is the latch — flip it, it stays.</p>
+      </div>
+
+      <!-- P9: Debounce -->
+      <div class="pattern" id="p9">
+        <h3><span class="num">09.</span> Debounce</h3>
+        <p class="tagline">Wait until a stream of events stops, then fire. The "user is done typing" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ▶   │────────▶│  📦  │
+   │ input│         │ 250ms│         │ final│
+   └──────┘         │ wait │         └──────┘
+                    └──────┘
+                   <span style="color: var(--text-faint);">resets on each input</span>
+</pre>
+        </div>
+        <div class="code">- id: input
+  kind: value
+  value: ""
+
+- id: timer
+  kind: program
+  code: |
+    let handle;
+    return (value) => {
+      clearTimeout(handle);
+      handle = setTimeout(() => runtime.set('final', value), 250);
+    };
+
+- id: final
+  kind: value
+  value: ""</div>
+        <p class="use"><strong>Use when</strong> you have a fast stream of events (typing, scrolling, sensor readings) but only want to act on the "settled" value. The classic search-as-you-type case.</p>
+      </div>
+
+      <!-- P10: Throttle -->
+      <div class="pattern" id="p10">
+        <h3><span class="num">10.</span> Throttle</h3>
+        <p class="tagline">Fire at most once per time window. The "don't spam me" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ▶   │────────▶│  📦  │
+   │input │         │ 1Hz  │         │ last │
+   │      │         │ limit│         │      │
+   └──────┘         └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">only emit at most every 1s</span>
+</pre>
+        </div>
+        <div class="code">- id: input
+  kind: value
+  value: 0
+
+- id: last_emit
+  kind: value
+  value: 0
+
+- id: throttled
+  kind: program
+  code: |
+    const now = Date.now();
+    if (now - runtime.get('last_emit').data > 1000) {
+      runtime.set('last_emit', now);
+      return runtime.get('input').data;
+    }
+    return runtime.get('last_emit').data;</div>
+        <p class="use"><strong>Use when</strong> you have a fast event source but want to limit the rate of actions. Network requests, UI updates, hardware writes. Don't over-drive your actuators.</p>
+      </div>
+    </section>
+
+    <!-- ============== DATA ============== -->
+    <section class="category">
+      <h2>Data</h2>
+      <p class="desc">Patterns for transforming, filtering, and remembering data. The data engineering layer.</p>
+
+      <!-- P11: Transform pipeline -->
+      <div class="pattern" id="p11">
+        <h3><span class="num">11.</span> Transform pipeline</h3>
+        <p class="tagline">A series of cells that each apply one transformation. Unix pipes as cells.</p>
+        <div class="diagram">
+<pre>   raw ──▶ parse ──▶ clean ──▶ enrich ──▶ save
+   📦        ƒ         ƒ         ƒ        📦
+
+   <span style="color: var(--text-faint);">each step is a cell</span>
+   <span style="color: var(--text-faint);">output of one is input of the next</span>
+</pre>
+        </div>
+        <div class="code">- id: raw
+  kind: value
+  value: "  Alice, 30  "
+
+- id: parsed
+  kind: formula
+  expr: "raw.trim().split(',')"
+
+- id: cleaned
+  kind: formula
+  expr: "[parsed[0].trim(), parseInt(parsed[1].trim())]"
+
+- id: enriched
+  kind: formula
+  expr: "{name: cleaned[0], age: cleaned[1], valid: cleaned[1] >= 18}"
+
+- id: save
+  kind: api
+  endpoint: "https://api.example.com/users"
+  method: POST</div>
+        <p class="use"><strong>Use when</strong> you have data that needs many transformations. Each step is a cell — you can inspect, swap, and reuse them independently.</p>
+      </div>
+
+      <!-- P12: Filter & map -->
+      <div class="pattern" id="p12">
+        <h3><span class="num">12.</span> Filter &amp; map</h3>
+        <p class="tagline">Apply a function to every element of a list. The "transform all the things" pattern.</p>
+        <div class="diagram">
+<pre>   list ──▶ map ──▶ filtered ──▶ sum
+   📦       ƒ        ƒ          ƒ
+
+   <span style="color: var(--text-faint);">map: x → f(x)</span>
+   <span style="color: var(--text-faint);">filter: keep only where predicate(x)</span>
+</pre>
+        </div>
+        <div class="code">- id: numbers
+  kind: value
+  value: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+- id: doubled
+  kind: formula
+  expr: "numbers.map(n => n * 2)"
+
+- id: evens
+  kind: formula
+  expr: "doubled.filter(n => n % 2 === 0)"
+
+- id: sum
+  kind: formula
+  expr: "evens.reduce((a, b) => a + b, 0)"</div>
+        <p class="use"><strong>Use when</strong> you have a list and want to derive a new list. Map, filter, reduce are universal primitives — they compose as cells.</p>
+      </div>
+
+      <!-- P13: Reducer -->
+      <div class="pattern" id="p13">
+        <h3><span class="num">13.</span> Reducer</h3>
+        <p class="tagline">Fold a stream of values into a single accumulated value. The "running total" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐
+   │ events│────┐    │      │
+   └──────┘    │    │      │
+   ┌──────┐    ├───▶│  ƒ   │──▶ total
+   │ events│────┤    │ fold │
+   └──────┘    │    │      │
+   ┌──────┐    │    │      │
+   │ events│────┘    │      │
+   └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">each event: total = (total, event) → total'</span>
+</pre>
+        </div>
+        <div class="code">- id: events
+  kind: value
+  value: [10, 20, 30, 40]
+
+- id: total
+  kind: formula
+  expr: "events.reduce((acc, e) => acc + e.value, 0)"
+
+- id: count
+  kind: formula
+  expr: "events.length"
+
+- id: average
+  kind: formula
+  expr: "count > 0 ? total / count : 0"</div>
+        <p class="use"><strong>Use when</strong> you have a stream and want a single derived value. Running totals, averages, max, min — all reducers.</p>
+      </div>
+
+      <!-- P14: Cache -->
+      <div class="pattern" id="p14">
+        <h3><span class="num">14.</span> Cache</h3>
+        <p class="tagline">Remember a computed value so you don't recompute it. The "memoize" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  💾  │────────▶│  ƒ   │
+   │ input│         │ cache│         │expensive
+   └──────┘         └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">on input change, recompute &amp; store</span>
+   <span style="color: var(--text-faint);">on no change, return cached</span>
+</pre>
+        </div>
+        <div class="code">- id: key
+  kind: value
+  value: "user:42"
+
+- id: cached
+  kind: value
+  value: null
+
+- id: expensive
+  kind: program
+  code: |
+    const cacheKey = runtime.get('key').data;
+    const cached = runtime.get('cached').data;
+    if (cached && cached.key === cacheKey) {
+      return cached.value;
+    }
+    const value = await expensive_operation(cacheKey);
+    runtime.set('cached', { key: cacheKey, value });
+    return value;</div>
+        <p class="use"><strong>Use when</strong> computation is expensive, or you don't want to re-hit an API. The cache cell is the layer. You can swap it (LRU, TTL, distributed) without touching the rest.</p>
+      </div>
+
+      <!-- P15: Time series -->
+      <div class="pattern" id="p15">
+        <h3><span class="num">15.</span> Time series</h3>
+        <p class="tagline">A cell whose value is a list of timestamped values. The "I have data over time" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────add──│  📦  │──window─▶│  ƒ   │
+   │ new  │         │series│         │ avg  │
+   └──────┘         └──────┘         └──────┘
+
+   <span style="color: var(--text-faint);">on new value: append to series</span>
+   <span style="color: var(--text-faint);">on change: compute windowed stats</span>
+</pre>
+        </div>
+        <div class="code">- id: series
+  kind: value
+  value: []
+
+- id: append
+  kind: listener
+  watch: input
+  condition: "true"
+  action: |
+    runtime.set('series', [...runtime.get('series').data,
+      { t: Date.now(), v: runtime.get('input').data }])
+
+- id: window_60s
+  kind: formula
+  expr: "series.filter(p => Date.now() - p.t < 60000)"
+
+- id: avg_60s
+  kind: formula
+  expr: "window_60s.reduce((a, p) => a + p.v, 0) / Math.max(1, window_60s.length)"</div>
+        <p class="use"><strong>Use when</strong> you care about how something changes over time. Heart rate, temperature, latency, sales. The series is the model.</p>
+      </div>
+    </section>
+
+    <!-- ============== COMPOSITION ============== -->
+    <section class="category">
+      <h2>Composition</h2>
+      <p class="desc">Patterns for combining cells into larger systems. The architectural layer.</p>
+
+      <!-- P16: Router -->
+      <div class="pattern" id="p16">
+        <h3><span class="num">16.</span> Router</h3>
+        <p class="tagline">A cell that returns different values based on who is asking. The "context-aware" pattern.</p>
+        <div class="diagram">
+<pre>   caller A ──▶ router ──▶ result_A
+   caller B ──▶ router ──▶ result_B
+                 (same cell, different output)
+
+   <span style="color: var(--text-faint);">based on caller.role, return different value</span>
+</pre>
+        </div>
+        <div class="code">- id: router
+  kind: router
+  routes:
+    - when: "caller.role === 'admin'"
+      expr: "all_data"
+    - when: "caller.role === 'user'"
+      expr: "filtered_data"
+    - when: "caller.role === 'guest'"
+      expr: "public_data"</div>
+        <p class="use"><strong>Use when</strong> the same logical cell should return different things to different callers. Authorization, A/B tests, multi-tenant, feature flags. The cell is the policy.</p>
+      </div>
+
+      <!-- P17: Sub-sheet -->
+      <div class="pattern" id="p17">
+        <h3><span class="num">17.</span> Sub-sheet</h3>
+        <p class="tagline">A cell that is itself a sheet. The "composable unit" pattern.</p>
+        <div class="diagram">
+<pre>   ┌─────────────────┐
+   │   parent sheet  │
+   │                 │
+   │  ┌────────────┐ │
+   │  │ sub-sheet  │ │  (a cell, itself a sheet)
+   │  │            │ │
+   │  │  cells:{}  │ │
+   │  │            │ │
+   │  └────────────┘ │
+   │                 │
+   └─────────────────┘
+
+   <span style="color: var(--text-faint);">sub-sheet has its own scope, but</span>
+   <span style="color: var(--text-faint);">exposes named outputs to parent</span>
+</pre>
+        </div>
+        <div class="code"># In parent.yaml
+- id: weather
+  kind: program
+  sheet: "./weather.yaml"
+  inputs: [location]
+  outputs: [temp, condition]
+
+# In weather.yaml
+cells:
+  - id: temp
+    kind: value
+    value: 22
+  - id: condition
+    kind: value
+    value: "sunny"</div>
+        <p class="use"><strong>Use when</strong> you have a meaningful subsystem that should be reusable. A weather module, a payment flow, a search. Sub-sheets are like functions, but they're inspectable.</p>
+      </div>
+
+      <!-- P18: Retry / fallback -->
+      <div class="pattern" id="p18">
+        <h3><span class="num">18.</span> Retry / fallback</h3>
+        <p class="tagline">If the primary call fails, try the fallback. The "resilient" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐
+   │      │ success ──▶ result
+   │  🌐  │
+   │primary│ failure
+   │      │     │
+   └──────┘     ▼
+              ┌──────┐
+              │  🌐  │ success ──▶ result
+              │backup│
+              │      │ failure
+              └──────┘     │
+                            ▼
+                       ┌──────┐
+                       │  📦  │
+                       │empty │
+                       └──────┘
+</pre>
+        </div>
+        <div class="code">- id: primary
+  kind: api
+  endpoint: "https://primary.example.com/data"
+
+- id: backup
+  kind: api
+  endpoint: "https://backup.example.com/data"
+
+- id: with_fallback
+  kind: program
+  code: |
+    try {
+      return await runtime.call('primary');
+    } catch (e) {
+      try {
+        return await runtime.call('backup');
+      } catch (e2) {
+        return { error: 'all sources down', last: e2.message };
+      }
+    }</div>
+        <p class="use"><strong>Use when</strong> reliability matters. The network is unreliable, APIs go down, services have outages. The fallback is the resilience.</p>
+      </div>
+
+      <!-- P19: Rate limit -->
+      <div class="pattern" id="p19">
+        <h3><span class="num">19.</span> Rate limit</h3>
+        <p class="tagline">Allow at most N calls per time window. The "be polite" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  📦  │────────▶│  ▶   │────────▶│  🌐  │
+   │request│         │limit │         │  api │
+   │       │         │ 10/m │         │      │
+   └──────┘         └──────┘         └──────┘
+                  (drop if over)
+</pre>
+        </div>
+        <div class="code">- id: window_start
+  kind: value
+  value: 0
+
+- id: count
+  kind: value
+  value: 0
+
+- id: allowed
+  kind: program
+  code: |
+    const now = Date.now();
+    const start = runtime.get('window_start').data;
+    if (now - start > 60000) {
+      runtime.set('window_start', now);
+      runtime.set('count', 0);
+    }
+    const c = runtime.get('count').data + 1;
+    if (c > 10) return false;
+    runtime.set('count', c);
+    return true;</div>
+        <p class="use"><strong>Use when</strong> you're calling an external API with rate limits (Twitter, OpenAI, Stripe). Stay under the limit, get a 429 if you go over. The cell is the budget.</p>
+      </div>
+
+      <!-- P20: Audit log -->
+      <div class="pattern" id="p20">
+        <h3><span class="num">20.</span> Audit log</h3>
+        <p class="tagline">Every change to a cell is recorded. The "who did what when" pattern.</p>
+        <div class="diagram">
+<pre>   ┌──────┐         ┌──────┐         ┌──────┐
+   │  ƒ   │────────▶│  🔔  │────────▶│  📦  │
+   │value │         │ log  │         │ log  │
+   │      │         │ on   │         │      │
+   └──────┘         │change│         └──────┘
+                    └──────┘
+                       │
+                       ▼ append
+                    ┌──────┐
+                    │  📦  │
+                    │ audit│
+                    │ log  │
+                    └──────┘
+</pre>
+        </div>
+        <div class="code">- id: critical
+  kind: value
+  value: 0
+
+- id: audit
+  kind: value
+  value: []
+
+- id: log_change
+  kind: listener
+  watch: critical
+  condition: "true"
+  action: |
+    runtime.set('audit', [...runtime.get('audit').data, {
+      who: caller.id,
+      what: 'critical',
+      from: oldValue,
+      to: runtime.get('critical').data,
+      when: Date.now()
+    }])</div>
+        <p class="use"><strong>Use when</strong> compliance matters, or you want to know what happened. Every change has a who, a what, and a when. The audit log is automatic.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>Quilt is a cellular runtime. Patterns are repeatable solutions to common problems. Fork, customize, ship.</p>
+  <p style="margin-top: 8px;">
+    <a href="docs.html">Docs</a> ·
+    <a href="tutorial.html">Tutorial</a> ·
+    <a href="gallery.html">Gallery</a> ·
+    <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a>
+  </p>
+</footer>
+
+</body>
+</html>
