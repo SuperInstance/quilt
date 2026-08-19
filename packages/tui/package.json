@@ -1,6 +1,6 @@
 {
   "name": "@quilt/tui",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Terminal UI for Quilt — the power-tool view of a running engine.",
   "license": "Apache-2.0",
   "type": "module",

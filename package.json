@@ -1,6 +1,6 @@
 {
   "name": "quilt",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "A spreadsheet where every cell is a live, addressable capability. The grid is the runtime.",
