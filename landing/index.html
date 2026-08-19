@@ -81,6 +81,8 @@ h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
 .nav-links a:hover { color: var(--text); background: var(--bg-card-hover); }
 .nav-links a.cta { color: var(--bg); background: var(--text); padding: 8px 16px; margin-left: 8px; font-weight: 500; }
 .nav-links a.cta:hover { background: var(--green); color: var(--bg); }
+.nav-links a.ai-link { color: var(--green); position: relative; }
+.nav-links a.ai-link:hover { color: var(--green); background: rgba(126, 198, 153, 0.1); }
 
 /* Hero */
 .hero { padding: 80px 0 0; text-align: center; position: relative; overflow: hidden; }
@@ -278,6 +280,11 @@ footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
       <a href="voice.html">Voice</a>
       <a href="camera.html">Camera</a>
       <a href="mesh-live.html">Mesh</a>
+      <a href="zai-live.html" class="ai-link">⚡ z.ai</a>
+      <a href="ai-playground.html" class="ai-link">AI Playground</a>
+      <a href="ai-rag.html" class="ai-link">RAG</a>
+      <a href="ai-agent.html" class="ai-link">Agent</a>
+      <a href="quilt-cloudflare.html" class="ai-link">Cloudflare</a>
       <a href="compare.html">Compare</a>
       <a href="start.html">Get started</a>
       <a href="download.html">Download</a>
@@ -294,11 +301,16 @@ footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
 
 <header class="hero">
   <div class="container">
-    <div class="hero-tag"><span class="dot"></span> v0.2.0 — production grade, 11 repos, 145+ tests</div>
+    <div class="hero-tag"><span class="dot"></span> v0.2.0 — production grade, 12 repos, 145+ tests, <span style="color: var(--green); font-weight: 600;">⚡ now with AI cells</span></div>
     <h1>Every cell is a live,<br><span class="grad-text">addressable capability.</span></h1>
-    <p class="lead">A reactive, typed, cellular runtime. From microcontroller to browser to mesh. The spreadsheet model, finally done right. The cell model, finally made real.</p>
+    <p class="lead">A reactive, typed, cellular runtime. From microcontroller to browser to mesh to cloudflare. The spreadsheet model, finally done right. The cell model, finally made real.</p>
     <div class="hero-ctas">
       <a href="quilt-live.html" class="btn btn-primary">Open Quilt Live <span class="arrow">→</span></a>
+      <a href="zai-live.html" class="btn btn-primary" style="background: var(--green); color: var(--bg);">⚡ z.ai Live</a>
+      <a href="ai-playground.html" class="btn">🧪 AI Playground</a>
+      <a href="ai-rag.html" class="btn">🔍 RAG</a>
+      <a href="ai-agent.html" class="btn">🤖 Agent</a>
+      <a href="quilt-cloudflare.html" class="btn">☁️ Cloudflare</a>
       <a href="playground.html" class="btn">Playground ▶</a>
       <a href="studio.html" class="btn">Studio</a>
       <a href="ide.html" class="btn">IDE</a>
@@ -619,6 +631,90 @@ mySheet.<span class="c-fn">wire</span>(mortgage.pmt, budget.payment);
 <br><br>
 <div style="color: var(--text-faint);">// Server sees only ciphertext.</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="ai" style="background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg) 100%); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow" style="color: var(--green);">⚡ Now with real AI</span>
+      <h2>Cells that <span class="grad-text">think</span>.</h2>
+      <p class="lead">The same cell model, but with LLMs. Each call is a cell. The cell model is uniform — values, formulas, and LLMs propagate reactively.</p>
+    </div>
+
+    <div class="features-grid">
+      <a href="zai-live.html" class="feature">
+        <div class="feat-icon">⚡</div>
+        <h3>z.ai GLM 5.3 live</h3>
+        <p>6 tabs of real z.ai cells: complete, code, reason, summarize, Q&amp;A, and 3-cell chains. Each call is a cell. The graph shows propagation.</p>
+        <span class="feat-link">Try it →</span>
+      </a>
+      <a href="ai-playground.html" class="feature">
+        <div class="feat-icon">🧪</div>
+        <h3>3 models, 1 prompt</h3>
+        <p>Send the same prompt to z.ai, Kimi, and DeepSeek in parallel. Compare side-by-side. Synthesize or vote (LLM judge picks the best).</p>
+        <span class="feat-link">Try it →</span>
+      </a>
+      <a href="ai-rag.html" class="feature">
+        <div class="feat-icon">🔍</div>
+        <h3>RAG over cells</h3>
+        <p>Add notes, they auto-embed. Search semantically. Top-K context. LLM answers with grounded context. 6 cells, fully reactive.</p>
+        <span class="feat-link">Try it →</span>
+      </a>
+      <a href="ai-agent.html" class="feature">
+        <div class="feat-icon">🤖</div>
+        <h3>Agent as a cell graph</h3>
+        <p>4 personas, multi-step reasoning, memory as a value cell, output as a derived cell. The agent loop unfolds in the graph as it runs.</p>
+        <span class="feat-link">Try it →</span>
+      </a>
+      <a href="quilt-cloudflare.html" class="feature">
+        <div class="feat-icon">☁️</div>
+        <h3>On Cloudflare</h3>
+        <p>One repo. Clone it. Workers + D1 + Vectorize + KV + R2 + AI. Deploy in 5 minutes. 8 AI cell kinds built in. Real, not a demo.</p>
+        <span class="feat-link">Deploy →</span>
+      </a>
+      <a href="quilt-agent.html" class="feature">
+        <div class="feat-icon">🧠</div>
+        <h3>Code generation</h3>
+        <p>Generate code with a model cell. Add a runner cell. The cells form a complete code generation pipeline. Formulas can be model outputs.</p>
+        <span class="feat-link">Try it →</span>
+      </a>
+    </div>
+
+    <div class="code-block" style="margin-top: 40px;">
+      <pre style="margin: 0; padding: 20px; color: var(--text-dim);"><span style="color: var(--text-faint);"># A Quilt cell that uses z.ai GLM 5.3</span>
+<span style="color: var(--purple);">- id: ai.glm</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">provider: zai</span>
+  <span style="color: var(--purple);">model: glm-4.5</span>
+  <span style="color: var(--purple);">prompt: "Translate to French: {{input.text}}"</span>
+
+<span style="color: var(--text-faint);"># A Quilt cell that uses Cloudflare Workers AI (free, runs on edge)</span>
+<span style="color: var(--purple);">- id: ai.embed</span>
+  <span style="color: var(--purple);">kind: ai.embed</span>
+  <span style="color: var(--purple);">provider: cloudflare</span>
+  <span style="color: var(--purple);">model: "@cf/baai/bge-base-en-v1.5"</span>
+  <span style="color: var(--purple);">input: ai.glm</span>
+
+<span style="color: var(--text-faint);"># A Quilt cell that uses a Kimi model</span>
+<span style="color: var(--purple);">- id: ai.kimi</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">provider: kimi</span>
+  <span style="color: var(--purple);">model: moonshot-v1-8k</span>
+  <span style="color: var(--purple);">prompt: "Summarize: {{input.text}}"</span>
+
+<span style="color: var(--text-faint);"># And one that uses DeepSeek (cheap, fast, wide view)</span>
+<span style="color: var(--purple);">- id: ai.deepseek</span>
+  <span style="color: var(--purple);">kind: ai.llm</span>
+  <span style="color: var(--purple);">provider: deepseek</span>
+  <span style="color: var(--purple);">model: deepseek-chat</span>
+  <span style="color: var(--purple);">prompt: "Generate 3 ideas for: {{input.text}}"</span></pre>
+    </div>
+
+    <div style="text-align: center; margin-top: 32px;">
+      <a href="https://github.com/SuperInstance/quilt-cloudflare" target="_blank" class="btn btn-primary">Get quilt-cloudflare <span class="arrow">→</span></a>
+      <a href="quilt-cloudflare.html" class="btn">Read the showcase</a>
     </div>
   </div>
 </section>
