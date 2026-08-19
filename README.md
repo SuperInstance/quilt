@@ -390,6 +390,7 @@ The TypeScript version is gaining a WASM-cell-sandbox as a v0.2 feature to close
 | **Embed Quilt in Rust** (single binary, embedded)       | [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust) |
 | **Get the same engine as a static binary** (alpha)      | [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust) |
 | Use the **TUI** (terminal view, tmux-friendly)          | [packages/tui/](packages/tui/)                                       |
+| **Try Quilt in a single HTML file** (no install, portable) | **[superinstance/quilt-live](https://github.com/superinstance/quilt-live)** — open one file, save state as cookie or downloadable .html |
 | **Report a bug**                                        | [issues](https://github.com/superinstance/quilt/issues)              |
 
 ---
