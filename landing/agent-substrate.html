@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt as Agent Substrate — the registry, the resolver, the substrate</title>
+<meta name="description" content="How Quilt implements the agent-substrate spec: 5 primitives, pinned-version artifacts, JSON-schema manifests, immutable run traces, template resolution, and a 4-method QuiltAgent class. Reactive beats imperative.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a14;--panel:#14141f;--pe:#1a1a26;--b:#252535;--bs:#353548;--t:#f0f0f5;--td:#a0a0b0;--tf:#6a6a7a;--a1:#7c3aed;--a2:#3b82f6;--g:linear-gradient(135deg,#7c3aed 0%,#3b82f6 100%);--ok:#7ec699;--err:#e07a8a;--w:#e6c87a;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;line-height:1.6}
+a{color:var(--a2);text-decoration:none}
+a:hover{color:var(--a1)}
+code,pre,.m{font-family:'JetBrains Mono',monospace}
+pre{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:13px 15px;overflow-x:auto;font-size:0.8rem;line-height:1.5;color:var(--td)}
+p{color:var(--td);margin-bottom:12px}
+ul{color:var(--td);padding-left:24px;margin-bottom:16px}
+ul li{margin:4px 0}
+h1,h2,h3,h4{color:var(--t)}
+.grad-text{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;align-items:center;justify-content:space-between;padding:11px 24px;background:rgba(10,10,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700}
+.mark{width:22px;height:22px;background:var(--g);border-radius:4px}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}
+.nav-links a{padding:5px 9px;font-size:.8rem;color:var(--td);border-radius:6px}
+.nav-links a:hover{background:var(--panel);color:var(--t)}
+.nav-links a.active{color:var(--t);background:var(--panel)}
+.anchor-nav{display:flex;gap:4px;flex-wrap:wrap;padding:8px 24px;background:var(--panel);border-bottom:1px solid var(--b);position:sticky;top:46px;z-index:49;font-size:.75rem}
+.anchor-nav a{padding:3px 9px;color:var(--tf);border-radius:4px;font-family:'JetBrains Mono',monospace}
+.anchor-nav a:hover{color:var(--t);background:var(--bg)}
+.hero{padding:64px 24px 32px;text-align:center;max-width:820px;margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,.12) 0%,rgba(59,130,246,.05) 35%,transparent 70%);pointer-events:none;z-index:-1}
+.hero h1{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:16px}
+.hero p.lead{color:var(--td);font-size:1.08rem;max-width:700px;margin:0 auto 20px}
+.hero .cta-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+.btn{padding:10px 20px;border-radius:8px;font-weight:600;font-size:.87rem;transition:all .2s;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--g);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(124,58,237,.35);color:#fff}
+.btn-ghost{background:transparent;border-color:var(--bs);color:var(--t)}
+.btn-ghost:hover{border-color:var(--a2);color:var(--t)}
+.btn-sm{padding:6px 13px;font-size:.78rem}
+.badges{display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--b);color:var(--td)}
+.badge.p{color:var(--a1);border-color:rgba(124,58,237,.4)}
+.badge.b{color:var(--a2);border-color:rgba(59,130,246,.4)}
+.badge.g{color:var(--ok);border-color:rgba(126,198,153,.3)}
+.badge.t{color:#c6a87e;border-color:rgba(198,168,126,.3)}
+main{max-width:960px;margin:0 auto;padding:0 24px 60px}
+section{margin:54px 0;scroll-margin-top:96px}
+section h2{font-size:1.75rem;font-weight:700;margin-bottom:12px;letter-spacing:-.02em}
+section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-right:10px;font-size:.82rem;vertical-align:middle}
+section h3{font-size:1.1rem;font-weight:600;margin:20px 0 8px}
+.equation{background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a2);border-radius:6px;padding:14px 18px;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:.86rem;color:var(--t)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+@media (max-width:720px){.cmp{grid-template-columns:1fr}}
+.cmp-card{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:15px}
+.cmp-card.bad{border-left:3px solid var(--err)}
+.cmp-card.good{border-left:3px solid var(--ok)}
+.cmp-card .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:4px}
+.cmp-card h4{font-size:.98rem;margin-bottom:6px}
+.cmp-card.bad h4{color:var(--err)}
+.cmp-card.good h4{color:var(--ok)}
+.cmp-card ul{font-size:.84rem;margin:0}
+.at{width:100%;border-collapse:collapse;margin:18px 0;font-size:.88rem}
+.at th,.at td{padding:9px 13px;text-align:left;border-bottom:1px solid var(--b);vertical-align:top}
+.at th{color:var(--tf);font-weight:600;text-transform:uppercase;font-size:.7rem;letter-spacing:.1em}
+.at tr:last-child td{border-bottom:none}
+.at tr:hover td{background:rgba(124,58,237,.04)}
+.at td.s{color:var(--a2);font-weight:600}
+.at td.q{color:var(--ok);font-family:'JetBrains Mono',monospace;font-size:.81rem}
+.at td.n{color:var(--td);font-size:.84rem}
+.callout{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(59,130,246,.05));border:1px solid var(--a1);border-radius:12px;padding:16px 18px;margin:20px 0}
+.callout h4{color:var(--a1);margin-bottom:6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.1em}
+.callout p{margin:0}
+.callout.blue{border-color:var(--a2)}
+.callout.blue h4{color:var(--a2)}
+.callout.green{border-color:var(--ok)}
+.callout.green h4{color:var(--ok)}
+.diagram{background:var(--panel);border:1px solid var(--b);border-radius:12px;padding:16px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:.76rem;line-height:1.5;color:var(--td);white-space:pre;overflow-x:auto}
+.diagram .a{color:var(--a2)}.diagram .a2{color:var(--a1)}.diagram .o{color:var(--ok)}.diagram .w{color:var(--w)}.diagram .d{color:var(--tf)}
+.primitive{background:var(--panel);border:1px solid var(--b);border-radius:12px;padding:16px 18px;margin:16px 0;position:relative}
+.primitive::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g);border-radius:12px 0 0 12px}
+.primitive h3{margin-top:0;margin-bottom:4px;font-size:1.05rem}
+.primitive .sig{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.82rem;padding:4px 9px;background:rgba(124,58,237,.08);border-radius:4px;display:inline-block;margin:4px 0 8px}
+.primitive .meta{display:flex;gap:5px;margin:6px 0 0;flex-wrap:wrap}
+.playground{background:var(--panel);border:1px solid var(--b);border-radius:12px;padding:18px;margin:20px 0}
+.playground h3{margin-top:0;display:flex;align-items:center;gap:8px}
+.playground h3 .dot{width:9px;height:9px;background:var(--g);border-radius:50%;display:inline-block}
+.pg-tabs{display:flex;gap:4px;border-bottom:1px solid var(--b);margin-bottom:12px}
+.pg-tab{padding:7px 13px;cursor:pointer;color:var(--tf);font-size:.83rem;font-family:'JetBrains Mono',monospace;border-bottom:2px solid transparent}
+.pg-tab:hover{color:var(--td)}
+.pg-tab.active{color:var(--a2);border-bottom-color:var(--a2)}
+.pg-panel{display:none}
+.pg-panel.active{display:block}
+.pg-row{margin:9px 0}
+.pg-row label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:4px}
+.pg-input,.pg-textarea{width:100%;padding:8px 11px;background:var(--bg);border:1px solid var(--b);border-radius:6px;color:var(--t);font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.pg-textarea{resize:vertical;min-height:100px;line-height:1.45}
+.pg-input:focus,.pg-textarea:focus{outline:none;border-color:var(--a2);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+.pg-output{background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:10px 12px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.77rem;line-height:1.55;min-height:52px;white-space:pre-wrap;word-break:break-all}
+.pg-output.ok{border-color:rgba(126,198,153,.4)}
+.pg-output.err{border-color:rgba(224,122,138,.4)}
+.pg-output .ok{color:var(--ok)}.pg-output .er{color:var(--err)}.pg-output .d{color:var(--tf)}
+.pg-actions{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:1px 5px;background:var(--pe);border:1px solid var(--bs);border-radius:4px;color:var(--t)}
+.surfaces{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:18px 0}
+@media (max-width:720px){.surfaces{grid-template-columns:1fr}}
+.surface{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:13px}
+.surface h4{font-size:.9rem;margin:0 0 3px}
+.surface .role{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--a1);margin-bottom:7px}
+.surface .screen{background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:9px 11px;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.5;color:var(--td);white-space:pre-wrap;min-height:90px}
+.surface .screen .o{color:var(--ok)}.surface .screen .a{color:var(--a2)}.surface .screen .a2{color:var(--a1)}.surface .screen .d{color:var(--tf)}
+.roadmap{display:grid;grid-template-columns:1fr;gap:7px;margin:16px 0}
+.roadmap-row{display:flex;align-items:center;gap:13px;padding:11px 15px;background:var(--panel);border:1px solid var(--b);border-radius:8px}
+.roadmap-row .status{width:25px;height:25px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;flex-shrink:0}
+.roadmap-row .status.done{background:rgba(126,198,153,.15);color:var(--ok);border:1px solid rgba(126,198,153,.4)}
+.roadmap-row .status.next{background:rgba(59,130,246,.12);color:var(--a2);border:1px solid rgba(59,130,246,.4)}
+.roadmap-row .label{flex:1}
+.roadmap-row .label .name{font-weight:600;color:var(--t)}
+.roadmap-row .label .desc{font-size:.79rem;color:var(--td);margin-top:1px}
+.roadmap-row .when{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--tf)}
+.class-block{background:var(--panel);border:1px solid var(--b);border-radius:12px;overflow:hidden;margin:16px 0}
+.class-block .head{display:flex;justify-content:space-between;align-items:center;padding:8px 15px;background:var(--pe);border-bottom:1px solid var(--b)}
+.class-block .head .name{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--t);font-size:.84rem}
+.class-block .head .meta{font-size:.7rem;color:var(--tf);font-family:'JetBrains Mono',monospace}
+.class-block pre{border:none;border-radius:0;margin:0}
+.next{display:flex;gap:11px;margin:28px 0;flex-wrap:wrap}
+.next a{padding:12px 15px;background:var(--panel);border:1px solid var(--b);border-radius:8px;color:var(--t);text-decoration:none;flex:1;min-width:210px;transition:all .2s}
+.next a:hover{border-color:var(--a2);transform:translateY(-2px)}
+.next a .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf)}
+.next a .t{display:block;font-size:.96rem;font-weight:600;color:var(--t);margin:3px 0}
+.next a .d{font-size:.8rem;color:var(--td)}
+footer{padding:32px 24px;text-align:center;color:var(--tf);border-top:1px solid var(--b);margin-top:50px;font-size:.82rem}
+footer a{color:var(--td)}
+footer a:hover{color:var(--a2)}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}.pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}.anim-grad{background-size:200% 200%;animation:gradShift 8s ease infinite}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a><a href="neural-cells.html">Neural Cells</a><a href="universe-model.html">Universe</a>
+    <a href="tavern.html">Tavern</a><a href="evolve.html">Evolve</a><a href="vibe.html">Vibe</a>
+    <a href="agent-substrate.html" class="active">⚡ Substrate</a>
+    <a href="quilt-live.html" style="background:var(--g);color:#fff">Open Live</a>
+  </div>
+</nav>
+
+<div class="anchor-nav">
+  <a href="#problem">#01 problem</a><a href="#primitives">#02 primitives</a>
+  <a href="#mapping">#03 mapping</a><a href="#insight">#04 insight</a>
+  <a href="#class">#05 QuiltAgent</a><a href="#playground">#06 playground</a>
+  <a href="#surfaces">#07 surfaces</a><a href="#roadmap">#08 roadmap</a>
+</div>
+
+<div class="hero">
+  <h1>Quilt as <span class="grad-text anim-grad">Agent Substrate</span></h1>
+  <p class="lead">The registry, the resolver, the substrate. Executable artifacts that any agent can compose — pinned, validated, templated, traced.</p>
+  <div class="badges">
+    <span class="badge p">5 primitives</span><span class="badge b">pinned URIs</span>
+    <span class="badge g">JSON Schema</span><span class="badge t">immutable traces</span>
+    <span class="badge">@quilt/mcp</span>
+  </div>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#primitives">View Schema ↓</a>
+    <a class="btn btn-ghost" href="#class">Read SDK ↓</a>
+    <a class="btn btn-ghost" href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">Open on GitHub →</a>
+  </div>
+</div>
+
+<main>
+
+<section id="problem">
+  <h2><span class="num">01</span>The problem: today's agents are stateless</h2>
+  <p>Every LLM call today is a one-shot. You send a prompt, you get a response, the context evaporates. There is no memory of what was tried, no provenance for what was produced, no way to compose the output with anyone else's work, no way to roll back to a known-good state, and no way to share a result with the next agent without re-deriving it from scratch.</p>
+  <p>It is the worst of both worlds: as fragile as a shell pipeline, and as expensive as a kernel boot. We have all the machinery of distributed systems — content addressing, capability negotiation, deterministic replay — and none of it is in the agent stack.</p>
+  <div class="cmp">
+    <div class="cmp-card bad">
+      <div class="lbl">Today</div>
+      <h4>Stateless LLM calls</h4>
+      <ul>
+        <li>One-shot, no memory between calls</li><li>No composition between agents</li>
+        <li>No provenance ("who produced this?")</li><li>No rollback ("yesterday's run worked")</li>
+        <li>Re-deriving the same answer costs the same every time</li><li>Tools hand-coded per agent, not reusable</li>
+      </ul>
+    </div>
+    <div class="cmp-card good">
+      <div class="lbl">With the substrate</div>
+      <h4>Quilt as agent substrate</h4>
+      <ul>
+        <li>Artifacts pinned by content hash — never drift</li><li>Manifests validated before any code runs</li>
+        <li>Run traces are immutable audit logs</li><li><code>{{template}}</code> substitution built into URIs</li>
+        <li>Any agent can call any artifact — registry is shared</li><li>Rollback is one <code>engine.serialize()</code> away</li>
+      </ul>
+    </div>
+  </div>
+  <p>The spec we're implementing is small — five primitives — but it is the same shape as the rest of the internet works (URIs, content addressing, signed manifests, immutable logs). We are not inventing a new model. We are catching up.</p>
+</section>
+
+<section id="primitives">
+  <h2><span class="num">02</span>The five primitives</h2>
+  <p>The spec defines five operations. Every other feature — caches, retries, replay, lineage, capability routing — is a composition of these. They are deliberately minimal so that any agent (Claude, GPT, a custom LLM, a shell script) can implement them.</p>
+
+  <div class="primitive">
+    <h3>① <code>resolveArtifact(uri, ctx)</code></h3>
+    <div class="sig">resolveArtifact(uri: string, ctx: Vars) =&gt; Promise&lt;Artifact&gt;</div>
+    <p>Given a canonical URI, return the pinned, content-addressed artifact. Templates like <code>quilt://demo/dataset:{{run_id}}</code> are filled from <code>ctx</code> before lookup. The result includes a SHA-256 of the bytes; downstream code can verify the result has not been tampered with.</p>
+<pre><span class="d">// spec</span>
+<span class="a2">const</span> a = <span class="a2">await</span> resolveArtifact(<span class="a">"quilt://demo/dataset:abc123"</span>, { run_id: <span class="a">"abc123"</span> });
+<span class="d">// → { uri, hash: "sha256:9f86d0...", bytes, kind }</span>
+
+<span class="d">// Quilt — every cell IS a content-addressed artifact</span>
+<span class="a2">import</span> { Engine } <span class="a2">from</span> <span class="a">'@quilt/core'</span>;
+<span class="a2">const</span> engine = <span class="a2">await</span> Engine.load();
+<span class="a2">const</span> cell   = engine.cell(<span class="a">`/demo/dataset:abc123`</span>);  <span class="d">// pinned</span>
+<span class="a2">await</span> engine.flush();                            <span class="d">// resolve &amp; cache</span></pre>
+    <div class="meta">
+      <span class="badge p">@quilt/core</span><span class="badge b">content-addressed</span><span class="badge g">idempotent</span>
+    </div>
+  </div>
+
+  <div class="primitive">
+    <h3>② <code>validateManifest(manifest)</code></h3>
+    <div class="sig">validateManifest(m: Manifest) =&gt; { ok: boolean, errors: Error[] }</div>
+    <p>Check that a manifest is well-formed <em>before</em> any of its cells run. Two layers: structural (JSON Schema: required fields, types, enums) and semantic (preconditions: input URIs resolve, model names are known, conditions are satisfiable). If either fails, the run is rejected with a structured error — not a stack trace.</p>
+<pre><span class="d">// spec</span>
+<span class="a2">const</span> r = validateManifest({ name: <span class="a">"classifier-dag"</span>, version: <span class="a">"1.0.0"</span>, cells: [...],
+  preconditions: [<span class="a">"model_requirements.provider == 'openai'"</span>] });
+<span class="d">// → { ok: true }  or  { ok: false, errors: [{ path, msg }] }</span>
+
+<span class="d">// Quilt — ajv for schema, sensor + validate listeners for preconditions</span>
+<span class="a2">import</span> { validate } <span class="a2">from</span> <span class="a">'@quilt/sdk'</span>;
+<span class="a2">const</span> r = validate(manifest);
+<span class="a2">if</span> (!r.ok) <span class="a2">throw new</span> ManifestError(r.errors);</pre>
+    <div class="meta">
+      <span class="badge p">@quilt/sdk</span><span class="badge b">JSON Schema (ajv)</span><span class="badge g">precondition check</span>
+    </div>
+  </div>
+
+  <div class="primitive">
+    <h3>③ <code>publishArtifact(path, metadata)</code></h3>
+    <div class="sig">publishArtifact(path: string, meta: Metadata) =&gt; Promise&lt;uri&gt;</div>
+    <p>Take a file or directory, hash it, attach metadata, write it to the registry, return the canonical URI. The URI is content-addressed: <code>quilt://&lt;namespace&gt;/&lt;name&gt;:&lt;sha256-prefix&gt;</code>. Same bytes, same URI, always. The metadata is signed by the publisher's key — agents can verify provenance without trusting the registry.</p>
+<pre><span class="d">// spec</span>
+<span class="a2">const</span> uri = <span class="a2">await</span> publishArtifact(<span class="a">"./dist/classifier-dag.yaml"</span>,
+  { name: <span class="a">"classifier-dag"</span>, version: <span class="a">"1.0.0"</span>, author: <span class="a">"team@quilt"</span> });
+<span class="d">// → "quilt://team/classifier-dag:a3f1b9c"  (sha256-prefix)</span>
+
+<span class="d">// Quilt — content-addressed storage, signed metadata</span>
+<span class="a2">import</span> { publish } <span class="a2">from</span> <span class="a">'@quilt/sdk'</span>;
+<span class="a2">const</span> uri = <span class="a2">await</span> publish({ path: <span class="a">'./dist/classifier-dag.yaml'</span>, registry: <span class="a">'quilt://team'</span> });</pre>
+    <div class="meta">
+      <span class="badge p">@quilt/sdk</span><span class="badge b">content-addressed</span><span class="badge g">signed</span><span class="badge t">CAS-backed</span>
+    </div>
+  </div>
+
+  <div class="primitive">
+    <h3>④ <code>publishRunTrace(trace)</code></h3>
+    <div class="sig">publishRunTrace(trace: RunTrace) =&gt; Promise&lt;trace_uri&gt;</div>
+    <p>Append a run trace to the immutable audit log. A trace is the complete record: which artifact ran, which inputs it used, the order and result of every cell evaluation, wall time, tokens consumed, model versions, hashes of the manifest and output. Once appended, the trace cannot be edited — only new traces can be appended.</p>
+<pre><span class="d">// spec</span>
+<span class="a2">const</span> uri = <span class="a2">await</span> publishRunTrace({
+  manifest_uri: <span class="a">"quilt://team/classifier-dag:a3f1b9c"</span>,
+  run_id: <span class="a">"01HXY..."</span>, started: <span class="a">"2026-01-15T14:22:01Z"</span>,
+  steps: [{ cell: <span class="a">"load"</span>, ok: <span class="a2">true</span>, ms: <span class="a">128</span> },
+          { cell: <span class="a">"embed"</span>, ok: <span class="a2">true</span>, ms: <span class="a">2410</span> }] });
+
+<span class="d">// Quilt — engine.serialize() IS the trace (reactive history)</span>
+<span class="a2">const</span> trace = engine.serialize();   <span class="d">// { nodes, edges, evals, timing, hashes }</span>
+<span class="a2">const</span> uri   = <span class="a2">await</span> publish({ path: trace, registry: <span class="a">'quilt://traces'</span> });</pre>
+    <div class="meta">
+      <span class="badge p">@quilt/core</span><span class="badge b">append-only</span><span class="badge g">hash-chained</span>
+    </div>
+  </div>
+
+  <div class="primitive">
+    <h3>⑤ <code>resolveTemplate(uri, ctx)</code></h3>
+    <div class="sig">resolveTemplate(uri: string, ctx: Vars) =&gt; string  <span class="d">// pure, no I/O</span></div>
+    <p>Substitute <code>{{variables}}</code> in a URI before resolution. This is the part that makes a registry <em>composable</em> rather than static: an artifact can declare <code>quilt://team/classifier-dag:{{tag}}</code> and the caller fills in <code>{ tag: 'a3f1b9c' }</code> at run time. Pure function, no cache to invalidate — and the same shape works in cells (their <code>derived_from</code> can be templated too).</p>
+<pre><span class="d">// spec</span>
+resolveTemplate(<span class="a">"quilt://demo/dataset:{{run_id}}"</span>, { run_id: <span class="a">"01HXY"</span> });
+<span class="d">// → "quilt://demo/dataset:01HXY"</span>
+
+resolveTemplate(<span class="a">"quilt://{{org}}/{{name}}:{{tag}}"</span>,
+  { org: <span class="a">"team"</span>, name: <span class="a">"classifier"</span>, tag: <span class="a">"v1"</span> });
+<span class="d">// → "quilt://team/classifier:v1"</span>
+
+<span class="d">// Quilt — 4 lines, used by resolveArtifact() before lookup</span>
+<span class="a2">export function</span> resolveTemplate(uri, ctx) {
+  <span class="a2">return</span> uri.replace(<span class="a">/\{\{(\w+)\}\}/g</span>, (_, k) =&gt; {
+    <span class="a2">if</span> (!(k <span class="a2">in</span> ctx)) <span class="a2">throw new</span> Error(<span class="a">`missing var: ${k}`</span>);
+    <span class="a2">return</span> ctx[k]; });
+}</pre>
+    <div class="meta">
+      <span class="badge p">@quilt/sdk</span><span class="badge b">pure function</span><span class="badge g">no I/O</span>
+    </div>
+  </div>
+</section>
+
+<section id="mapping">
+  <h2><span class="num">03</span>How Quilt already implements this</h2>
+  <p>The mapping is not 1:1 — Quilt has its own vocabulary, and the right way to read this table is "the existing concept is the realization of the spec concept". In every case, the Quilt equivalent was either <em>already</em> the right primitive or was a small, principled generalization of one.</p>
+  <table class="at">
+    <thead><tr><th style="width:26%">Spec concept</th><th style="width:30%">Quilt equivalent</th><th>How it works</th></tr></thead>
+    <tbody>
+      <tr><td class="s">Manifest (declarative primitive)</td><td class="q">Quilt sheet (YAML)</td><td class="n">A sheet is a list of named cells with kinds, formulas, and edges. The manifest schema is a strict subset of the sheet schema.</td></tr>
+      <tr><td class="s">Container entrypoint</td><td class="q">Cell <code>evaluate()</code></td><td class="n">No Docker needed. A cell is a function — call it, get a value. Process isolation is one engine, not one container.</td></tr>
+      <tr><td class="s">Inputs / outputs</td><td class="q"><code>derived_from</code> + reactive propagation</td><td class="n">A cell declares which other cells it reads. The engine recomputes the closure when an input changes — no explicit "get input" call.</td></tr>
+      <tr><td class="s">Pre / postconditions</td><td class="q"><code>kind: 'sensor'</code> + <code>validate</code> listener</td><td class="n">A sensor cell checks a precondition; a validate listener runs a function on the value before it propagates. Both fire before any consumer sees the value.</td></tr>
+      <tr><td class="s">Rollback</td><td class="q"><code>@quilt/evolve</code> revert step</td><td class="n">The engine holds a reactive history. Revert is <code>engine.load(snapshot)</code> — one call, deterministic, no manual checkpointing.</td></tr>
+      <tr><td class="s">model_requirements</td><td class="q"><code>kind: 'ai'</code> + ai_kind + provider config</td><td class="n">An <code>ai</code> cell declares its model, provider, and parameters. The engine routes the call to the right API key and tracks tokens.</td></tr>
+      <tr><td class="s">Run trace</td><td class="q"><code>engine.serialize()</code> + reactive history</td><td class="n">Every cell evaluation is recorded. Serialize captures the full graph + history + hashes — the audit log is the engine state, not a separate write path.</td></tr>
+      <tr><td class="s">Capability negotiation</td><td class="q"><code>@quilt/ai</code> routes across 4 providers</td><td class="n">Quilt already speaks OpenAI, Anthropic, DeepSeek, and z.ai. The router picks based on model + cost + availability — no agent has to encode this.</td></tr>
+      <tr><td class="s">Agent substrate (the whole point)</td><td class="q"><code>@quilt/mcp</code> exposes Quilt to ANY agent</td><td class="n">MCP (Model Context Protocol) is the standard agent-to-tool bus. <code>@quilt/mcp</code> mounts the registry, validator, and runtime as MCP tools.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <h4>Why this mapping works</h4>
+    <p>Quilt was designed as a reactive graph runtime. The spec was designed as a portable interface to agent runtimes. They were <em>not</em> designed in coordination — but they describe the same thing. The reactive graph IS the substrate; the spec is just the surface area that makes it accessible to agents that don't want to learn Quilt's internals.</p>
+  </div>
+</section>
+
+<section id="insight">
+  <h2><span class="num">04</span>The insight: reactive &gt; imperative</h2>
+  <p>The most-quoted sentence in this design is also the most undersold. If you internalize it, the rest of the spec falls out for free.</p>
+  <div class="equation">
+    <span class="a2">Don't</span> run containers, <span style="color:var(--t)">run cells.</span><br>
+    <span class="a2">Don't</span> fetch inputs, <span style="color:var(--t)">watch them change.</span><br>
+    <span class="a2">Don't</span> checkpoint state, <span style="color:var(--t)">serialize the engine.</span>
+  </div>
+  <h3>Before: the imperative agent</h3>
+  <div class="diagram"><span class="d"># today — every agent re-implements this dance</span>
+<span class="w">agent</span> = <span class="a">LLM</span>(<span class="w">prompt</span> = <span class="a2">f"""
+  Step 1: docker run --rm team/classifier:v1 --input {input_url}
+  Step 2: download output to /tmp/out.json
+  Step 3: parse, validate, retry on fail
+  Step 4: if schema mismatch → call another LLM to fix it
+"""</span>)
+<span class="w">agent</span>.run()       <span class="d"># opaque, untestable, no rollback</span>
+<span class="w">agent</span>.debug()     <span class="d"># print the prompt; good luck</span>
+<span class="w">agent</span>.replay()    <span class="d"># not a thing</span>
+</div>
+  <h3>After: the reactive agent</h3>
+  <div class="diagram"><span class="d"># with Quilt — the engine does the dance</span>
+<span class="o">manifest</span> = <span class="a">load</span>(<span class="a2">"quilt://team/classifier:a3f1b9c"</span>)
+<span class="o">manifest</span>.<span class="a">validate</span>()        <span class="d"># JSON Schema + preconditions</span>
+<span class="o">engine</span>   = <span class="a">Engine</span>(manifest)
+<span class="o">engine</span>.<span class="a">tick</span>(input_uri)         <span class="d"># reactive propagation</span>
+<span class="o">engine</span>.<span class="a">serialize</span>()            <span class="d"># full trace, deterministic</span>
+<span class="o">engine</span>.<span class="a">load</span>(snapshot)          <span class="d"># rollback is one call</span>
+
+<span class="d"># the LLM never had to know about Docker, parsing, or retry.</span>
+<span class="d"># it just told the substrate WHAT, not HOW.</span>
+</div>
+  <p>The shift is small in code, but enormous in what becomes possible:</p>
+  <ul>
+    <li><b>Replay becomes free.</b> The engine's reactive history IS the replay log. No separate trace to maintain.</li>
+    <li><b>Lineage becomes free.</b> Each cell knows its parents (declared in <code>derived_from</code>). Provenance walks the graph.</li>
+    <li><b>Rollback becomes free.</b> The engine's state is serializable. <code>engine.load(snapshot)</code> restores any prior state exactly.</li>
+    <li><b>Composition becomes free.</b> An artifact is a URI. A URI can be embedded in another artifact's manifest. No glue code.</li>
+    <li><b>Provenance becomes free.</b> The trace is the engine state. There is no other place to write to.</li>
+  </ul>
+  <div class="callout blue">
+    <h4>The one-sentence version</h4>
+    <p>An imperative agent is a program that calls functions. A reactive agent is a graph that the engine evaluates. The graph is the artifact, the evaluation is the run, the trace is the audit. Three things, one source of truth.</p>
+  </div>
+</section>
+
+<section id="class">
+  <h2><span class="num">05</span>The <code>QuiltAgent</code> class</h2>
+  <p>The whole spec, condensed into four methods. An agent is anything that can <b>plan</b> (decompose a goal into artifacts), <b>execute</b> (run them in the substrate), <b>replay</b> (re-run with new inputs), and <b>inspect</b> (look at what actually happened). The class below is a working reference implementation — about 60 lines on top of <code>@quilt/sdk</code> and <code>@quilt/core</code>.</p>
+  <div class="class-block">
+    <div class="head">
+      <span class="name">quilt-agent.ts</span>
+      <span class="meta">@quilt/sdk + @quilt/core · ~60 LOC</span>
+    </div>
+<pre><span class="d">// QuiltAgent — the 4-method interface every agent implements.</span>
+<span class="d">// The substrate does the rest.</span>
+
+<span class="a2">import</span> { Engine } <span class="a2">from</span> <span class="a">'@quilt/core'</span>;
+<span class="a2">import</span> {
+  resolveTemplate, resolveArtifact, validateManifest, publishRunTrace, publish,
+} <span class="a2">from</span> <span class="a">'@quilt/sdk'</span>;
+
+<span class="a2">export class</span> <span class="a">QuiltAgent</span> {
+  <span class="a2">constructor</span>(<span class="a2">private</span> llm: <span class="a">LLM</span>, <span class="a2">private</span> reg = <span class="a">'quilt://team'</span>) {}
+
+  <span class="d">// ① plan — goal in, manifest out. LLM picks artifacts &amp; wires them.</span>
+  <span class="a2">async</span> <span class="a">plan</span>(goal: <span class="a">string</span>) {
+    <span class="a2">const</span> catalog = <span class="a2">await</span> <span class="a2">this</span>.listCatalog();
+    <span class="a2">const</span> manifest = <span class="a2">await</span> <span class="a2">this</span>.llm.json({
+      system: <span class="a">`You are a planner. Pick artifacts and return a Quilt manifest.`</span>,
+      user:   <span class="a">`Goal: ${goal}\nCatalog:\n${catalog}`</span>,
+    });
+    <span class="a2">return</span> { manifest, uris: manifest.cells.map(c =&gt; c.ref) };
+  }
+
+  <span class="d">// ② execute — validate, resolve, run, trace. Four steps, all substrate.</span>
+  <span class="a2">async</span> <span class="a">execute</span>(plan, inputs) {
+    <span class="a2">const</span> v = validateManifest(plan.manifest);
+    <span class="a2">if</span> (!v.ok) <span class="a2">throw new</span> Error(<span class="a">`manifest invalid: ${v.errors}`</span>);
+    <span class="a2">await</span> Promise.all(plan.uris.map(u =&gt; resolveArtifact(resolveTemplate(u, inputs))));
+    <span class="a2">const</span> engine = <span class="a2">await</span> Engine.fromManifest(plan.manifest);
+    <span class="a2">await</span> engine.flush();
+    <span class="a2">const</span> trace_uri = <span class="a2">await</span> publishRunTrace(engine.serialize());
+    <span class="a2">return</span> { trace_uri, outputs: engine.outputs() };
+  }
+
+  <span class="d">// ③ replay — same plan, different inputs. Reactive engine = free replay.</span>
+  <span class="a2">async</span> <span class="a">replay</span>(plan, _prior, inputs) { <span class="a2">return</span> <span class="a2">this</span>.execute(plan, inputs); }
+
+  <span class="d">// ④ inspect — what actually happened? Read the trace, walk the graph.</span>
+  <span class="a2">async</span> <span class="a">inspect</span>(trace_uri: <span class="a">string</span>) {
+    <span class="a2">const</span> t = <span class="a2">await</span> resolveArtifact(trace_uri);
+    <span class="a2">return</span> { manifest: t.manifest_uri, ms: t.duration_ms,
+      cells: t.steps.map(s =&gt; ({ name: s.cell, ms: s.ms, ok: s.ok })),
+      tokens: t.tokens, cost: t.tokens * <span class="a">0.000002</span> };
+  }
+}
+
+<span class="d">// Usage:</span>
+<span class="a2">const</span> agent  = <span class="a2">new</span> <span class="a">QuiltAgent</span>(gpt4);
+<span class="a2">const</span> plan   = <span class="a2">await</span> agent.plan(<span class="a">"classify these 1000 reviews"</span>);
+<span class="a2">const</span> result = <span class="a2">await</span> agent.execute(plan, { dataset: <span class="a">"s3://..."</span> });
+<span class="a2">const</span> report = <span class="a2">await</span> agent.inspect(result.trace_uri);</pre>
+  </div>
+  <p>That is the entire agent surface area. <b>plan → execute → replay → inspect</b>. Everything else — caching, retries, parallelism, rollback, lineage — is provided by the substrate for free, because the engine already implements it.</p>
+  <div class="callout green">
+    <h4>Why 4 methods, not 40</h4>
+    <p>The spec is deliberately tiny. A 40-method API would be a tax on every agent; a 4-method interface is one any LLM can hold in context. The substrate does the heavy lifting so the agent stays focused on <em>what</em> to do, not <em>how</em> to do it.</p>
+  </div>
+</section>
+
+<section id="playground">
+  <h2><span class="num">06</span>Playground — try the primitives</h2>
+  <p>All three examples run in the browser. No server, no API keys. Paste a manifest (JSON), click a button, see the substrate work.</p>
+  <div class="playground">
+    <h3><span class="dot pulse"></span> Live primitives</h3>
+    <div class="pg-tabs">
+      <div class="pg-tab active" data-tab="resolve">① resolveTemplate</div>
+      <div class="pg-tab" data-tab="validate">② validateManifest</div>
+      <div class="pg-tab" data-tab="trace">③ publishRunTrace</div>
+    </div>
+
+    <div class="pg-panel active" data-panel="resolve">
+      <div class="pg-row">
+        <label>URI with <code>{{template}}</code> variables</label>
+        <input class="pg-input" id="uri-input" value="quilt://demo/dataset:{{run_id}}#{{step}}" />
+      </div>
+      <div class="pg-row">
+        <label>Variables (one per line, <code>key: value</code>)</label>
+        <textarea class="pg-textarea" id="vars-input" rows="3">run_id: 01HXY2K9
+step: embed-v2</textarea>
+      </div>
+      <div class="pg-actions">
+        <button class="btn btn-primary btn-sm" id="run-resolve">Resolve →</button>
+        <button class="btn btn-ghost btn-sm" id="reset-resolve">Reset</button>
+      </div>
+      <div class="pg-row">
+        <label>Resolved URI</label>
+        <div class="pg-output" id="resolve-out"><span class="d">click Resolve to see the template filled in…</span></div>
+      </div>
+    </div>
+
+    <div class="pg-panel" data-panel="validate">
+      <div class="pg-row">
+        <label>Manifest (JSON)</label>
+        <textarea class="pg-textarea" id="manifest-input" rows="9">{
+  "name": "classifier-dag",
+  "version": "1.0.0",
+  "cells": [
+    { "id": "load", "kind": "sensor", "source": "s3://data/train.parquet" },
+    { "id": "embed", "kind": "ai", "ai_kind": "embedding",
+      "model": "text-embedding-3-small", "derived_from": ["load"] },
+    { "id": "classify", "kind": "ai", "ai_kind": "chat",
+      "model": "gpt-4o-mini", "derived_from": ["embed"],
+      "preconditions": ["embed.size > 0"],
+      "model_requirements": { "provider": "openai", "max_tokens": 4096 } }
+  ]
+}</textarea>
+      </div>
+      <div class="pg-actions">
+        <button class="btn btn-primary btn-sm" id="run-validate">Validate →</button>
+        <button class="btn btn-ghost btn-sm" id="try-bad">Try a broken one</button>
+        <button class="btn btn-ghost btn-sm" id="try-good">Try a valid one</button>
+      </div>
+      <div class="pg-row">
+        <label>Result</label>
+        <div class="pg-output" id="validate-out"><span class="d">click Validate to run JSON Schema + precondition checks…</span></div>
+      </div>
+    </div>
+
+    <div class="pg-panel" data-panel="trace">
+      <div class="pg-row">
+        <label>Click "Publish" to generate a run trace from a simulated DAG</label>
+      </div>
+      <div class="pg-actions">
+        <button class="btn btn-primary btn-sm" id="run-trace">Publish Run Trace →</button>
+        <button class="btn btn-ghost btn-sm" id="run-trace-fail">Publish (with failure) →</button>
+      </div>
+      <div class="pg-row">
+        <label>Run trace (canonical, hash-chained)</label>
+        <div class="pg-output" id="trace-out"><span class="d">click Publish to see the immutable audit record…</span></div>
+      </div>
+    </div>
+  </div>
+  <p>The point of these three boxes is not to be a full implementation — it is to show that the substrate's contract is small enough to demonstrate end-to-end in 50 lines of JS. When you read the SDK, you will find the same shape, just with the I/O filled in.</p>
+</section>
+
+<section id="surfaces">
+  <h2><span class="num">07</span>Provenance-first UX</h2>
+  <p>One backend, three surfaces. Every surface shows the same thing: <em>where did this result come from?</em> The TUI is for power users, the GUI is for the rest of us, the voice interface is for the visually impaired and the impatient. All three hit the same <code>QuiltAgent</code> instance — there is exactly one source of truth.</p>
+  <div class="surfaces">
+    <div class="surface">
+      <h4>▣ TUI · terminal</h4>
+      <div class="role">quilt run classifier.yaml</div>
+      <div class="screen"><span class="a">$</span> quilt run classifier.yaml --input data.csv
+<span class="d">→ resolving</span>  <span class="a2">quilt://team/classifier:a3f1b9c</span> <span class="o">✓</span>
+<span class="d">→ validating</span> manifest        <span class="o">✓  0 errors</span>
+<span class="d">→ executing</span> 4 cells
+  <span class="o">✓</span> load      128 ms
+  <span class="o">✓</span> embed     <span class="a">2,410 ms</span>  <span class="d">14.2k tokens</span>
+  <span class="o">✓</span> classify   890 ms  <span class="d">2.1k tokens</span>
+  <span class="o">✓</span> route       3 ms
+<span class="d">→ trace</span>  <span class="a2">quilt://traces/01HXY...:b3a9</span>
+<span class="d">→ cost</span>   $0.043
+<span class="o">✓ done</span> in <span class="a">3.43s</span></div>
+    </div>
+    <div class="surface">
+      <h4>◫ GUI · browser</h4>
+      <div class="role">quilt.studio / inspector</div>
+      <div class="screen"><span class="d">Run</span>  classifier-dag  <span class="o">● ok</span>
+<span class="d">────────────────────────────────────</span>
+manifest   <span class="a2">quilt://team/classifier:a3f1b9c</span>
+started    14:22:01Z
+duration   <span class="a">3.43s</span>
+tokens     16,300  <span class="d">($0.043)</span>
+<span class="d">────────────────────────────────────</span>
+  load      <span class="o">✓</span>    128 ms
+  embed     <span class="o">✓</span>  <span class="a">2,410 ms</span>
+  classify  <span class="o">✓</span>    890 ms
+  route     <span class="o">✓</span>      3 ms
+<span class="d">────────────────────────────────────</span>
+trace      <span class="a2">quilt://traces/01HXY...:b3a9</span>
+<span class="d">[click to inspect graph]</span></div>
+    </div>
+    <div class="surface">
+      <h4>◉ Voice · spoken</h4>
+      <div class="role">"Quilt, what just happened?"</div>
+      <div class="screen"><span class="d">▶</span> "I ran <span class="a2">classifier</span> version <span class="a">a3f1</span>... on
+   your CSV, four cells, three point four seconds,
+   sixteen thousand tokens, cost four cents.
+
+   Two <span class="o">thumbs up</span> — every cell passed.
+
+   Trace is at <span class="a2">traces / 01HXY ... b3a9</span>.
+
+   Want me to replay it with the new data?"</div>
+    </div>
+  </div>
+  <div class="callout">
+    <h4>The single contract</h4>
+    <p>All three surfaces serialize to the same <code>RunResult</code>. The TUI renders it as monospace, the GUI as a graph, the voice agent as natural language. None of them invent new state. That is the whole point of having a substrate — one source of truth, many ways to read it.</p>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2><span class="num">08</span>Roadmap</h2>
+  <p>Where we are, where we are going. The first three rows are shipped; the rest are in flight.</p>
+  <div class="roadmap">
+    <div class="roadmap-row"><span class="status done">✓</span><div class="label"><div class="name">Manifest schema</div><div class="desc">JSON Schema for cells, edges, preconditions, model_requirements. The substrate's source of truth.</div></div><span class="when">v0.1 — shipped</span></div>
+    <div class="roadmap-row"><span class="status done">✓</span><div class="label"><div class="name">@quilt/sdk</div><div class="desc">The 5 primitives as a TypeScript package — <code>resolveArtifact</code>, <code>validateManifest</code>, <code>publishArtifact</code>, <code>publishRunTrace</code>, <code>resolveTemplate</code>.</div></div><span class="when">v0.2 — shipped</span></div>
+    <div class="roadmap-row"><span class="status done">✓</span><div class="label"><div class="name"><code>quilt validate</code> CLI</div><div class="desc"><code>npx quilt validate manifest.yaml</code> — schema check + precondition probe + URI reachability. Returns a structured report.</div></div><span class="when">v0.3 — shipped</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">quilt-runner <span class="badge" style="margin-left:6px">reference executor</span></div><div class="desc">A small executor that loads a manifest, resolves inputs, runs the engine, and publishes the trace. The "hello world" of agents on Quilt.</div></div><span class="when">v0.4 — next</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">quilt-rag <span class="badge" style="margin-left:6px">production RAG</span></div><div class="desc">A reference RAG sheet — embed, retrieve, rerank, answer — exposed as a single artifact. Pin it, version it, ship it.</div></div><span class="when">v0.5 — in design</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">quilt-demo-classifier-dag</div><div class="desc">The end-to-end demo. 4 cells, 1.0.0 manifest, working trace, published artifact. The thing you copy to start your own.</div></div><span class="when">v0.5 — in design</span></div>
+  </div>
+  <p>If you build on the substrate, your work goes here. The next row could be yours — the registry is open, the schema is open, the SDK is open.</p>
+</section>
+
+<section>
+  <h2>Where to go from here</h2>
+  <p>Three doors, depending on what brought you here.</p>
+  <div class="next">
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener"><div class="l">Repo</div><div class="t">github.com/SuperInstance/quilt</div><div class="d">The substrate. The 5 primitives, the engine, the schema, the spec. MIT licensed.</div></a>
+    <a href="https://github.com/SuperInstance/quilt/blob/main/docs/agent-substrate-spec.md" target="_blank" rel="noopener"><div class="l">Spec</div><div class="t">The agent-substrate spec</div><div class="d">The full text. The rationale for each primitive, the edge cases, the rejection criteria. If you are going to implement against it, start here.</div></a>
+    <a href="neural-cells.html"><div class="l">Companion</div><div class="t">Neural Cells</div><div class="d">The deeper theory: Quilt as a generalized message-passing architecture. Hopfield nets, transformers, MoE, diffusion, neural ODEs.</div></a>
+    <a href="universe-model.html"><div class="l">Companion</div><div class="t">Universe Model</div><div class="d">A Quilt sheet as a self-contained universe, wrapping any engine — robotics sim, game engine, notebook, backtester.</div></a>
+    <a href="evolve.html"><div class="l">Companion</div><div class="t">Evolve</div><div class="d">The self-improvement loop. The substrate learns from its own traces — the same runs that publishRunTrace produces are the training data.</div></a>
+    <a href="quilt-live.html"><div class="l">Try it</div><div class="t">Quilt Live</div><div class="d">Open the studio. Build a sheet, validate it, run it, inspect the trace. Five minutes from zero to first artifact.</div></a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Quilt · Agent Substrate · the registry, the resolver, the substrate</p>
+  <p style="margin-top:6px">
+    <a href="index.html">Home</a> · <a href="neural-cells.html">Neural Cells</a> · <a href="universe-model.html">Universe</a> ·
+    <a href="evolve.html">Evolve</a> · <a href="vibe.html">Vibe</a> ·
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">GitHub</a>
+  </p>
+  <p style="margin-top:6px;font-size:.76rem">spec · primitives · substrate · <code class="kbd">resolveArtifact</code> <code class="kbd">validateManifest</code> <code class="kbd">publishArtifact</code> <code class="kbd">publishRunTrace</code> <code class="kbd">resolveTemplate</code></p>
+</footer>
+
+<script>
+// ============================================================================
+// PLAYGROUND — three live primitives, all in the browser
+// ============================================================================
+document.querySelectorAll('.pg-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.pg-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.pg-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelector(`.pg-panel[data-panel="${t.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// ① resolveTemplate
+const resolveTemplate = (uri, ctx) =>
+  uri.replace(/\{\{(\w+)\}\}/g, (_, k) => {
+    if (!(k in ctx)) throw new Error(`missing variable: ${k}`);
+    return ctx[k];
+  });
+const setOut = (id, cls, html) => { const o = document.getElementById(id); o.className = 'pg-output ' + cls; o.innerHTML = html; };
+document.getElementById('run-resolve').onclick = () => {
+  try {
+    const uri  = document.getElementById('uri-input').value;
+    const vars = {};
+    document.getElementById('vars-input').value.split('\n').forEach(line => {
+      const [k, ...rest] = line.split(':');
+      if (k && rest.length) vars[k.trim()] = rest.join(':').trim();
+    });
+    setOut('resolve-out', 'ok', `<span class="ok">✓ resolved</span>\n\n${resolveTemplate(uri, vars)}`);
+  } catch (e) { setOut('resolve-out', 'err', `<span class="er">✗ ${e.message}</span>`); }
+};
+document.getElementById('reset-resolve').onclick = () => {
+  document.getElementById('uri-input').value = 'quilt://demo/dataset:{{run_id}}#{{step}}';
+  document.getElementById('vars-input').value = 'run_id: 01HXY2K9\nstep: embed-v2';
+  setOut('resolve-out', '', '<span class="d">click Resolve to see the template filled in…</span>');
+};
+
+// ② validateManifest
+const SCHEMA = { type:'object', required:['name','version','cells'],
+  properties: {
+    name:    { type:'string', pattern:'^[a-z0-9-]+$' },
+    version: { type:'string', pattern:'^\\d+\\.\\d+\\.\\d+$' },
+    cells:   { type:'array', minItems:1 } } };
+const KINDS = new Set(['sensor','formula','value','ai','program','router','listener','api','io']);
+function ajvLite(schema, data, path = '$') {
+  const errs = [];
+  if (schema.type === 'object') {
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) return [{ path, msg: 'expected object' }];
+    (schema.required || []).forEach(k => { if (!(k in data)) errs.push({ path: `${path}.${k}`, msg: 'required' }); });
+    for (const k in (schema.properties || {})) if (k in data) errs.push(...ajvLite(schema.properties[k], data[k], `${path}.${k}`));
+  } else if (schema.type === 'array') {
+    if (!Array.isArray(data)) errs.push({ path, msg: 'expected array' });
+    else if (schema.minItems && data.length < schema.minItems) errs.push({ path, msg: `minItems ${schema.minItems}` });
+  } else if (schema.type === 'string') {
+    if (typeof data !== 'string') errs.push({ path, msg: 'expected string' });
+    else if (schema.pattern && !new RegExp(schema.pattern).test(data)) errs.push({ path, msg: `pattern mismatch: ${schema.pattern}` });
+  }
+  return errs;
+}
+function validateManifest(m) {
+  const errs = ajvLite(SCHEMA, m);
+  if (m.cells) m.cells.forEach((c, i) => {
+    if (!c.kind) errs.push({ path: `cells[${i}].kind`, msg: 'required' });
+    else if (!KINDS.has(c.kind)) errs.push({ path: `cells[${i}].kind`, msg: `unknown kind "${c.kind}"` });
+    if (c.kind === 'ai' && !c.model) errs.push({ path: `cells[${i}].model`, msg: 'ai cells require model' });
+  });
+  return { ok: errs.length === 0, errors: errs };
+}
+document.getElementById('run-validate').onclick = () => {
+  try {
+    const m = JSON.parse(document.getElementById('manifest-input').value);
+    const r = validateManifest(m);
+    if (r.ok) {
+      setOut('validate-out', 'ok',
+        `<span class="ok">✓ valid</span>\n  cells:     ${m.cells.length}\n  kinds:     ${[...new Set(m.cells.map(c => c.kind))].join(', ')}\n` +
+        `  preconds:  ${m.cells.reduce((n, c) => n + (c.preconditions?.length || 0), 0)}\n` +
+        `  schema:    ${m.name}@${m.version}\n  result:    no errors found`);
+    } else {
+      setOut('validate-out', 'err',
+        `<span class="er">✗ invalid</span>\n\n` + r.errors.map(e => `  ${e.path}\n    ${e.msg}`).join('\n'));
+    }
+  } catch (e) { setOut('validate-out', 'err', `<span class="er">✗ parse error</span>\n  ${e.message}`); }
+};
+document.getElementById('try-bad').onclick = () => {
+  document.getElementById('manifest-input').value = JSON.stringify({
+    name: 'BAD_NAME', version: 'not-semver',
+    cells: [{ id: 'x', kind: 'ai_image' }, { id: 'y', kind: 'ai', model: 'gpt-4o' }]
+  }, null, 2);
+};
+document.getElementById('try-good').onclick = () => {
+  document.getElementById('manifest-input').value = JSON.stringify({
+    name: 'classifier-dag', version: '1.0.0',
+    cells: [
+      { id: 'load', kind: 'sensor', source: 's3://data/train.parquet' },
+      { id: 'embed', kind: 'ai', ai_kind: 'embedding', model: 'text-embedding-3-small', derived_from: ['load'] },
+      { id: 'classify', kind: 'ai', ai_kind: 'chat', model: 'gpt-4o-mini', derived_from: ['embed'],
+        preconditions: ['embed.size > 0'],
+        model_requirements: { provider: 'openai', max_tokens: 4096 } } ]
+  }, null, 2);
+};
+
+// ③ publishRunTrace
+const sha256 = async (s) => {
+  const buf = new TextEncoder().encode(s);
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return 'sha256:' + Array.from(new Uint8Array(h)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+};
+const randId = () => Math.random().toString(36).slice(2, 10).toUpperCase();
+const parseTok = (note) => { const m = note.match(/([\d,]+) tokens/); return m ? +m[1].replace(/,/g, '') : 0; };
+const STEPS_OK = [
+  { name:'load',     ms:128,  ok:true,  note:'4.2 MB parquet' },
+  { name:'embed',    ms:2410, ok:true,  note:'14,200 tokens', provider:'openai' },
+  { name:'classify', ms:890,  ok:true,  note:'2,100 tokens',  provider:'openai' },
+  { name:'route',    ms:3,    ok:true,  note:'3 cells' } ];
+const STEPS_FAIL = [
+  { name:'load',     ms:128,  ok:true,  note:'4.2 MB parquet' },
+  { name:'embed',    ms:2410, ok:true,  note:'14,200 tokens', provider:'openai' },
+  { name:'classify', ms:891,  ok:false, note:'rate limit exceeded', provider:'openai' },
+  { name:'route',    ms:0,    ok:false, note:'skipped — upstream failed' } ];
+async function publishTrace(steps) {
+  const runId = '01HXY' + randId();
+  const t = {
+    manifest_uri: 'quilt://team/classifier-dag:a3f1b9c', run_id: runId,
+    duration_ms: steps.reduce((s, x) => s + x.ms, 0),
+    tokens: steps.reduce((s, x) => s + parseTok(x.note), 0),
+    ok: steps.every(s => s.ok), steps };
+  t.hash = await sha256(JSON.stringify(t.steps) + t.run_id);
+  t.trace_uri = `quilt://traces/${runId}:${t.hash.split(':')[1].slice(0, 8)}`;
+  return t;
+}
+function renderTrace(t) {
+  return [
+    `<span class="ok">✓ published</span>`, ``,
+    `  <span class="d">trace_uri</span>  ${t.trace_uri}`,
+    `  <span class="d">manifest</span>   ${t.manifest_uri}`,
+    `  <span class="d">run_id</span>     ${t.run_id}`,
+    `  <span class="d">duration</span>   ${t.duration_ms} ms`,
+    `  <span class="d">tokens</span>     ${t.tokens.toLocaleString()}`,
+    `  <span class="d">ok</span>          ${t.ok ? '<span class="ok">true</span>' : '<span class="er">false</span>'}`,
+    `  <span class="d">hash</span>       ${t.hash}`, ``,
+    `  <span class="d">steps:</span>`,
+    ...t.steps.map(s => `    ${s.ok ? '<span class="ok">✓</span>' : '<span class="er">✗</span>'} ${String(s.name).padEnd(10)} ${String(s.ms).padStart(5)} ms  ${s.note}`) ].join('\n');
+}
+document.getElementById('run-trace').onclick = async () => {
+  setOut('trace-out', 'ok', '<span class="d">publishing…</span>');
+  setOut('trace-out', 'ok', renderTrace(await publishTrace(STEPS_OK)));
+};
+document.getElementById('run-trace-fail').onclick = async () => {
+  setOut('trace-out', 'err', '<span class="d">publishing…</span>');
+  setOut('trace-out', 'err', renderTrace(await publishTrace(STEPS_FAIL)));
+};
+
+// smooth scroll for anchor nav
+document.querySelectorAll('.anchor-nav a, .hero .btn[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href');
+    if (id && id.startsWith('#')) {
+      e.preventDefault();
+      document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

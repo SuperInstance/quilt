@@ -1,0 +1,68 @@
+# Example manifest demonstrating the spec-compatible Quilt envelope.
+# This is a self-contained example of a planner-friendly manifest
+# that uses Quilt's manifest schema fields.
+#
+# Try:
+#   quilt validate examples/train-classifier.manifest.yaml
+#   quilt validate examples/train-classifier.manifest.yaml --check-exists --run-id r-20260819-01
+
+id: train-classifier
+version: "1.0.0"
+title: "Train Classifier"
+description: "Train classifier on staged dataset"
+
+# Declared inputs
+inputs:
+  - name: dataset
+    uri: quilt://ml/datasets/staged:latest
+    required: true
+    type: dataset
+
+# Declared outputs (templated with run_id)
+outputs:
+  - name: model
+    uri: quilt://ml/models/classifier:{{run_id}}
+    type: model
+  - name: metrics
+    uri: quilt://ml/metrics/classifier:{{run_id}}
+    type: metrics
+
+# Conditions that must be true before this runs
+preconditions:
+  - type: artifact_exists
+    uri: quilt://ml/datasets/staged:latest
+  - type: cell_ready
+    cell: train.config.epochs
+  - type: expr
+    expr: "train.config.learning_rate > 0"
+
+# Conditions that must be true after this runs successfully
+postconditions:
+  - type: artifact_exists
+    uri: quilt://ml/models/classifier:{{run_id}}
+  - type: cell_ready
+    cell: validate.accuracy
+
+# How to roll back side effects
+rollback:
+  type: manifest
+  manifest_id: rollback-train
+
+# Hardware and timing hints
+resource_hints:
+  gpu: 1
+  memory_gb: 32
+  timeout_s: 7200
+  network: restricted
+  sandbox: container
+
+# Model adapter requirements (for AI cells in the sheet)
+model_requirements:
+  llm_context_tokens: 8000
+  multimodal: false
+
+# Tags for search and grouping
+provenance_tags:
+  - training
+  - weekly-run
+  - production

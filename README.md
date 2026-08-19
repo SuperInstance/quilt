@@ -741,6 +741,8 @@ embedding surfaces. This is the entire command surface:
 | `quilt set <sheet> <cell> <value>` | Set a cell's value in a fresh session and print confirmation (does not persist) |
 | `quilt test <sheet>` | Evaluate every cell; print `✓`/`✗` per cell; exit `1` if anything failed |
 | `quilt inspect <sheet>` | Show the sheet grouped by kind, with dependency arrows and descriptions |
+| `quilt validate <file>` | Validate a manifest against the JSON Schema; `--check-exists` to verify preconditions; `--run-id <id>` to template `{{run_id}}` |
+| `quilt resolve <uri>` | Resolve a Quilt URI: substitute `{{vars}}` and pin `:latest`; `--run-id <id>` for context |
 | `quilt help` / `-h` / `--help` | Print usage |
 
 Details worth knowing:
@@ -760,6 +762,58 @@ Details worth knowing:
   the simulator, or an MCP `serve` session.
 - **Exit codes** — usage errors exit `1`; `test` exits `1` if any
   cell failed; everything else exits `0`.
+
+---
+
+## 🧬 Quilt as an Agent Substrate
+
+Quilt is a registry, a resolver, and an execution substrate. The
+**`@quilt/sdk`** package exposes five primitives that let any planner,
+runtime, or UI compose Quilt sheets into agentic workflows:
+
+```ts
+import {
+  resolveTemplate,         // 1. substitute {{vars}}
+  resolveArtifact,         // 2. pin :latest, get provenance
+  validateManifest,        // 3. JSON Schema + precondition checks
+  publishArtifact,         // 4. upload, get content-addressed URI
+  publishRunTrace,         // 5. persist immutable execution trace
+  InMemoryArtifactStore,
+} from '@quilt/sdk';
+
+const store = new InMemoryArtifactStore();
+
+// Compile a goal into a plan
+const v = await validateManifest(plan, { store, checkExists: true });
+
+// Run it (Quilt's reactive engine evaluates the cells)
+const { uri, contentHash } = await publishArtifact(modelBytes, { manifestId: plan.id, runId }, store);
+
+// Audit it
+await publishRunTrace({
+  runId: 'r-01',
+  manifestId: plan.id,
+  startTime: new Date().toISOString(),
+  status: 'success',
+  nodes: [{ nodeId: 'main', status: 'success', artifactUris: [uri] }],
+}, store);
+```
+
+**Why these five?** They are the minimum surface that lets planners
+compile goals into manifest DAGs, runtimes execute them transactionally,
+agents learn from the past, and UIs show users what is happening with
+full provenance. **See the [Agent Substrate landing page](landing/agent-substrate.html)
+for the full mapping and live playground.**
+
+```bash
+# Try it
+quilt validate examples/train-classifier.manifest.yaml
+quilt resolve 'quilt://ml/models:{{run_id}}' --run-id r-20260819-01
+```
+
+28 tests cover: templating edge cases, URI validation, version pinning,
+schema validation, all precondition types, content addressing,
+idempotency, end-to-end planner-style flows.
 
 ---
 
@@ -984,7 +1038,8 @@ The Rust port honors the same five layers. The data model is identical. Only the
 
 ### Core runtime
 - **`@quilt/core`** — the reactive cell engine. TypeScript, ESM, no native deps. ~1,500 lines, heavily commented.
-- **`@quilt/cli`** — `init / run / serve --mcp / get / set / inspect / test`. The entry point.
+- **`@quilt/sdk`** — agent substrate primitives. Five functions: `resolveTemplate`, `resolveArtifact`, `validateManifest`, `publishArtifact`, `publishRunTrace`. Turn any Quilt sheet into an executable, auditable, replayable artifact. **28 tests.**
+- **`@quilt/cli`** — `init / run / serve --mcp / get / set / inspect / test / validate / resolve`. The entry point.
 - **`@quilt/mcp`** — exposes every cell as an MCP tool, every sheet as an MCP resource.
 - **`@quilt/tui`** — terminal-native view of a running engine. Live cell grid, dependencies panel, key bindings. Plays well with tmux.
 

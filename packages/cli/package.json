@@ -13,6 +13,7 @@
   "dependencies": {
     "@quilt/core": "*",
     "@quilt/mcp": "*",
+    "@quilt/sdk": "*",
     "yaml": "^2.3.0"
   },
   "devDependencies": {

@@ -1,0 +1,25 @@
+{
+  "name": "@quilt/sdk",
+  "version": "0.1.0",
+  "description": "Agent substrate primitives for Quilt: resolveArtifact, validateManifest, publishArtifact, publishRunTrace, resolveTemplate. The five functions that turn Quilt sheets into executable, auditable, replayable artifacts.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx --test test/*.test.js"
+  },
+  "files": ["dist", "README.md"],
+  "dependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^3.0.1"
+  },
+  "peerDependencies": {
+    "@quilt/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

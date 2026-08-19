@@ -3,13 +3,17 @@
  * quilt CLI — the entry point for working with sheets from the terminal.
  *
  * Commands:
- *   quilt init [name]         Scaffold a new sheet
- *   quilt run <sheet>         Run a sheet, watch cells update
- *   quilt serve <sheet>       Serve a sheet (stdio MCP or TUI)
- *   quilt get <sheet> <cell>  Get a cell's value
- *   quilt set <sheet> <cell>  Set a cell's value
- *   quilt test <sheet>        Run cell tests
- *   quilt inspect <sheet>     Show sheet structure
+ *   quilt init [name]              Scaffold a new sheet
+ *   quilt run <sheet>              Run a sheet, watch cells update
+ *   quilt serve <sheet>            Serve a sheet (stdio MCP or TUI)
+ *   quilt get <sheet> <cell>       Get a cell's value
+ *   quilt set <sheet> <cell> <v>   Set a cell's value
+ *   quilt test <sheet>             Run cell tests
+ *   quilt inspect <sheet>          Show sheet structure
+ *   quilt validate <file>          Validate a manifest against the JSON Schema
+ *                                  (optionally --check-exists to verify preconditions)
+ *   quilt resolve <uri>            Resolve a Quilt URI (template substitution + version pinning)
+ *   help                           Show this help
  *
  * The CLI is intentionally minimal — the real power is in the runtime
  * and the embedding surfaces (TUI, MCP, Web).
@@ -19,6 +23,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { QuiltEngine, parseSheet, type SheetDef } from '@quilt/core';
 import { startMcpServer } from '@quilt/mcp';
+import { validateManifest, resolveArtifact, resolveTemplate, InMemoryArtifactStore } from '@quilt/sdk';
 
 const HELP = `
 quilt — a spreadsheet where every cell is a live, addressable capability
@@ -27,20 +32,27 @@ USAGE:
   quilt <command> [args]
 
 COMMANDS:
-  init [name]              Scaffold a new sheet
-  run <sheet>              Run a sheet, print live cell values
-  serve <sheet> [--mcp]    Serve a sheet (TUI by default, --mcp for MCP stdio)
-  get <sheet> <cell>       Get a cell's current value
-  set <sheet> <cell> <v>   Set a cell's value
-  test <sheet>             Run cell tests
-  inspect <sheet>          Show sheet structure as a tree
-  help                     Show this help
+  init [name]                  Scaffold a new sheet
+  run <sheet>                  Run a sheet, print live cell values
+  serve <sheet> [--mcp]        Serve a sheet (TUI by default, --mcp for MCP stdio)
+  get <sheet> <cell>           Get a cell's current value
+  set <sheet> <cell> <v>       Set a cell's value
+  test <sheet>                 Run cell tests
+  inspect <sheet>              Show sheet structure as a tree
+  validate <file>              Validate a manifest against the JSON Schema
+    --check-exists             Also verify artifact_exists preconditions
+    --run-id <id>              Provide run_id for templating in preconditions
+  resolve <uri>                Resolve a Quilt URI
+    --run-id <id>              Provide run_id for templating
+  help                         Show this help
 
 EXAMPLES:
   quilt init my-autopilot
   quilt run examples/boat-autopilot/sheet.yaml
   quilt serve examples/agent-dashboard/sheet.yaml --mcp
   quilt get examples/boat-autopilot/sheet.yaml rudder.command
+  quilt validate examples/train-classifier.manifest.yaml
+  quilt resolve 'quilt://ml/models:{{run_id}}' --run-id r-20260819-01
 `;
 
 async function main(): Promise<void> {
@@ -62,6 +74,10 @@ async function main(): Promise<void> {
       return inspect(args[1]);
     case 'test':
       return testSheet(args[1]);
+    case 'validate':
+      return validateCmd(args[1], args);
+    case 'resolve':
+      return resolveCmd(args[1], args);
     case 'help':
     case '--help':
     case '-h':
@@ -248,6 +264,111 @@ async function testSheet(path?: string): Promise<void> {
   }
   console.log(`\n${passed} passed, ${failed} failed (${engine.listCells().length} total)`);
   if (failed > 0) process.exit(1);
+}
+
+/**
+ * `quilt validate <file>` — validate a manifest against the Quilt
+ * manifest JSON Schema, with optional precondition checks.
+ *
+ * Examples:
+ *   quilt validate my-manifest.yaml
+ *   quilt validate my-manifest.yaml --check-exists
+ *   quilt validate my-manifest.yaml --check-exists --run-id r-20260819-01
+ */
+async function validateCmd(path: string | undefined, args: string[]): Promise<void> {
+  if (!path) {
+    console.error('usage: quilt validate <file> [--check-exists] [--run-id <id>]');
+    process.exit(1);
+  }
+  const abs = resolve(path);
+  const source = await readFile(abs, 'utf8');
+
+  // The file may be a Quilt sheet (which has cells) or a plain manifest
+  // (which is a JSON object matching the manifest schema). Detect by
+  // attempting JSON parse first; if that fails, parse as YAML and look
+  // for a `manifest` top-level key or treat the whole file as a sheet.
+  let manifest: unknown;
+  const trimmed = source.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    manifest = JSON.parse(source);
+  } else {
+    const yaml = await import('yaml');
+    const parsed = yaml.parse(source);
+    // If it has cells, it's a sheet — extract the manifest envelope
+    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.cells)) {
+      manifest = parsed;
+    } else {
+      manifest = parsed;
+    }
+  }
+
+  const checkExists = args.includes('--check-exists');
+  const runIdIdx = args.indexOf('--run-id');
+  const runId = runIdIdx > -1 ? args[runIdIdx + 1] : undefined;
+  const runContext = runId ? { runId, timestamp: new Date().toISOString() } : { timestamp: new Date().toISOString() };
+
+  const store = checkExists ? new InMemoryArtifactStore() : undefined;
+  const result = await validateManifest(manifest, {
+    store,
+    checkExists,
+    runContext,
+  });
+
+  if (result.valid) {
+    console.log(`✓ Valid manifest: ${path}`);
+    if (checkExists) {
+      console.log(`  ✓ All artifact_exists preconditions satisfied`);
+    }
+    // Show a quick summary
+    const m = manifest as { id?: string; version?: string; provenance_tags?: string[] };
+    if (m.id) console.log(`  id:        ${m.id}`);
+    if (m.version) console.log(`  version:   ${m.version}`);
+    if (m.provenance_tags?.length) console.log(`  tags:      ${m.provenance_tags.join(', ')}`);
+    return;
+  }
+
+  console.error(`✗ Invalid manifest: ${path}`);
+  for (const err of result.errors) {
+    console.error(`  ${err.path}: ${err.message}`);
+  }
+  process.exit(1);
+}
+
+/**
+ * `quilt resolve <uri>` — resolve a Quilt URI: template substitution
+ * plus (optionally) version pinning against a store.
+ *
+ * Examples:
+ *   quilt resolve 'quilt://ml/models:{{run_id}}' --run-id r-01
+ */
+async function resolveCmd(uri: string | undefined, args: string[]): Promise<void> {
+  if (!uri) {
+    console.error('usage: quilt resolve <uri> [--run-id <id>]');
+    process.exit(1);
+  }
+  const runIdIdx = args.indexOf('--run-id');
+  const runId = runIdIdx > -1 ? args[runIdIdx + 1] : undefined;
+  const runContext = { runId, timestamp: new Date().toISOString() };
+
+  // First show the template substitution
+  let templated: string;
+  try {
+    templated = resolveTemplate(uri, runContext);
+    if (templated !== uri) {
+      console.log(`Template:    ${uri}`);
+      console.log(`Substituted: ${templated}`);
+    }
+  } catch (err) {
+    console.error(`✗ Template error: ${(err as Error).message}`);
+    process.exit(1);
+  }
+
+  // Then resolve against an in-memory store (in production this would
+  // hit the user's configured Quilt backend)
+  const store = new InMemoryArtifactStore();
+  const result = await resolveArtifact(uri, runContext, store);
+  console.log(`Version:     ${result.version}`);
+  console.log(`Resolved:    ${result.resolvedUri}`);
 }
 
 function kindSymbol(kind: string): string {
