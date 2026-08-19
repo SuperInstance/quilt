@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Quilt Manifesto — why a cellular runtime?</title>
+<meta name="description" content="Why Quilt exists. A small thesis about a big idea: the spreadsheet is the runtime, the cell is the universal IO, and the model is finally made real.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; font-size: 1.05rem; }
+a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border-strong); } a:hover { color: var(--green); border-color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; border-bottom: none; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 100px 24px 60px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.15rem; max-width: 600px; margin: 0 auto; }
+
+article { max-width: 680px; margin: 0 auto; padding: 0 24px 80px; }
+article h2 { font-size: 1.6rem; font-weight: 700; margin: 60px 0 16px; }
+article h2:first-child { margin-top: 0; }
+article h3 { font-size: 1.2rem; font-weight: 600; margin: 32px 0 12px; }
+article p { color: var(--text-dim); margin-bottom: 20px; }
+article p strong { color: var(--text); font-weight: 600; }
+article p em { color: var(--text); font-style: normal; border-bottom: 1px dashed var(--border-strong); }
+article ul, article ol { color: var(--text-dim); margin: 12px 0 24px 20px; }
+article li { margin-bottom: 8px; }
+article blockquote { border-left: 3px solid var(--green); padding: 12px 20px; background: var(--bg-card); border-radius: 0 8px 8px 0; margin: 24px 0; font-style: italic; color: var(--text); }
+article blockquote p { color: var(--text); margin: 0; }
+pre { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 16px 0; }
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-dim); white-space: pre; overflow-x: auto; margin: 16px 0; }
+.pull { font-size: 1.5rem; line-height: 1.3; color: var(--text); font-weight: 500; padding: 24px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 40px 0; text-align: center; }
+
+.timeline { margin: 24px 0; }
+.timeline-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 8px; display: grid; grid-template-columns: 100px 1fr; gap: 16px; align-items: start; }
+.timeline-year { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 700; color: var(--green); }
+.timeline-content { font-size: 0.95rem; }
+.timeline-content strong { color: var(--text); display: block; margin-bottom: 4px; }
+.timeline-content span { color: var(--text-dim); font-size: 0.85rem; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="docs.html">Docs</a>
+    <a href="tutorial.html">Tutorial</a>
+    <a href="cells.html">Cells</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="playground.html">Playground</a>
+    <a href="compare.html">Compare</a>
+    <a href="start.html">Get started</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>The Quilt <span class="grad-text">Manifesto</span></h1>
+  <p class="lead">Why a cellular runtime, in 2026, when the cloud has its APIs and the front-end has its frameworks?</p>
+</div>
+
+<article>
+
+  <h2>The shape of the problem</h2>
+
+  <p>Software is built out of nouns and verbs. The nouns are <em>data</em>. The verbs are <em>operations</em>. The relationship between them is what we call <em>programs</em>.</p>
+
+  <p>For fifty years, we have built programs out of <strong>functions</strong>. A function takes data, transforms it, returns data. Functions compose. Functions are the unit. This is the model of essentially every language and framework since Lisp.</p>
+
+  <p>It works. It scales. It's not wrong. But it's not the only shape. There is another shape, just as old, that we have largely ignored.</p>
+
+  <p>The spreadsheet.</p>
+
+  <h2>The shape of the spreadsheet</h2>
+
+  <p>A spreadsheet is also nouns and verbs. The nouns are <em>cells</em>. The verbs are <em>formulas</em>. The relationship is <em>wires</em>: a formula depends on certain cells; when those cells change, the formula recomputes.</p>
+
+  <p>This is a <strong>reactive</strong> system. A cell is not a value — a cell is a live, addressable, reactive thing. The spreadsheet is the runtime. The cell is the universal IO.</p>
+
+  <p>The spreadsheet was the killer app of the 1980s because it made reactive programming <em>visual</em>. You see the formulas. You see the values. You see the propagation. The system is inspectable in a way that no other software has ever been.</p>
+
+  <blockquote>
+    <p>The spreadsheet is the most successful end-user programming language in history. And we don't think of it as a programming language — because it doesn't look like one.</p>
+  </blockquote>
+
+  <h2>What was missing</h2>
+
+  <p>Spreadsheets were missing three things.</p>
+
+  <p><strong>First, types.</strong> A cell can be a number, a string, a date, or — by accident — a Boolean, a list, an object. The spreadsheet has no concept of a cell's <em>kind</em>. It treats everything as a scalar, and coerces at the boundaries.</p>
+
+  <p><strong>Second, side effects.</strong> A cell is a value. It can be displayed, exported, charted. But it can't do anything — it can't make a network call, it can't drive a motor, it can't log an alert. Spreadsheets are read-mostly.</p>
+
+  <p><strong>Third, names.</strong> A cell is identified by its row and column: <code>A1</code>, <code>B17</code>. Insert a row, and <code>B17</code> becomes <code>B18</code>. The address is fragile; the data is tied to its position.</p>
+
+  <h2>What Quilt adds</h2>
+
+  <p>Quilt takes the spreadsheet model and fills in what was missing.</p>
+
+  <ul>
+    <li><strong>Types.</strong> A Quilt cell has a <em>kind</em>: <code>value</code>, <code>formula</code>, <code>program</code>, <code>sensor</code>, <code>api</code>, <code>listener</code>, <code>router</code>, <code>io</code>. The kind determines what the cell does, what its inputs are, and how it propagates.</li>
+    <li><strong>Side effects.</strong> A <code>program</code> cell can run async code. A <code>listener</code> cell can fire on change. A <code>sensor</code> cell can poll the world. An <code>io</code> cell can drive a motor. The cell is the universal IO.</li>
+    <li><strong>Names.</strong> A Quilt cell has a stable, hierarchical name: <code>kitchen.temp</code>, <code>budget.savings</code>, <code>agent.memory</code>. The address is a name, not a coordinate. Cells don't move when the sheet changes.</li>
+  </ul>
+
+  <h2>The paradigm shift</h2>
+
+  <div class="pull">A cell is not a value. A cell is a live, typed, addressable capability. The spreadsheet is not a document. The spreadsheet is the runtime.</div>
+
+  <p>That's the shift. The spreadsheet, finally, is not the artifact. The spreadsheet is the program. The cell is the function. The wire is the data flow. The engine is the runtime.</p>
+
+  <h2>What this unlocks</h2>
+
+  <p>Once you accept that the spreadsheet is the runtime, several things become possible that weren't before.</p>
+
+  <h3>1. Inspectability</h3>
+
+  <p>Every cell is a value. Every wire is a dependency. Every change is a propagation. The whole system is visible, all the time, in a way that no other software has ever been. A spreadsheet, but live.</p>
+
+  <h3>2. The mesh</h3>
+
+  <p>Two spreadsheets can sync. No server, no API, no schema. Just a CRDT, propagating the changes. The cell is the unit of synchronization. The wire is the unit of conflict resolution.</p>
+
+  <h3>3. Time travel</h3>
+
+  <p>Every cell has a history. You can rewind to last Tuesday and see what your budget looked like. You can fork a sheet, try a different budget, and rewind if you don't like it. The cell is a versioned value.</p>
+
+  <h3>4. Encryption</h3>
+
+  <p>A cell can be encrypted. The server sees only ciphertext. The peers see only the cells they're authorized for. The cell is the unit of privacy.</p>
+
+  <h3>5. Agents</h3>
+
+  <p>An agent is a sheet. Its memory is a value cell. Its tools are API cells. Its reasoning is a chain of program cells. Its goals are listener cells. Every capability is inspectable, addressable, and persistent.</p>
+
+  <h2>The architecture</h2>
+
+  <div class="diagram">   ┌──────────────────────────────────────────────────────────────┐
+   │                       your code                               │
+   │                                                              │
+   │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │
+   │   │  Sheet (.yaml) │  │   Engine       │  │   Harness      │  │
+   │   │                │  │                │  │                │  │
+   │   │  cells:        │  │   reactive DAG │  │   MCP server   │  │
+   │   │  - id: x       │─▶│   per-context  │─▶│   CLI          │  │
+   │   │    kind: value │  │   memoization  │  │   web UI       │  │
+   │   │  - id: y       │  │   topological  │  │   library API  │  │
+   │   │    kind: for..│  │   evaluation   │  │                │  │
+   │   │                │  │                │  │                │  │
+   │   └────────────────┘  └────────────────┘  └────────────────┘  │
+   │            │                   │                  │          │
+   └────────────┼───────────────────┼──────────────────┼──────────┘
+                ▼                   ▼                  ▼
+           ┌────────┐          ┌─────────┐        ┌──────────┐
+           │  8 cell│          │ formulas │        │ external │
+           │  kinds │          │ programs │        │ systems  │
+           │        │          │ listeners│        │          │
+           └────────┘          └─────────┘        └──────────┘</div>
+
+  <p>Three layers, cleanly separated. The <strong>sheet</strong> is declarative. The <strong>engine</strong> is reactive. The <strong>harness</strong> is the entry point. You can use any layer in isolation.</p>
+
+  <h2>The 5-year arc</h2>
+
+  <p>The full vision is bigger than one runtime. It is a stack.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-year">Q1 2026</div>
+      <div class="timeline-content">
+        <strong>The runtime</strong>
+        <span>Quilt itself. TypeScript, Rust, Live. The cell model. Reactive engine. 146 tests.</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">Q2 2026</div>
+      <div class="timeline-content">
+        <strong>The time layer</strong>
+        <span>quilt-time, quilt-vault, quilt-mesh. Versioned cells. Encrypted cells. Peer-to-peer cells.</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">Q3 2026</div>
+      <div class="timeline-content">
+        <strong>The agent layer</strong>
+        <span>quilt-agent, quilt-vision, quilt-zk. Cells as agent capabilities. Vision and proof as cells.</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">Q4 2026</div>
+      <div class="timeline-content">
+        <strong>The build layer</strong>
+        <span>quilt-flow, quilt-esp32. Visual wiring. Edge deployment. The cell graph becomes a deployable artifact.</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2027+</div>
+      <div class="timeline-content">
+        <strong>The mesh</strong>
+        <span>quilt-rooms, quilt-print, quilt-music, quilt-fabric, quilt-civic, quilt-fs. Cells in rooms. Cells in physical space. Cells as the substrate of personal data.</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>What this is for</h2>
+
+  <p>Quilt is for the things that the cloud does badly and the spreadsheet does well.</p>
+
+  <p>For personal data that lives on personal devices, in a personal mesh, encrypted at rest, synced peer-to-peer, versioned by default, inspectable at will. Not on a server, not in a database someone else controls. <em>On your own machine, in your own format, under your own keys.</em></p>
+
+  <p>For the agents that will live in our lives — assistants, schedulers, planners, companions — and need a runtime that's addressable, inspectable, and persistent. Not an LLM in a chat window. A program in a sheet, with memory, with tools, with a state.</p>
+
+  <p>For the IoT mesh that will be the edge of the next decade — a hundred small things, each with a state, each reactive to the others, each addressable by name. The cell model is the shape.</p>
+
+  <p>For the programmable world, where everything is a cell and every cell is a program. Where the spreadsheet is the runtime and the runtime is the spreadsheet.</p>
+
+  <h2>The promise</h2>
+
+  <blockquote>
+    <p>The cell is the universal IO. The sheet is the runtime. The mesh is the network. The model is finally made real.</p>
+  </blockquote>
+
+  <p>That's the project. If you read this far, you understand. Welcome to Quilt.</p>
+
+  <p style="margin-top: 60px; text-align: center; font-size: 0.9rem; color: var(--text-faint);">— <a href="https://github.com/SuperInstance" target="_blank">SuperInstance</a>, 2026</p>
+
+</article>
+
+<footer>
+  <p>The Quilt Manifesto · v0.1 · 2026</p>
+  <p style="margin-top: 8px;">
+    <a href="docs.html">Docs</a> ·
+    <a href="tutorial.html">Tutorial</a> ·
+    <a href="start.html">Get started</a> ·
+    <a href="quilt-live.html" class="cta" style="color: var(--green); border-bottom: none;">Open Live →</a>
+  </p>
+</footer>
+
+</body>
+</html>

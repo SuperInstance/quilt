@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get started with Quilt — install in 5 minutes</title>
+<meta name="description" content="Install Quilt in TypeScript, Rust, or as a single HTML file. No build step. No account. Just open and play.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+.tabs { display: flex; gap: 4px; background: var(--bg-card); border-radius: 8px; padding: 4px; margin: 40px 0 24px; width: fit-content; margin-left: auto; margin-right: auto; }
+.tab { padding: 8px 16px; background: transparent; border: none; color: var(--text-dim); font-size: 0.85rem; cursor: pointer; border-radius: 4px; font-family: inherit; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--green); color: var(--bg); }
+
+.steps { counter-reset: step; }
+.step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; position: relative; }
+.step::before { counter-increment: step; content: counter(step); position: absolute; top: -10px; left: 20px; background: var(--green); color: var(--bg); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 2px 10px; border-radius: 999px; }
+.step h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; margin-top: 8px; }
+.step p { color: var(--text-dim); margin-bottom: 12px; }
+.step pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 8px 0; }
+
+.paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 40px 0; }
+@media (max-width: 800px) { .paths { grid-template-columns: 1fr; } }
+.path { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+.path .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.path h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+.path .tagline { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 12px; }
+.path .meta { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-faint); margin-bottom: 16px; }
+.path .btn { display: inline-block; padding: 8px 16px; background: var(--green); color: var(--bg); border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+.path .btn:hover { background: var(--blue); }
+
+.optional { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 16px 0; }
+.optional h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; color: var(--yellow); }
+.optional p { color: var(--text-dim); font-size: 0.85rem; }
+
+.next-steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 24px 0; }
+@media (max-width: 600px) { .next-steps { grid-template-columns: 1fr; } }
+.next { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.next .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 4px; }
+.next .title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.next .desc { color: var(--text-dim); font-size: 0.85rem; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="docs.html">Docs</a>
+    <a href="tutorial.html">Tutorial</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="playground.html">Playground</a>
+    <a href="studio.html">Studio</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Get started with <span class="grad-text">Quilt</span></h1>
+  <p class="lead">Three ways to start. Pick the one that matches your environment. All three share the same sheet format and the same cell model.</p>
+</div>
+
+<main>
+
+  <!-- 3 paths -->
+  <div class="paths">
+    <div class="path">
+      <div class="icon">📜</div>
+      <h3>Quilt Live</h3>
+      <div class="tagline">One HTML file. Browser-native. Zero install.</div>
+      <div class="meta">70 KB · no build · works offline</div>
+      <a href="quilt-live.html" class="btn">Open Live →</a>
+    </div>
+    <div class="path">
+      <div class="icon">📦</div>
+      <h3>TypeScript</h3>
+      <div class="tagline">The canonical runtime. npm install, run, ship.</div>
+      <div class="meta">Node 18+ · 98 tests · MIT</div>
+      <a href="https://github.com/SuperInstance/quilt" class="btn" target="_blank">npm install →</a>
+    </div>
+    <div class="path">
+      <div class="icon">🦀</div>
+      <h3>Rust</h3>
+      <div class="tagline">Single binary. No runtime. Cross-compile to anything.</div>
+      <div class="meta">3 MB stripped · 0 deps · static binary</div>
+      <a href="https://github.com/SuperInstance/quilt-rust" class="btn" target="_blank">cargo add →</a>
+    </div>
+  </div>
+
+  <!-- PATH 1: Quilt Live -->
+  <section>
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;">Path 1: Quilt Live (the easiest)</h2>
+    <p style="color: var(--text-dim); margin-bottom: 24px;">If you can open a browser, you can use Quilt. No install, no build, no account. Just open the file.</p>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Open quilt-live.html</h3>
+        <p>Click the button below. Your browser will load the file from GitHub Pages. No internet is required after that — the file is self-contained.</p>
+        <pre><a href="quilt-live.html" style="color: var(--green);">https://superinstance.github.io/quilt/landing/quilt-live.html</a></pre>
+      </div>
+      <div class="step">
+        <h3>Click "Add cell" and explore</h3>
+        <p>The UI has a list of cells on the left, a detail editor on the right, and a few starter sheets. Pick one from the sidebar to see how a working sheet looks.</p>
+      </div>
+      <div class="step">
+        <h3>Edit a value, watch formulas recompute</h3>
+        <p>Change any value cell. Every formula that depends on it updates. That's the whole reactive system. There's nothing more to it.</p>
+      </div>
+      <div class="step">
+        <h3>Save your work</h3>
+        <p>Click "Save" to store your state in a cookie. Click "Download" to bake the state into a new HTML file you can email, commit, or share. The downloaded file is self-contained — anyone can open it, no server needed.</p>
+      </div>
+    </div>
+
+    <div class="optional">
+      <h4>📚 Going further</h4>
+      <p>Quilt Live has 54 starter examples covering productivity, finance, fitness, music, photography, education, gaming, and more. Browse them with the Examples panel.</p>
+    </div>
+  </section>
+
+  <!-- PATH 2: TypeScript -->
+  <section>
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; margin-top: 60px;">Path 2: TypeScript (the canonical)</h2>
+    <p style="color: var(--text-dim); margin-bottom: 24px;">The full-featured runtime. Use this when you want to build real applications with Quilt, run an MCP server, or extend the engine.</p>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Install the package</h3>
+        <p>Requires Node.js 18 or later. Quilt is a regular npm package.</p>
+        <pre>npm install @quilt/core @quilt/cli</pre>
+      </div>
+      <div class="step">
+        <h3>Create a sheet</h3>
+        <p>A sheet is a YAML file. The cell model is the same as Quilt Live.</p>
+        <pre># hello.yaml
+id: hello
+title: "Hello, world"
+version: 0.1.0
+cells:
+  - id: greeting
+    kind: value
+    value: "Hello, world!"
+  - id: shout
+    kind: formula
+    expr: "greeting.toUpperCase()"</pre>
+      </div>
+      <div class="step">
+        <h3>Run it</h3>
+        <p>The CLI evaluates the sheet and prints the result.</p>
+        <pre>npx quilt run hello.yaml
+
+# Output:
+# ✓ greeting = "Hello, world!"
+# ✓ shout    = "HELLO, WORLD!"</pre>
+      </div>
+      <div class="step">
+        <h3>Or use the library</h3>
+        <p>Import the engine into your own TypeScript app.</p>
+        <pre>import { QuiltEngine, parseSheet } from '@quilt/core';
+
+const engine = new QuiltEngine();
+const sheet = parseSheet(yamlText);
+engine.load(sheet);
+
+console.log(await engine.get('shout'));
+// → { data: "HELLO, WORLD!", status: 'ready' }</pre>
+      </div>
+      <div class="step">
+        <h3>Run an MCP server</h3>
+        <p>Every named cell in your sheet becomes an MCP tool. Claude Code, Cursor, and other MCP clients can use them.</p>
+        <pre>npx quilt mcp hello.yaml
+# Server running on stdio. Every cell is a tool.</pre>
+      </div>
+    </div>
+
+    <div class="optional">
+      <h4>📚 Going further</h4>
+      <p>See the <a href="docs.html">documentation</a> for the full API, the <a href="tutorial.html">tutorial</a> for a 5-minute walkthrough, or the <a href="patterns.html">patterns cookbook</a> for 20 reusable idioms.</p>
+    </div>
+  </section>
+
+  <!-- PATH 3: Rust -->
+  <section>
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; margin-top: 60px;">Path 3: Rust (for production deployment)</h2>
+    <p style="color: var(--text-dim); margin-bottom: 24px;">The Rust port compiles to a single static binary. Drop it on a server, an edge device, a Raspberry Pi, a bare-metal target — anywhere there's a CPU.</p>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Add the dependency</h3>
+        <p>Quilt is a regular Cargo crate.</p>
+        <pre>[dependencies]
+quilt = "0.2"
+tokio = { version = "1", features = ["full"] }</pre>
+      </div>
+      <div class="step">
+        <h3>Load a sheet</h3>
+        <p>The same YAML format. The same cell model.</p>
+        <pre>use quilt::{QuiltEngine, parse_sheet};
+
+let yaml = std::fs::read_to_string("hello.yaml")?;
+let sheet = parse_sheet(&yaml)?;
+let engine = QuiltEngine::new();
+engine.load(sheet)?;</pre>
+      </div>
+      <div class="step">
+        <h3>Get a cell value</h3>
+        <p>Same async API as TypeScript.</p>
+        <pre>let result = engine.get("shout").await?;
+println!("shout = {:?}", result.data);</pre>
+      </div>
+      <div class="step">
+        <h3>Or compile a single binary</h3>
+        <p>The <code>quilt</code> CLI works as a standalone binary. ~3 MB stripped, no runtime, no Node.js.</p>
+        <pre>cargo install quilt-cli
+quilt run hello.yaml
+
+# Or cross-compile:
+cargo build --target x86_64-unknown-linux-musl --release
+cargo build --target aarch64-unknown-linux-musl --release  # ARM
+cargo build --target x86_64-pc-windows-gnu --release      # Windows</pre>
+      </div>
+    </div>
+
+    <div class="optional">
+      <h4>📚 Going further</h4>
+      <p>The Rust port also has <code>quilt-tui</code> (crossterm-based terminal UI) and <code>quilt-web</code> (axum + Server-Sent Events for a live web UI). See the <a href="https://github.com/SuperInstance/quilt-rust" target="_blank">README</a> for details.</p>
+    </div>
+  </section>
+
+  <!-- Next steps -->
+  <section style="margin-top: 80px;">
+    <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;">Next steps</h2>
+    <p style="color: var(--text-dim); margin-bottom: 24px;">Now that you have Quilt running, here are good places to go next.</p>
+
+    <div class="next-steps">
+      <a href="tutorial.html" class="next">
+        <div class="label">Step 1</div>
+        <div class="title">📖 5-minute tutorial</div>
+        <div class="desc">A guided walkthrough that builds a working sheet from scratch.</div>
+      </a>
+      <a href="patterns.html" class="next">
+        <div class="label">Step 2</div>
+        <div class="title">📚 20 patterns</div>
+        <div class="desc">The idioms that solve 80% of problems. With diagrams and code.</div>
+      </a>
+      <a href="cells.html" class="next">
+        <div class="label">Step 3</div>
+        <div class="title">🔬 The 8 cell kinds</div>
+        <div class="desc">A deep dive into the primitives — every kind, every option.</div>
+      </a>
+      <a href="playground.html" class="next">
+        <div class="label">Step 4</div>
+        <div class="title">▶ Live playground</div>
+        <div class="desc">Write a sheet, run it, see the cells come alive. No setup.</div>
+      </a>
+      <a href="studio.html" class="next">
+        <div class="label">Step 5</div>
+        <div class="title">🎨 Quilt Studio</div>
+        <div class="desc">The visual editor. Drag-drop, time-travel, encryption, multi-user.</div>
+      </a>
+      <a href="compare.html" class="next">
+        <div class="label">Step 6</div>
+        <div class="title">⚖ Compare</div>
+        <div class="desc">How Quilt compares to spreadsheets, React, databases, and more.</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Quilt — a reactive, typed, cellular runtime. From $3 chips to browsers to servers.</p>
+  <p style="margin-top: 8px;">
+    <a href="index.html">Home</a> ·
+    <a href="docs.html">Docs</a> ·
+    <a href="https://github.com/SuperInstance/quilt" target="_blank">GitHub</a>
+  </p>
+</footer>
+
+</body>
+</html>

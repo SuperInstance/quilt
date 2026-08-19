@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The 8 cell kinds — a deep dive into Quilt</title>
+<meta name="description" content="A deep dive into the 8 cell kinds that are the building blocks of every Quilt sheet. With code, diagrams, and live examples.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-card-hover: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; --cyan: #7ec6c6; --gray: #888; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.1rem; max-width: 600px; margin: 0 auto 40px; }
+
+main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+.kinds-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 40px 0; }
+@media (max-width: 700px) { .kinds-grid { grid-template-columns: 1fr; } }
+
+.kind-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-decoration: none; color: var(--text); transition: all 0.2s; cursor: pointer; }
+.kind-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.kind-card .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.kind-card h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.kind-card .tagline { color: var(--text-dim); font-size: 0.9rem; }
+
+section { margin-bottom: 80px; scroll-margin-top: 80px; }
+section h2 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+section .desc { color: var(--text-dim); margin-bottom: 24px; font-size: 1rem; }
+
+.detail-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 16px; }
+.detail-card .header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.detail-card .big-icon { font-size: 3rem; }
+.detail-card h3 { font-size: 1.5rem; font-weight: 700; }
+.detail-card .kind-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600; }
+.detail-card .kind-tag.value { background: rgba(126,198,153,0.15); color: var(--green); }
+.detail-card .kind-tag.formula { background: rgba(95,168,211,0.15); color: var(--blue); }
+.detail-card .kind-tag.program { background: rgba(187,126,198,0.15); color: var(--purple); }
+.detail-card .kind-tag.sensor { background: rgba(198,168,126,0.15); color: var(--tan); }
+.detail-card .kind-tag.api { background: rgba(198,126,126,0.15); color: var(--red); }
+.detail-card .kind-tag.listener { background: rgba(198,198,126,0.15); color: var(--yellow); }
+.detail-card .kind-tag.router { background: rgba(126,198,198,0.15); color: var(--cyan); }
+.detail-card .kind-tag.io { background: rgba(136,136,136,0.15); color: var(--gray); }
+
+.detail-card h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin: 20px 0 8px; font-weight: 600; }
+.detail-card p { margin-bottom: 12px; color: var(--text-dim); }
+.detail-card p strong { color: var(--text); }
+pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 12px 0; }
+.diagram { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.4; color: var(--text-dim); white-space: pre; overflow-x: auto; }
+
+.use-cases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
+@media (max-width: 600px) { .use-cases { grid-template-columns: 1fr; } }
+.use-case { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 0.85rem; }
+.use-case .uc-title { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.use-case .uc-desc { color: var(--text-dim); font-size: 0.8rem; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="docs.html">Docs</a>
+    <a href="showcase.html">Showcase</a>
+    <a href="studio.html">Studio</a>
+    <a href="ide.html">IDE</a>
+    <a href="synoptic.html">Synoptic</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>The <span class="grad-text">8 cell kinds</span></h1>
+  <p class="lead">Every Quilt sheet is built from eight primitives. Each is a small, focused idea. Together, they're a complete reactive system.</p>
+</div>
+
+<main>
+
+  <!-- 8 cards in a grid -->
+  <div class="kinds-grid">
+    <a href="#value" class="kind-card">
+      <div class="icon">📦</div>
+      <h3>value</h3>
+      <div class="tagline">A static piece of data. The atom of the spreadsheet.</div>
+    </a>
+    <a href="#formula" class="kind-card">
+      <div class="icon">ƒ</div>
+      <h3>formula</h3>
+      <div class="tagline">A reactive expression. Recomputes when inputs change.</div>
+    </a>
+    <a href="#program" class="kind-card">
+      <div class="icon">▶</div>
+      <h3>program</h3>
+      <div class="tagline">An async expression. Side effects, awaits, runtime state.</div>
+    </a>
+    <a href="#sensor" class="kind-card">
+      <div class="icon">👁</div>
+      <h3>sensor</h3>
+      <div class="tagline">A polled input source. Reads the world on a schedule.</div>
+    </a>
+    <a href="#api" class="kind-card">
+      <div class="icon">🌐</div>
+      <h3>api</h3>
+      <div class="tagline">An outbound call. Fetch, POST, GraphQL — same cell shape.</div>
+    </a>
+    <a href="#listener" class="kind-card">
+      <div class="icon">🔔</div>
+      <h3>listener</h3>
+      <div class="tagline">Fires on change. Notifications, logs, side effects.</div>
+    </a>
+    <a href="#router" class="kind-card">
+      <div class="icon">↪</div>
+      <h3>router</h3>
+      <div class="tagline">Context-aware dispatch. Different output for different callers.</div>
+    </a>
+    <a href="#io" class="kind-card">
+      <div class="icon">🔌</div>
+      <h3>io</h3>
+      <div class="tagline">A physical port. LED, relay, motor, sensor pin.</div>
+    </a>
+  </div>
+
+  <!-- ============== VALUE ============== -->
+  <section id="value">
+    <h2>value</h2>
+    <p class="desc">A static, named piece of data. The simplest cell. The atom of the spreadsheet.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">📦</div>
+        <div>
+          <h3>value <span class="kind-tag value">kind: value</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">The reactive primitive of constants. Mutable from outside, but doesn't recompute from inputs.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A <code class="inline">value</code> cell is a named box that holds a piece of data. It's reactive in that <em>other</em> cells can listen to it, but it doesn't have inputs of its own. It's the leaf of the cell graph.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: temperature
+  kind: value
+  value: 22.5
+
+- id: user.name
+  kind: value
+  value: "Alice"
+
+- id: enabled
+  kind: value
+  value: true
+
+- id: tags
+  kind: value
+  value: ["urgent", "frontend", "ux"]</pre>
+
+      <h4>When the value changes</h4>
+      <div class="diagram">┌──────────┐
+   value  │  was 22.5  │
+          └─────┬──────┘
+                │ change
+                ▼
+   ┌──────────┐
+   │ formula  │ recomputes
+   │ depends  │
+   └─────┬────┘
+         ▼
+   ┌──────────┐
+   │ formula  │ recomputes
+   │ depends  │
+   └──────────┘</div>
+
+      <p>Changing a value cell cascades through every cell that depends on it. The order of writes doesn't matter; the engine handles the topology.</p>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Configuration</div>
+          <div class="uc-desc">A threshold, a setting, a label.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">User input</div>
+          <div class="uc-desc">A form field, a slider value, a search box.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Constants</div>
+          <div class="uc-desc">An API key, a URL, a color code.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">State</div>
+          <div class="uc-desc">A counter, a toggle, a current mode.</div>
+        </div>
+      </div>
+
+      <h4>What it is NOT</h4>
+      <p>A value cell is not a constant. It can be changed from outside (by user input, by an external system, by a listener). The difference from a <code class="inline">formula</code> is that it has no <code class="inline">expr</code> — it doesn't recompute; it's a leaf.</p>
+    </div>
+  </section>
+
+  <!-- ============== FORMULA ============== -->
+  <section id="formula">
+    <h2>formula</h2>
+    <p class="desc">A reactive expression. The core of the reactive system.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">ƒ</div>
+        <div>
+          <h3>formula <span class="kind-tag formula">kind: formula</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A pure expression that recomputes whenever any of its inputs change. Sync, deterministic, no side effects.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A formula cell is a pure function from its dependencies to its value. When any dependency changes, the formula recomputes. It's the workhorse of the reactive system.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: fahrenheit
+  kind: formula
+  expr: "sensor.temp * 1.8 + 32"
+
+- id: status
+  kind: formula
+  expr: 'heat_index > 30 ? "hot" : "ok"'
+
+- id: average
+  kind: formula
+  expr: "(a + b + c) / 3"</pre>
+
+      <h4>How it works</h4>
+      <div class="diagram">formula cell
+        │
+        │  has expr: "a + b * 2"
+        │
+        ├─ looks for: a, b
+        │
+        ▼
+   ┌──────┐  ┌──────┐
+   │ a    │  │ b    │  ← other cells
+   │ (any │  │ (any │
+   │ kind)│  │ kind)│
+   └──────┘  └──────┘
+        │
+        │ when a or b changes
+        ▼
+   ┌──────────────────┐
+   │ eval expr with   │
+   │ a, b in scope    │
+   │ → 5 + 7 * 2 = 19 │
+   └──────────────────┘</div>
+
+      <h4>What you can use</h4>
+      <p>The expression is a small JavaScript-like language. Numbers, strings, booleans, arrays, objects. Arithmetic, comparison, ternary, function calls (Math, JSON, Array.prototype). No statements — just an expression.</p>
+
+      <pre>// All of these are valid:
+expr: "a + b"
+expr: 'status === "ok"'
+expr: "Math.sqrt(x * x + y * y)"
+expr: "items.filter(i => i.active).length"
+expr: "JSON.stringify(data)"</pre>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Unit conversion</div>
+          <div class="uc-desc">Celsius to Fahrenheit, meters to feet, etc.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Aggregations</div>
+          <div class="uc-desc">Sum, average, max, min over a list.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Conditional logic</div>
+          <div class="uc-desc">Status, category, threshold checks.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Computed views</div>
+          <div class="uc-desc">A derived value for display or export.</div>
+        </div>
+      </div>
+
+      <h4>Limitations</h4>
+      <p>No async. No side effects. No `await`, no `setTimeout`, no `fetch`. For those, use <code class="inline">program</code>. A formula must be a pure expression — its output is determined entirely by its inputs.</p>
+    </div>
+  </section>
+
+  <!-- ============== PROGRAM ============== -->
+  <section id="program">
+    <h2>program</h2>
+    <p class="desc">An async expression. The escape hatch from pure formulas.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">▶</div>
+        <div>
+          <h3>program <span class="kind-tag program">kind: program</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A small async body that can await, call other cells, and produce a value. Use when formulas aren't enough.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A program cell is a function that can do work. It can call other cells, await async operations, throw errors, and return a value. It's the bridge between the synchronous, pure reactive core and the messy outside world.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: summarize
+  kind: program
+  code: |
+    const items = runtime.get('raw_data').data;
+    const filtered = items.filter(i => i.score > 0.8);
+    const summary = await runtime.call('api.llm', {
+      prompt: 'Summarize: ' + JSON.stringify(filtered)
+    });
+    runtime.set('summary_text', summary);
+    return summary;</pre>
+
+      <h4>The runtime API</h4>
+      <p>Inside a program cell, you have access to a <code class="inline">runtime</code> object:</p>
+      <pre>runtime.get(id)            // → { data, status, error, computedAt }
+runtime.set(id, value)      // set another cell
+runtime.call(id, args)      // → await a program or api cell
+runtime.cells               // → a Proxy of all cell values
+runtime.log(...args)        // → log to the engine console</pre>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Multi-step pipelines</div>
+          <div class="uc-desc">Fetch → parse → transform → store.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Composed async</div>
+          <div class="uc-desc">Call multiple cells in sequence, combine results.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">State machines</div>
+          <div class="uc-desc">Update state based on complex conditions.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Custom logic</div>
+          <div class="uc-desc">Anything formulas can't express.</div>
+        </div>
+      </div>
+
+      <h4>When to use a program vs a formula</h4>
+      <p>Use a <code class="inline">formula</code> when the computation is pure and synchronous. Use a <code class="inline">program</code> when you need <code class="inline">await</code>, side effects, or want to set other cells. Programs are the escape hatch — use them when needed, not by default.</p>
+    </div>
+  </section>
+
+  <!-- ============== SENSOR ============== -->
+  <section id="sensor">
+    <h2>sensor</h2>
+    <p class="desc">A polled input source. The cell that reads the world.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">👁</div>
+        <div>
+          <h3>sensor <span class="kind-tag sensor">kind: sensor</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A cell that holds the latest reading from an external source. Polled, scheduled, or pushed.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A sensor cell is a window into the world. It's the cell that says "the temperature is X right now" or "the user is on page Y" or "the timer has fired N times". The engine doesn't know how the value is updated — it just holds the latest reading.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: sensor.temp
+  kind: sensor
+  source: dht22
+  default: 22
+  poll_ms: 1000
+
+- id: sensor.motion
+  kind: sensor
+  source: pir
+  default: false
+
+- id: sensor.clock
+  kind: sensor
+  source: timer
+  interval_ms: 60000</pre>
+
+      <h4>How it works</h4>
+      <p>The engine doesn't poll directly. Instead, adapters push values into the sensor cell. The cell then re-evaluates, and any formula that depends on it recomputes.</p>
+
+      <div class="diagram">physical world
+        │
+        │ temperature changes
+        ▼
+   ┌──────────┐
+   │ adapter  │  (driver code, OS call, network)
+   └─────┬────┘
+         │ runtime.set('sensor.temp', 23.5)
+         ▼
+   ┌──────────┐
+   │ sensor   │  value updates
+   │ .temp    │
+   └─────┬────┘
+         │ dependents recompute
+         ▼
+   ┌──────────┐  ┌──────────┐
+   │ formula  │  │ formula  │
+   └──────────┘  └──────────┘</div>
+
+      <h4>Sources</h4>
+      <p>A sensor's <code class="inline">source</code> is an identifier for an adapter. Each runtime (TypeScript, Rust, Live) defines its own set of sources. Common ones:</p>
+      <pre>source: dht22          // temperature/humidity sensor (ESP32)
+source: pir            // motion sensor
+source: timer          // clock-based
+source: ble            // Bluetooth Low Energy
+source: mqtt           // MQTT subscription
+source: websocket      // WebSocket
+source: interval       // client-side timer
+source: file           // file watcher</pre>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">IoT</div>
+          <div class="uc-desc">Temperature, humidity, motion, light, soil moisture.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Realtime data</div>
+          <div class="uc-desc">Stock prices, weather, location, server metrics.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">User input</div>
+          <div class="uc-desc">Mouse position, scroll, keystrokes (in Live).</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Polling</div>
+          <div class="uc-desc">An external API you want to call on a schedule.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== API ============== -->
+  <section id="api">
+    <h2>api</h2>
+    <p class="desc">An outbound call. The cell that talks to the world.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">🌐</div>
+        <div>
+          <h3>api <span class="kind-tag api">kind: api</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A cell that calls an external service. Lazy, cached, addressable. Like a function over the network.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>An api cell is a named, addressable network call. You reference it by id; the engine makes the HTTP request; the result is cached. The cell is the function; the network is the implementation.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: api.users
+  kind: api
+  endpoint: "https://api.example.com/users"
+  method: GET
+
+- id: api.weather
+  kind: api
+  endpoint: "https://api.weather.com/v1/current"
+  method: GET
+  params:
+    lat: 37.7749
+    lon: -122.4194
+  cache_ttl: 300   # 5 minutes</pre>
+
+      <h4>How it works</h4>
+      <p>API cells are lazy. They don't fetch until something reads them. When read, the engine calls the endpoint, caches the result (per the cache_ttl), and returns the value. Subsequent reads (within the TTL) return the cached value without re-fetching.</p>
+
+      <div class="diagram">formula depends on api.users
+        │
+        │ runtime.get('api.users')
+        ▼
+   ┌──────────┐
+   │   api    │
+   │  .users  │  cached? ──yes──▶ return cached
+   └─────┬────┘
+         │ no
+         ▼
+   GET https://api.example.com/users
+         │
+         │ response
+         ▼
+   cache + return</div>
+
+      <h4>Per-context memoization</h4>
+      <p>The same api cell called from different formulas can have different cached values, depending on the caller's context. The engine tracks the caller and respects the cache accordingly.</p>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">External data</div>
+          <div class="uc-desc">REST APIs, GraphQL, gRPC-web.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">LLM calls</div>
+          <div class="uc-desc">OpenAI, Anthropic, local models.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Microservices</div>
+          <div class="uc-desc">Internal services, RPCs.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Webhooks</div>
+          <div class="uc-desc">Send events to external systems.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== LISTENER ============== -->
+  <section id="listener">
+    <h2>listener</h2>
+    <p class="desc">Fires on change. The cell that reacts to the world.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">🔔</div>
+        <div>
+          <h3>listener <span class="kind-tag listener">kind: listener</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A cell that watches another cell and fires an action when a condition is met. The "if X then Y" primitive.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A listener cell watches a target cell. When the target changes, the listener evaluates a condition. If the condition is true, it fires an action. The action is a side effect — log, alert, HTTP call, anything.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: alert.hot
+  kind: listener
+  watch: sensor.temp
+  condition: "sensor.temp > 30"
+  action: "console.log('⚠️ Hot!')"
+
+- id: audit
+  kind: listener
+  watch: critical.value
+  condition: "true"
+  action: |
+    runtime.set('audit_log', [...runtime.get('audit_log').data, {
+      who: 'system',
+      what: 'critical.value',
+      from: oldValue,
+      to: runtime.get('critical.value').data,
+      when: Date.now()
+    }])</pre>
+
+      <h4>How it works</h4>
+      <div class="diagram">┌──────────┐
+   │  target  │  (e.g. sensor.temp)
+   │   cell   │
+   └─────┬────┘
+         │ value changes
+         ▼
+   ┌──────────┐
+   │ listener │  evaluate condition
+   │  .hot    │  → "sensor.temp > 30"
+   └─────┬────┘
+         │ condition true?
+         ▼ yes
+   fire action
+   ┌──────────────────┐
+   │ console.log(...) │
+   │ runtime.set(...) │
+   │ runtime.call(...)│
+   └──────────────────┘</div>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Alerts</div>
+          <div class="uc-desc">Threshold breaches, error conditions.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Logging</div>
+          <div class="uc-desc">Every change, every value, for audit.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Side effects</div>
+          <div class="uc-desc">Write to disk, send a notification, call an API.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Triggers</div>
+          <div class="uc-desc">Start a workflow, kick off a backup.</div>
+        </div>
+      </div>
+
+      <h4>Listeners vs formulas</h4>
+      <p>A <code class="inline">formula</code> computes a value. A <code class="inline">listener</code> fires a side effect. The distinction: formulas are pure; listeners are not. Use formulas for values, listeners for actions.</p>
+    </div>
+  </section>
+
+  <!-- ============== ROUTER ============== -->
+  <section id="router">
+    <h2>router</h2>
+    <p class="desc">Context-aware dispatch. The cell that decides.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">↪</div>
+        <div>
+          <h3>router <span class="kind-tag router">kind: router</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A cell that returns different values based on who is asking. Multi-tenant, role-based, A/B tests.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>A router cell is a single cell with multiple possible outputs. The output depends on the caller. The same cell id, different values for different callers.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: data.public
+  kind: router
+  routes:
+    - when: "caller.role === 'admin'"
+      expr: "all_data"
+    - when: "caller.role === 'user'"
+      expr: "filtered_data"
+    - when: "caller.role === 'guest'"
+      expr: "public_data"
+  default: "public_data"</pre>
+
+      <h4>How it works</h4>
+      <p>When something reads the router cell, it provides a <code class="inline">caller</code> context. The router evaluates each route's <code class="inline">when</code> clause; the first match wins. The result is the cell's value <em>for that caller</em>.</p>
+
+      <div class="diagram">caller A (admin) ──▶ router ──▶ all_data
+caller B (user)  ──▶ router ──▶ filtered_data
+caller C (guest) ──▶ router ──▶ public_data
+
+   (same cell, different output per caller)</div>
+
+      <h4>Per-context memoization</h4>
+      <p>Each caller gets their own cached value. The same router cell, called from two contexts, evaluates twice and caches twice. This is what makes routers work without leaking data between callers.</p>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Authorization</div>
+          <div class="uc-desc">Different data for different roles.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">A/B testing</div>
+          <div class="uc-desc">Different logic for different cohorts.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Multi-tenant</div>
+          <div class="uc-desc">Tenant A sees A's data, tenant B sees B's.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Feature flags</div>
+          <div class="uc-desc">Show feature X to some users, Y to others.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== IO ============== -->
+  <section id="io">
+    <h2>io</h2>
+    <p class="desc">A physical port. The cell that drives the world.</p>
+
+    <div class="detail-card">
+      <div class="header">
+        <div class="big-icon">🔌</div>
+        <div>
+          <h3>io <span class="kind-tag io">kind: io</span></h3>
+          <p style="margin: 0; color: var(--text-dim);">A cell that drives a physical actuator. LED, relay, motor, pin. The output of the cyber-physical loop.</p>
+        </div>
+      </div>
+
+      <h4>Mental model</h4>
+      <p>An io cell is the end of the cell graph, in the physical world. It writes to a port — GPIO pin, serial, PWM channel, motor controller. The cell is a name for a physical output.</p>
+
+      <h4>Syntax</h4>
+      <pre>- id: led.green
+  kind: io
+  port: "gpio2"
+  direction: out
+
+- id: motor.fan
+  kind: io
+  port: "pwm0"
+  direction: out
+
+- id: relay.heater
+  kind: io
+  port: "relay1"
+  direction: out
+  invert: false</pre>
+
+      <h4>How it works</h4>
+      <p>When a formula writes to an io cell, the value is dispatched to the port driver. On an ESP32, that means setting a GPIO pin or a PWM duty cycle. On a server, it could mean calling a hardware API (a Modbus device, a serial port, a DAQ).</p>
+
+      <div class="diagram">formula depends on io.led
+        │
+        │ runtime.set('led.green', true)
+        ▼
+   ┌──────────┐
+   │   io     │  dispatch to port
+   │  .green  │
+   └─────┬────┘
+         │ GPIO write
+         ▼
+   ┌──────────┐
+   │  LED on  │  (or motor, relay, etc.)
+   │  pin 2   │
+   └──────────┘</div>
+
+      <h4>Use cases</h4>
+      <div class="use-cases">
+        <div class="use-case">
+          <div class="uc-title">Home automation</div>
+          <div class="uc-desc">Lights, locks, thermostats, fans.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Robotics</div>
+          <div class="uc-desc">Motors, servos, valves.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Industrial</div>
+          <div class="uc-desc">Relays, contactors, stepper drivers.</div>
+        </div>
+        <div class="use-case">
+          <div class="uc-title">Wearables</div>
+          <div class="uc-desc">Haptic motors, LEDs, buzzers.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== SUMMARY ============== -->
+  <section>
+    <h2>How they compose</h2>
+    <p class="desc">The 8 cell kinds are a complete reactive system. Any non-trivial sheet is a graph of them.</p>
+
+    <div class="diagram">   sensor ──▶ formula ──▶ io
+      │            │
+      │            ▼
+      │         listener
+      │
+      └──▶ api ──▶ program ──▶ formula
+                    │
+                    ▼
+                 router
+                    │
+                    ▼
+              (per-caller output)</div>
+
+    <p style="margin-top: 20px;">A real system is rarely one kind. A weather station is <code class="inline">sensor</code> cells (DHT22, motion, light), <code class="inline">formula</code> cells (heat index, comfort, threshold), <code class="inline">listener</code> cells (alert on heat), and <code class="inline">io</code> cells (drive the fan, light the LED). The 8 kinds compose into anything.</p>
+  </section>
+
+</main>
+
+<footer>
+  <p>The 8 cell kinds — value, formula, program, sensor, api, listener, router, io. The atoms of Quilt.</p>
+  <p style="margin-top: 8px;">
+    <a href="patterns.html">See them in patterns</a> ·
+    <a href="playground.html">Try them in the Playground</a> ·
+    <a href="synoptic.html">Watch them in 3D</a>
+  </p>
+</footer>
+
+</body>
+</html>
