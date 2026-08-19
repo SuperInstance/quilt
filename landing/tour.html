@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt Tour — a 5-minute walkthrough</title>
+<meta name="description" content="A 5-minute interactive walkthrough of Quilt. From value cells to time travel to mesh sync, step by step, with live cells at every step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; min-height: 100%; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg-elev); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 60px 24px 30px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+.tour { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 0; margin: 30px 0; overflow: hidden; }
+.tour-progress { display: flex; background: var(--bg-elev-2, var(--bg-elev)); border-bottom: 1px solid var(--border); }
+.tour-progress .step { flex: 1; padding: 12px 16px; border-right: 1px solid var(--border); cursor: pointer; font-size: 0.85rem; color: var(--text-dim); transition: all 0.2s; }
+.tour-progress .step:last-child { border-right: none; }
+.tour-progress .step:hover { color: var(--text); }
+.tour-progress .step.active { background: var(--green); color: var(--bg); }
+.tour-progress .step .num { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; background: rgba(255,255,255,0.1); font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; margin-right: 8px; }
+.tour-progress .step.active .num { background: rgba(0,0,0,0.2); color: #fff; }
+
+.tour-content { padding: 30px; min-height: 400px; }
+.tour-step { display: none; }
+.tour-step.active { display: block; }
+
+.tour-step h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+.tour-step .step-tag { color: var(--green); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; }
+.tour-step .step-desc { color: var(--text-dim); margin-bottom: 20px; font-size: 1rem; }
+
+.tour-step pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; margin: 12px 0; }
+
+.tour-step .demo { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 16px 0; }
+.tour-step .demo h4 { font-size: 0.85rem; color: var(--text-faint); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+.tour-step .demo .cell { background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; margin: 4px 0; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.tour-step .demo .cell .id { color: var(--green); font-weight: 600; }
+.tour-step .demo .cell .value { color: var(--text); }
+.tour-step .demo .cell .value.pulse { animation: pulse-anim 0.5s ease-out; }
+.tour-step .demo .cell .kind { font-size: 0.7rem; color: var(--text-faint); }
+@keyframes pulse-anim { 0% { background: var(--green); color: var(--bg); } 100% { background: var(--bg-card); } }
+
+.tour-step .controls { display: flex; gap: 8px; margin: 16px 0; }
+.tour-step .controls button { padding: 8px 16px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+.tour-step .controls button:hover { background: var(--bg-elev-2); border-color: var(--green); }
+.tour-step .controls button.primary { background: var(--green); color: var(--bg); border-color: var(--green); }
+
+.tour-step .narrative { background: var(--bg); border-left: 3px solid var(--green); padding: 16px 20px; border-radius: 0 6px 6px 0; margin: 16px 0; color: var(--text-dim); font-size: 0.9rem; }
+.tour-step .narrative strong { color: var(--text); }
+
+.tour-nav { display: flex; justify-content: space-between; padding: 20px 30px; background: var(--bg-elev); border-top: 1px solid var(--border); }
+.tour-nav button { padding: 10px 20px; background: var(--green); color: var(--bg); border: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+.tour-nav button:hover { background: var(--blue); }
+.tour-nav button:disabled { background: var(--bg-elev-2); color: var(--text-faint); cursor: not-allowed; }
+.tour-nav .progress-text { color: var(--text-dim); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+
+footer { padding: 30px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="tour.html" class="active">Tour</a>
+    <a href="tutorial.html">Tutorial</a>
+    <a href="patterns.html">Patterns</a>
+    <a href="playground.html">Playground</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Quilt in <span class="grad-text">5 minutes</span></h1>
+  <p class="lead">A guided walkthrough. Click through 7 steps. At each step, the cells come alive. By the end, you'll have built a working reactive system.</p>
+</div>
+
+<main>
+
+  <div class="tour">
+    <div class="tour-progress" id="progress">
+      <div class="step active" data-step="1"><span class="num">1</span>Hello, cell</div>
+      <div class="step" data-step="2"><span class="num">2</span>Reactive</div>
+      <div class="step" data-step="3"><span class="num">3</span>Listener</div>
+      <div class="step" data-step="4"><span class="num">4</span>Sensor</div>
+      <div class="step" data-step="5"><span class="num">5</span>Router</div>
+      <div class="step" data-step="6"><span class="num">6</span>Time</div>
+      <div class="step" data-step="7"><span class="num">7</span>Mesh</div>
+    </div>
+
+    <div class="tour-content" id="content">
+
+      <!-- STEP 1: Hello, cell -->
+      <div class="tour-step active" data-step="1">
+        <div class="step-tag">Step 1 of 7</div>
+        <h2>Hello, cell</h2>
+        <p class="step-desc">A Quilt cell is a named, addressable value. The smallest possible sheet has one cell.</p>
+
+        <pre>id: hello
+title: "Hello, world"
+version: 0.1.0
+cells:
+  - id: greeting
+    kind: value
+    value: "Hello, world!"</pre>
+
+        <div class="narrative">
+          <strong>Three things to notice:</strong> the cell has a <strong>name</strong> (greeting), a <strong>kind</strong> (value), and a <strong>value</strong> ("Hello, world!"). The name is the cell's address — you reference it from anywhere.
+        </div>
+
+        <div class="demo">
+          <h4>The cell, live</h4>
+          <div class="cell"><span class="id">greeting</span><span class="kind">value</span><span class="value">"Hello, world!"</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="changeGreeting()">Try changing it</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Reactive -->
+      <div class="tour-step" data-step="2">
+        <div class="step-tag">Step 2 of 7</div>
+        <h2>Reactive</h2>
+        <p class="step-desc">A formula cell is a function of other cells. When an input changes, the formula recomputes. The whole thing is reactive.</p>
+
+        <pre>- id: price
+  kind: value
+  value: 100
+
+- id: tax_rate
+  kind: value
+  value: 0.08
+
+- id: total
+  kind: formula
+  expr: "price * (1 + tax_rate)"</pre>
+
+        <div class="narrative">
+          <strong>The reactive flow:</strong> change <code>price</code> or <code>tax_rate</code>, and <code>total</code> automatically updates. You don't write the propagation — the engine handles it.
+        </div>
+
+        <div class="demo">
+          <h4>The cells, live</h4>
+          <div class="cell"><span class="id">price</span><span class="kind">value</span><span class="value" id="t2-price">100</span></div>
+          <div class="cell"><span class="id">tax_rate</span><span class="kind">value</span><span class="value" id="t2-tax">0.08</span></div>
+          <div class="cell"><span class="id">total</span><span class="kind">formula</span><span class="value" id="t2-total">108</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="reactiveDemo('price')">Change price to 200</button>
+          <button onclick="reactiveDemo('tax')">Change tax to 0.10</button>
+          <button onclick="reactiveDemo('reset')">Reset</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Listener -->
+      <div class="tour-step" data-step="3">
+        <div class="step-tag">Step 3 of 7</div>
+        <h2>Listeners fire on change</h2>
+        <p class="step-desc">A listener watches a cell. When the value changes, the listener fires. That's where the side effects live — notifications, logs, writes, anything.</p>
+
+        <pre>- id: temperature
+  kind: value
+  value: 22
+
+- id: alert
+  kind: listener
+  watch: temperature
+  condition: "temperature > 30"
+  action: 'console.log("⚠️ Hot!")'</pre>
+
+        <div class="narrative">
+          <strong>The reactive + listener combo:</strong> when temperature goes above 30, the listener fires. The console log appears. You could send a notification, write to disk, or call an API — same pattern.
+        </div>
+
+        <div class="demo">
+          <h4>Set temperature to 35</h4>
+          <div class="cell"><span class="id">temperature</span><span class="kind">value</span><span class="value" id="t3-temp">22</span></div>
+          <div class="cell"><span class="id">alert</span><span class="kind">listener</span><span class="value" id="t3-alert">—</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="listenerDemo(35)">Set temp to 35</button>
+          <button onclick="listenerDemo(20)">Set temp to 20</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Sensor -->
+      <div class="tour-step" data-step="4">
+        <div class="step-tag">Step 4 of 7</div>
+        <h2>Sensors read the world</h2>
+        <p class="step-desc">A sensor cell reads from the physical world. A temperature sensor, a clock, a websocket. The cell holds the latest value.</p>
+
+        <pre>- id: sensor.temp
+  kind: sensor
+  source: dht22
+  default: 22
+
+- id: sensor.humid
+  kind: sensor
+  source: dht22
+  default: 50
+
+- id: heat_index
+  kind: formula
+  expr: "sensor.temp + (sensor.humid - 50) * 0.05"</pre>
+
+        <div class="narrative">
+          <strong>The sensor is a window:</strong> the value updates whenever a new reading arrives. In Quilt Live, this is simulated. On an ESP32, this is a real DHT22 sensor. The cell model is the same.
+        </div>
+
+        <div class="demo">
+          <h4>Live sensor readings</h4>
+          <div class="cell"><span class="id">sensor.temp</span><span class="kind">sensor</span><span class="value" id="t4-temp">22.0</span></div>
+          <div class="cell"><span class="id">sensor.humid</span><span class="kind">sensor</span><span class="value" id="t4-humid">50.0</span></div>
+          <div class="cell"><span class="id">heat_index</span><span class="kind">formula</span><span class="value" id="t4-heat">22.0</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="sensorRead()">Take a reading</button>
+        </div>
+      </div>
+
+      <!-- STEP 5: Router -->
+      <div class="tour-step" data-step="5">
+        <div class="step-tag">Step 5 of 7</div>
+        <h2>Routers dispatch by caller</h2>
+        <p class="step-desc">A router cell returns different values for different callers. The same cell id, different outputs based on context.</p>
+
+        <pre>- id: data.public
+  kind: router
+  routes:
+    - when: "caller.role === 'admin'"
+      expr: "all_data"
+    - when: "caller.role === 'user'"
+      expr: "filtered_data"
+    - when: "caller.role === 'guest'"
+      expr: "public_data"</pre>
+
+        <div class="narrative">
+          <strong>Context-aware dispatch:</strong> when the admin calls <code>data.public</code>, they see everything. When a guest calls, they see only the public bits. The cell is the policy.
+        </div>
+
+        <div class="demo">
+          <h4>Call as different roles</h4>
+          <div class="cell"><span class="id">data.public</span><span class="kind">router</span><span class="value" id="t5-data">—</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="routerDemo('admin')">Call as admin</button>
+          <button onclick="routerDemo('user')">Call as user</button>
+          <button onclick="routerDemo('guest')">Call as guest</button>
+        </div>
+      </div>
+
+      <!-- STEP 6: Time -->
+      <div class="tour-step" data-step="6">
+        <div class="step-tag">Step 6 of 7</div>
+        <h2>Time travel</h2>
+        <p class="step-desc">With <a href="quilt-time.html" style="color: var(--green);">quilt-time</a>, every cell has a history. You can rewind, replay, fork, merge.</p>
+
+        <pre>const q = new QuiltTime();
+q.set('counter', 0);
+q.set('counter', 1);
+q.set('counter', 2);
+
+q.at('counter', 1);   // → 0
+q.fork('experiment');  // snapshot
+q.rewind('main');     // back to 2</pre>
+
+        <div class="narrative">
+          <strong>Every cell has a past:</strong> this is what makes Quilt a database + a runtime. The cell is a value <em>over time</em>. The engine is small (~3 KB) but the API is real.
+        </div>
+
+        <div class="demo">
+          <h4>The timeline</h4>
+          <div class="cell"><span class="id">counter</span><span class="kind">value</span><span class="value" id="t6-counter">0</span></div>
+          <div class="cell"><span class="id">t=1</span><span class="kind">history</span><span class="value" id="t6-t1">0</span></div>
+          <div class="cell"><span class="id">t=2</span><span class="kind">history</span><span class="value" id="t6-t2">1</span></div>
+          <div class="cell"><span class="id">t=3</span><span class="kind">history</span><span class="value" id="t6-t3">2</span></div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" onclick="timeStep()">Step forward</button>
+          <button onclick="timeRewind()">Rewind</button>
+        </div>
+      </div>
+
+      <!-- STEP 7: Mesh -->
+      <div class="tour-step" data-step="7">
+        <div class="step-tag">Step 7 of 7</div>
+        <h2>The mesh</h2>
+        <p class="step-desc">With <a href="quilt-mesh.html" style="color: var(--green);">quilt-mesh</a>, cells sync peer-to-peer. No server, no internet. Two devices, two engines, gossip.</p>
+
+        <pre>let alice = QuiltMesh::new("alice");
+let bob   = QuiltMesh::new("bob");
+
+alice.set("counter", 1);
+alice.gossip_with(&mut bob);
+// bob.counter == 1</pre>
+
+        <div class="narrative">
+          <strong>You're done.</strong> You built a value cell, a formula cell, a listener, a sensor, a router, time travel, and a mesh. That's Quilt. The cell is the universal IO. The sheet is the runtime. The mesh is the network.
+        </div>
+
+        <div class="demo">
+          <h4>Try the mesh live</h4>
+          <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 12px;">Open this page in a second tab — your cells sync peer-to-peer.</p>
+          <a href="mesh-live.html" style="display: inline-block; padding: 10px 20px; background: var(--green); color: var(--bg); border-radius: 6px; font-weight: 600;">→ Try the mesh</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tour-nav">
+      <button id="prev" onclick="prev()">← Previous</button>
+      <span class="progress-text" id="progress-text">Step 1 of 7</span>
+      <button id="next" onclick="next()">Next →</button>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin: 40px 0; color: var(--text-dim);">
+    <p>Finished the tour? Try the <a href="playground.html" style="color: var(--green);">Playground</a>, or open <a href="quilt-live.html" style="color: var(--green);">Quilt Live</a> and start building.</p>
+  </div>
+
+</main>
+
+<footer>
+  <p>The Quilt Tour — 5 minutes, 7 steps, one cell model.</p>
+</footer>
+
+<script>
+let currentStep = 1;
+const totalSteps = 7;
+
+function showStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.tour-step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
+  document.querySelectorAll('.tour-progress .step').forEach(s => s.classList.toggle('active', +s.dataset.step === n));
+  document.getElementById('progress-text').textContent = `Step ${n} of ${totalSteps}`;
+  document.getElementById('prev').disabled = n === 1;
+  document.getElementById('next').disabled = n === totalSteps;
+}
+function next() { if (currentStep < totalSteps) showStep(currentStep + 1); }
+function prev() { if (currentStep > 1) showStep(currentStep - 1); }
+document.querySelectorAll('.tour-progress .step').forEach(s => s.onclick = () => showStep(+s.dataset.step));
+
+// Step 1
+function changeGreeting() {
+  document.querySelector('[data-step="1"] .cell .value').textContent = '"Hello, Quilt!"';
+  pulse('[data-step="1"] .cell .value');
+}
+
+// Step 2
+function reactiveDemo(kind) {
+  const price = document.getElementById('t2-price');
+  const tax = document.getElementById('t2-tax');
+  const total = document.getElementById('t2-total');
+  if (kind === 'price') { price.textContent = '200'; pulse(price); }
+  else if (kind === 'tax') { tax.textContent = '0.10'; pulse(tax); }
+  else { price.textContent = '100'; tax.textContent = '0.08'; pulse(price); pulse(tax); }
+  const p = +price.textContent, t = +tax.textContent;
+  total.textContent = (p * (1 + t)).toFixed(2);
+  pulse(total);
+}
+
+// Step 3
+function listenerDemo(t) {
+  const temp = document.getElementById('t3-temp');
+  const alert = document.getElementById('t3-alert');
+  temp.textContent = t;
+  pulse(temp);
+  if (t > 30) { alert.textContent = '⚠️ Hot!'; alert.style.color = 'var(--yellow)'; }
+  else { alert.textContent = '—'; alert.style.color = ''; }
+  pulse(alert);
+}
+
+// Step 4
+function sensorRead() {
+  const t = (22 + (Math.random() - 0.5) * 4).toFixed(1);
+  const h = (50 + (Math.random() - 0.5) * 10).toFixed(1);
+  const heat = (parseFloat(t) + (parseFloat(h) - 50) * 0.05).toFixed(1);
+  document.getElementById('t4-temp').textContent = t; pulse(document.getElementById('t4-temp'));
+  document.getElementById('t4-humid').textContent = h; pulse(document.getElementById('t4-humid'));
+  document.getElementById('t4-heat').textContent = heat; pulse(document.getElementById('t4-heat'));
+}
+
+// Step 5
+function routerDemo(role) {
+  const data = document.getElementById('t5-data');
+  if (role === 'admin') data.textContent = '{all fields, all rows}';
+  else if (role === 'user') data.textContent = '{own fields, own rows}';
+  else data.textContent = '{public fields only}';
+  pulse(data);
+}
+
+// Step 6
+let timeT = 3;
+let history = [0, 1, 2];
+function timeStep() {
+  timeT++;
+  history.push(timeT - 1);
+  document.getElementById('t6-counter').textContent = timeT - 1;
+  document.getElementById('t6-t1').textContent = history[0];
+  document.getElementById('t6-t2').textContent = history[Math.min(1, history.length - 1)];
+  document.getElementById('t6-t3').textContent = history[Math.min(2, history.length - 1)];
+  pulse(document.getElementById('t6-counter'));
+}
+function timeRewind() {
+  timeT = 3; history = [0, 1, 2];
+  document.getElementById('t6-counter').textContent = '2';
+  document.getElementById('t6-t1').textContent = '0';
+  document.getElementById('t6-t2').textContent = '1';
+  document.getElementById('t6-t3').textContent = '2';
+  pulse(document.getElementById('t6-counter'));
+}
+
+function pulse(el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 500); }
+
+showStep(1);
+</script>
+
+</body>
+</html>

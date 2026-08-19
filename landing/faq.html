@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quilt FAQ — frequently asked questions</title>
+<meta name="description" content="Frequently asked questions about Quilt. Architecture, performance, comparison, deployment, security, the cell model, and the roadmap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0a0a0a; --bg-card: #131313; --bg-elev: #1a1a1a; --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.16); --text: #f0f0f0; --text-dim: #a0a0a0; --text-faint: #707070; --green: #7ec699; --blue: #5fa8d3; --purple: #bb7ec6; --tan: #c6a87e; --red: #c67e7e; --yellow: #c6c67e; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; }
+a { color: var(--text); text-decoration: none; } a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.grad-text { background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,10,0.7); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.mark { width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--blue), var(--purple)); border-radius: 4px; }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a { padding: 6px 10px; font-size: 0.85rem; color: var(--text-dim); border-radius: 6px; }
+.nav-links a:hover { background: var(--bg-card); color: var(--text); }
+.nav-links a.cta { background: var(--green); color: var(--bg); }
+
+.hero { padding: 80px 24px 40px; text-align: center; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px; }
+.hero p.lead { color: var(--text-dim); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+main { max-width: 800px; margin: 0 auto; padding: 0 24px 80px; }
+
+.toc-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 32px 0 16px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+.toc-bar a { padding: 4px 10px; background: var(--bg-elev); border-radius: 4px; font-size: 0.8rem; color: var(--text-dim); }
+.toc-bar a:hover { background: var(--bg-elev-2); color: var(--text); }
+
+section { margin-bottom: 48px; scroll-margin-top: 80px; }
+section h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--green); }
+
+.qa { margin-bottom: 16px; }
+.qa summary { padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary::after { content: '+'; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; transition: transform 0.2s; }
+.qa[open] summary::after { content: '−'; }
+.qa[open] summary { border-radius: 8px 8px 0 0; border-bottom-color: transparent; }
+.qa .answer { padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; color: var(--text-dim); }
+.qa .answer p { margin-bottom: 12px; }
+.qa .answer p:last-child { margin-bottom: 0; }
+.qa .answer strong { color: var(--text); }
+.qa .answer a { color: var(--green); }
+.qa .answer pre { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px; margin: 8px 0; font-size: 0.8rem; line-height: 1.5; }
+
+footer { padding: 40px 24px; text-align: center; color: var(--text-faint); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="faq.html" class="active">FAQ</a>
+    <a href="docs.html">Docs</a>
+    <a href="tutorial.html">Tutorial</a>
+    <a href="compare.html">Compare</a>
+    <a href="about.html">About</a>
+    <a href="quilt-live.html" class="cta">Open Live</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Frequently asked <span class="grad-text">questions</span></h1>
+  <p class="lead">Everything you wanted to know about Quilt, organized. If you have a question that's not here, open an issue on <a href="https://github.com/SuperInstance/quilt" style="color: var(--green);">GitHub</a>.</p>
+</div>
+
+<main>
+
+  <div class="toc-bar">
+    <a href="#basics">Basics</a>
+    <a href="#cells">The cell model</a>
+    <a href="#tech">Technical</a>
+    <a href="#perf">Performance</a>
+    <a href="#security">Security</a>
+    <a href="#deploy">Deployment</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#community">Community</a>
+  </div>
+
+  <!-- =============== BASICS =============== -->
+  <section id="basics">
+    <h2>Basics</h2>
+
+    <details class="qa">
+      <summary>What is Quilt?</summary>
+      <div class="answer">
+        <p>Quilt is a reactive, typed, cellular runtime. A spreadsheet where every cell is a live, addressable capability. The sheet is the program, the cell is the universal IO.</p>
+        <p>See the <a href="about.html">manifesto</a> for the full story.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What problem does Quilt solve?</summary>
+      <div class="answer">
+        <p>Quilt makes reactive programming <strong>visual and inspectable</strong>. You see the cells. You see the wires. You see the propagation. You see the value. Every cell has a name, a kind, a value, and dependencies. You can address any cell by name from anywhere — the engine, the CLI, the UI, an MCP client, a peer.</p>
+        <p>It's the spreadsheet model, finally made real for software.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What can I build with it?</summary>
+      <div class="answer">
+        <p>Personal data apps, smart home controllers, AI agents, financial dashboards, IoT meshes, multiplayer games, real-time analytics — anything that fits the "reactive value + state" model. See the <a href="apps.html">apps gallery</a> for 30 examples.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Is Quilt a database?</summary>
+      <div class="answer">
+        <p>It's a runtime that <em>has</em> database properties: persistence (via <a href="quilt-time.html">quilt-time</a>), distribution (via <a href="quilt-mesh.html">quilt-mesh</a>), encryption (via <a href="quilt-vault.html">quilt-vault</a>). It's not a SQL database; the cell model is the API.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Is Quilt a programming language?</summary>
+      <div class="answer">
+        <p>Quilt is a runtime. The "language" is YAML (for sheets) and JavaScript or Rust (for programs inside cells). The cell model is the API surface; the YAML is the public contract.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Is Quilt open source?</summary>
+      <div class="answer">
+        <p>Yes. The canonical runtime is Apache 2.0; the supporting repos are MIT. The code is at <a href="https://github.com/SuperInstance/quilt" target="_blank">github.com/SuperInstance/quilt</a>.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Who maintains it?</summary>
+      <div class="answer">
+        <p>The <a href="https://github.com/SuperInstance" target="_blank">SuperInstance</a> org. It's a small team, working in the open.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== CELLS =============== -->
+  <section id="cells">
+    <h2>The cell model</h2>
+
+    <details class="qa">
+      <summary>What are the 8 cell kinds?</summary>
+      <div class="answer">
+        <p><strong>value</strong> — a static value. <strong>formula</strong> — a reactive expression. <strong>program</strong> — an async body. <strong>sensor</strong> — a polled input. <strong>api</strong> — an outbound call. <strong>listener</strong> — fires on change. <strong>router</strong> — context-aware dispatch. <strong>io</strong> — a physical port.</p>
+        <p>See the <a href="cells.html">deep dive</a> for examples of each.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can I add my own cell kinds?</summary>
+      <div class="answer">
+        <p>In TypeScript, yes — extend the engine. In Rust, also yes. In Live, the 8 kinds are fixed. The point of a fixed vocabulary is that sheets are portable across runtimes.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How are cell names chosen?</summary>
+      <div class="answer">
+        <p>Hierarchical, dot-separated. Like <code>kitchen.temp</code>, <code>budget.savings</code>, <code>agent.memory.short</code>. The dot is just naming convention; the engine treats it as one string.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can cells have circular dependencies?</summary>
+      <div class="answer">
+        <p>No. The engine detects cycles at load time and refuses to evaluate. Cycles are a code smell in reactive systems; the engine tells you where.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What's per-context memoization?</summary>
+      <div class="answer">
+        <p>A cell called by different callers can have different cached values, based on the caller's context. This is what makes <a href="cells.html#router">router</a> cells work — the same cell, two different outputs, two different caches.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can a cell call itself?</summary>
+      <div class="answer">
+        <p>No. That would be a cycle. The engine would refuse to load the sheet.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== TECHNICAL =============== -->
+  <section id="tech">
+    <h2>Technical</h2>
+
+    <details class="qa">
+      <summary>What's the engine written in?</summary>
+      <div class="answer">
+        <p>Two implementations: TypeScript (the canonical, npm-installable) and Rust (the production, single-binary). They share the same sheet format and the same cell model. See <a href="compare.html">the comparison</a> for tradeoffs.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What is the sheet format?</summary>
+      <div class="answer">
+        <p>YAML. A cell is a YAML map with an <code>id</code> and a <code>kind</code>, plus kind-specific config. The same sheet format works in TypeScript, Rust, and Live.</p>
+        <pre>id: example
+cells:
+  - id: a
+    kind: value
+    value: 10
+  - id: doubled
+    kind: formula
+    expr: "a * 2"</pre>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How does evaluation work?</summary>
+      <div class="answer">
+        <p>Topological sort over the cell graph. When a cell changes, the engine computes the cascade — every cell that transitively depends on it — in dependency order. No re-evaluation of unchanged cells.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How does Quilt handle errors?</summary>
+      <div class="answer">
+        <p>A formula cell that throws has a status of <code>error</code>, with the error message preserved. Dependent cells get a degraded value but don't crash. You can subscribe to errors and react.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can a cell be async?</summary>
+      <div class="answer">
+        <p>Use the <code>program</code> cell kind. It's an async function with <code>await</code>, side effects, and a return value. For pure async, use <code>api</code> cells, which are lazily fetched and cached.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What about time zones, locales, dates?</summary>
+      <div class="answer">
+        <p>The formula language is JavaScript. You have access to <code>Date</code>, <code>Intl</code>, <code>Math</code>, and the standard library. There are no Quilt-specific date types — use what's in the language.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== PERFORMANCE =============== -->
+  <section id="perf">
+    <h2>Performance</h2>
+
+    <details class="qa">
+      <summary>How fast is Quilt?</summary>
+      <div class="answer">
+        <p>Real numbers on a MacBook Pro M2: <strong>0.05ms average cell evaluation</strong> in TypeScript, <strong>0.008ms</strong> in Rust. A 1,000-cell cascade in 30ms (TS) or 4.5ms (Rust). See the <a href="perf.html">full benchmarks</a>.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How does it scale?</summary>
+      <div class="answer">
+        <p>Linear in the size of the cascade, not the size of the sheet. A 10,000-cell sheet with one root change touches only the cells in the cascade. Topological sort is O(V + E).</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What's the memory footprint?</summary>
+      <div class="answer">
+        <p>Empty engine: 2 MB (TS), 800 KB (Rust). 1,000 cells: 8 MB (TS), 1.5 MB (Rust). The Live HTML file is 70 KB. The Rust binary is 3.2 MB stripped.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can Quilt run on a microcontroller?</summary>
+      <div class="answer">
+        <p>Yes — see <a href="quilt-esp32.html">quilt-esp32</a>. A no_std Rust port that fits in 32 KB of flash, with 64 cells, 8 deps per cell, 32-char IDs. Runs on a $3 chip.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== SECURITY =============== -->
+  <section id="security">
+    <h2>Security</h2>
+
+    <details class="qa">
+      <summary>Is my data sent to a server?</summary>
+      <div class="answer">
+        <p>No. Quilt Live runs entirely in the browser. The TypeScript runtime runs in your Node process. The Rust runtime runs in your container. You bring the server, if any. The cell is the unit of storage; the engine is the unit of execution; you control both.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can cells be encrypted?</summary>
+      <div class="answer">
+        <p>Yes — see <a href="quilt-vault.html">quilt-vault</a>. Per-cell encryption with ECDH P-256 + AES-GCM, real WebCrypto. The server (if any) sees only ciphertext. Per-cell ACLs are built in.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can a Quilt cell call out to the network?</summary>
+      <div class="answer">
+        <p>Yes — <code>api</code> cells do exactly that. The cell model is uniform: a value is a value, regardless of where it came from. If you want to lock down network access, you can run Quilt with a fetch policy that disallows certain domains.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What about formula injection?</summary>
+      <div class="answer">
+        <p>Formulas are <code>new Function()</code> with the cells in scope. If a user can edit a formula, they can run arbitrary JavaScript. The same is true of Excel macros. Don't let untrusted users edit formulas in a shared sheet.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== DEPLOYMENT =============== -->
+  <section id="deploy">
+    <h2>Deployment</h2>
+
+    <details class="qa">
+      <summary>How do I deploy Quilt?</summary>
+      <div class="answer">
+        <p>Three ways: <strong>as a library</strong> (npm install, import, ship with your app), <strong>as a binary</strong> (cargo build → 3.2 MB static binary → drop on any Linux/macOS/Windows/ARM), or <strong>as a single HTML</strong> (the Live file, email it, commit it, run it offline forever). See <a href="build.html">the build page</a>.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can I run Quilt in a serverless function?</summary>
+      <div class="answer">
+        <p>Yes. The Rust port compiles to a 3.2 MB static binary. Cold start is ~12ms. Perfect for AWS Lambda, Cloudflare Workers (via WASM), Vercel Edge Functions, or a Graviton instance.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How do I update a deployed sheet?</summary>
+      <div class="answer">
+        <p>The sheet is a YAML file. You deploy it like any other file. Update the file, restart the engine. For live updates, the engine can be configured to hot-reload sheets from a file watcher.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can multiple users edit the same sheet?</summary>
+      <div class="answer">
+        <p>In Quilt Studio, yes — there's multi-user collab via BroadcastChannel (same machine) or WebRTC (cross-machine, in development). For server-mediated collab, the engine exposes a CRDT via <a href="quilt-mesh.html">quilt-mesh</a>.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== ROADMAP =============== -->
+  <section id="roadmap">
+    <h2>Roadmap</h2>
+
+    <details class="qa">
+      <summary>What's next for Quilt?</summary>
+      <div class="answer">
+        <p>See the full <a href="timeline.html">5-year roadmap</a>. Near-term: real-time multiplayer via WebRTC, more cell kinds, the production IDE, encrypted version history, MCP for every cell. Far-term: Quilt-on-Quilt (a sheet that edits its own sheet), a mesh of personal devices, the runtime for personal AI.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>When will it be "1.0"?</summary>
+      <div class="answer">
+        <p>When the documentation is complete, the API is stable, the tests cover 95%+, and we've shipped 5,000 stars. Roughly Q3 2026. Current is v0.2.0.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>How can I contribute?</summary>
+      <div class="answer">
+        <p>Open an issue on GitHub. Pick a <code>good first issue</code>. File bugs. Suggest examples. Build a sheet and share it. Help with docs. Help with translations. The community is small; every contribution matters.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- =============== COMMUNITY =============== -->
+  <section id="community">
+    <h2>Community</h2>
+
+    <details class="qa">
+      <summary>Where do I ask questions?</summary>
+      <div class="answer">
+        <p><a href="https://github.com/SuperInstance/quilt/issues" target="_blank">GitHub issues</a> for bugs and feature requests. Discussions for questions. The Discord (TBD) for chat. Or open a Discussion on GitHub.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Is there a Discord?</summary>
+      <div class="answer">
+        <p>Not yet. GitHub Discussions is the main channel. We'll launch a Discord when the community is big enough to need it.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can I use Quilt in my company?</summary>
+      <div class="answer">
+        <p>Yes, the license is Apache 2.0 (TS) or MIT (Rust). Use it commercially, modify it, ship it. Attribution appreciated, not required.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Can I hire someone to build with Quilt?</summary>
+      <div class="answer">
+        <p>The team is small. We're not a consultancy. But there are early adopters in the community who can help. Reach out via GitHub.</p>
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>What's the license?</summary>
+      <div class="answer">
+        <p>The canonical runtime is Apache 2.0. The supporting repos (mesh, time, vault, etc.) are MIT. The site content (this page) is CC BY 4.0.</p>
+      </div>
+    </details>
+  </section>
+
+</main>
+
+<footer>
+  <p>Didn't find your question? <a href="https://github.com/SuperInstance/quilt/issues/new">Open an issue</a>.</p>
+</footer>
+
+</body>
+</html>
