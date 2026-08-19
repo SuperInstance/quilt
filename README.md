@@ -11,10 +11,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-native-purple)](https://modelcontextprotocol.io)
 [![Rust port](https://img.shields.io/badge/Rust-1.0-blue)](https://github.com/superinstance/quilt-rust)
-[![Status](https://img.shields.io/badge/status-v0.5.0-brightgreen)](https://github.com/superinstance/quilt)
-[![Tests](https://img.shields.io/badge/tests-82%2F82-brightgreen)](https://github.com/superinstance/quilt)
+[![Status](https://img.shields.io/badge/status-v0.6.0-brightgreen)](https://github.com/superinstance/quilt)
+[![Tests](https://img.shields.io/badge/tests-79%2F79%20sdk%20%7C%2082%2F82%20total-brightgreen)](https://github.com/superinstance/quilt)
 [![Federation](https://img.shields.io/badge/federation-15%20repos-emerald)](https://superinstance.github.io/quilt/landing/federation.html)
-[![Agent Substrate](https://img.shields.io/badge/agent%20substrate-8%20primitives-purple)](https://superinstance.github.io/quilt/landing/agent-substrate.html)
+[![Agent Substrate](https://img.shields.io/badge/agent%20substrate-10%20primitives-purple)](https://superinstance.github.io/quilt/landing/agent-substrate.html)
+[![Docs](https://img.shields.io/badge/docs-VitePress-blue)](docs/)
 
 **[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Playground ▶](https://superinstance.github.io/quilt/landing/playground.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[IDE 🛠](https://superinstance.github.io/quilt/landing/ide.html)** · **[Synoptic 🎬](https://superinstance.github.io/quilt/landing/synoptic.html)** · **[3D View](https://superinstance.github.io/quilt/landing/synoptic3d.html)** · **[Patterns 📚](https://superinstance.github.io/quilt/landing/patterns.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Compare ⚖](https://superinstance.github.io/quilt/landing/compare.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Federation 🌐](https://superinstance.github.io/quilt/landing/federation.html)** · **[Agent Substrate 🧬](https://superinstance.github.io/quilt/landing/agent-substrate.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
 
@@ -55,9 +56,14 @@ You write a `sheet.yaml` that declares cells and their dependencies. The Quilt e
 | **Computer vision** cells (camera → scene → caption)               | [`quilt-vision`][quilt-vision] | browser  | Web APIs, getUserMedia           |
 | **Zero-knowledge** cell verification (planner primitives)         | [`quilt-zk`][quilt-zk]      | server       | TS, 7 tests                      |
 | **Workflow** cells (DAG execution, retry, rollback)               | [`quilt-flow`][quilt-flow]  | server       | TS, 8 tests                      |
-| **Agent substrate** primitives (resolve, validate, publish, trace) | [`@quilt/sdk`][quilt]       | anywhere     | 8 functions, 61 tests            |
+| **Agent substrate** primitives (resolve, validate, publish, trace) | [`@quilt/sdk`][quilt]       | anywhere     | 8 functions, 79 tests            |
 | **Federation** — quilts that link to other quilts                 | [`@quilt/sdk`][quilt]       | anywhere     | `resolveCell`, `subscribeCell`   |
+| **Multi-tier cache** + R2 canonical store                         | [`@quilt/sdk`][quilt]       | anywhere     | `FederatedArtifactStore`         |
+| **IoT-native pub/sub** transport (MQTT 5.0)                       | [`@quilt/sdk`][quilt]       | anywhere     | `MqttCellTransport`              |
 | **High-throughput** cell evaluation (compiled, no GC)             | [`quilt-rust`][quilt-rust]  | server       | Rust, ~50k ops/s in TS, much more in Rust |
+| **Edge ML** (Jetson, CUDA, ROS2, sensor fusion) — _forthcoming_   | `quilt-jetson`              | edge ML      | Rust, axum, tokio                |
+| **Production RAG** (5 vector stores, 5 embedders, 3 rerankers) — _forthcoming_ | `quilt-rag`      | server       | TS, Vectorize + OpenAI + Cohere  |
+| **Multi-instance fleet orchestration** — _forthcoming_           | `quilt-fleet`               | orchestrator | TS, REST + WebSocket + gRPC     |
 
 [quilt]: https://github.com/SuperInstance/quilt
 [quilt-rust]: https://github.com/SuperInstance/quilt-rust
