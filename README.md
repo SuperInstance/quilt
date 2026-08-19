@@ -14,7 +14,7 @@
 [![Status](https://img.shields.io/badge/status-v0.2.0-brightgreen)](https://github.com/superinstance/quilt)
 [![Tests](https://img.shields.io/badge/tests-15%2F15-brightgreen)](https://github.com/superinstance/quilt)
 
-**[Live simulator ⚡](landing/simulator.html)** · **[Read the manifesto →](docs/manifesto.md)** · **[Tutorial →](tutorials/README.md)** · **[Examples →](examples/)** · **[Architecture →](docs/architecture.md)** · **[Harness guide →](docs/harness-guide.md)** · **[Throughput notes →](docs/throughput.md)**
+**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Simulator](https://superinstance.github.io/quilt/landing/simulator.html)** · **[Read the manifesto →](docs/manifesto.md)** · **[Tutorial →](tutorials/README.md)** · **[Examples →](examples/)** · **[Architecture →](docs/architecture.md)** · **[Harness guide →](docs/harness-guide.md)** · **[Throughput notes →](docs/throughput.md)**
 
 ---
 
@@ -73,7 +73,7 @@ Quilt is a reactive, typed, cellular runtime. The spreadsheet is the control pla
 │       └────────┘  └────────┘  └────────┘                 │
 │                                                          │
 │       ┌────────┐                                          │
-│       │  Web   │  ← landing/simulator.html               │
+│       │  Web   │  ← /landing/quilt-live.html + simulator│
 │       │  UI    │  ← browser-native, no build step        │
 │       └────────┘                                          │
 └──────────────────────────────────────────────────────────┘
@@ -89,13 +89,26 @@ The Rust port has the same shape — same 8 cell kinds, same engine, same CLI/MC
 
 ---
 
-## ⚡ Try the live simulator
+## ⚡ Try it now
 
 **No install. No clone. Just open it.**
 
-**[→ Open the simulator](landing/simulator.html)** *(in your browser, offline-capable)*
+### Two flavors
 
-A side-by-side code editor + runtime view + dependency graph. Edit a YAML sheet, see the cells update in real time. Pick a preset, hit "Run", watch the cells compute.
+| What | Try it | Best for |
+| --- | --- | --- |
+| **Quilt Live** | [→ Open the page](https://superinstance.github.io/quilt/landing/quilt-live.html) | Full reactive data OS in your browser. Click-to-try grid, save state as a cookie or downloadable .html. **One file, the whole app.** |
+| **Live simulator** | [→ Open the page](https://superinstance.github.io/quilt/landing/simulator.html) | Side-by-side code editor + runtime view + dependency graph. Edit a YAML sheet, see the cells update in real time. |
+
+Both run entirely in the browser. No build, no install, no server.
+
+> Want a local copy? You can also **download `quilt-live.html` as a single file** and run it offline. The button is right there in the app's top bar.
+
+### What is Quilt Live?
+
+A portable, reactive data OS in one HTML file. **~70 KB, zero dependencies.** Every cell in the grid is a live, addressable capability. Open the link above, change a value, watch the formulas recompute. Save the state as a cookie, or download the whole app with your state baked in. The downloaded file *IS* the app — open it on any device, even offline, and your work is right there.
+
+[→ Open Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.html) · [Source on GitHub](https://github.com/SuperInstance/quilt-live) · [See the 54 examples](https://github.com/SuperInstance/quilt-live/tree/main/examples)
 
 ---
 
@@ -280,8 +293,9 @@ Six new production-grade examples:
 
 ### Browser visuals (no build step)
 - **[landing/index.html](landing/index.html)** — landing page with animated grid demo
-- **[landing/simulator.html](landing/simulator.html)** — live side-by-side simulator (code + runtime + dependency graph)
-- Both work offline. Just open them in a browser.
+- **[landing/quilt-live.html](landing/quilt-live.html)** — the Quilt Live single-file reactive data OS ([live page](https://superinstance.github.io/quilt/landing/quilt-live.html))
+- **[landing/simulator.html](landing/simulator.html)** — live side-by-side simulator (code + runtime + dependency graph) ([live page](https://superinstance.github.io/quilt/landing/simulator.html))
+- All work offline. Just open them in a browser.
 
 ### Documentation
 - **[Manifesto](docs/manifesto.md)** — the 10-point declaration
@@ -380,7 +394,8 @@ The TypeScript version is gaining a WASM-cell-sandbox as a v0.2 feature to close
 | Want to…                                                | Go to                                                                |
 | ------------------------------------------------------- | -------------------------------------------------------------------- |
 | **Use Quilt right now** (stable, TypeScript)            | This repo.                                                           |
-| Try the **browser simulator** (live, no install)        | [landing/simulator.html](landing/simulator.html)                     |
+| Try the **browser simulator** (live, no install)        | [superinstance.github.io/quilt/landing/simulator.html](https://superinstance.github.io/quilt/landing/simulator.html) |
+| Try **Quilt Live** (full reactive OS, single file)     | [superinstance.github.io/quilt/landing/quilt-live.html](https://superinstance.github.io/quilt/landing/quilt-live.html) |
 | Read the **manifesto** (the 10-point declaration)       | [docs/manifesto.md](docs/manifesto.md)                               |
 | Read the **architecture** deep-dive                      | [docs/architecture.md](docs/architecture.md)                         |
 | Read about **security** and the trust model              | [docs/security.md](docs/security.md)                                 |

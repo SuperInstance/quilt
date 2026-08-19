@@ -1,0 +1,2115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quilt Live — a portable reactive data OS</title>
+<meta name="description" content="A single-file, browser-native, reactive data OS. Spreadsheet as runtime. You own the data.">
+<meta property="og:title" content="Quilt Live — a portable reactive data OS">
+<meta property="og:description" content="A single-file, browser-native, reactive data OS. Spreadsheet as runtime. You own the data.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://superinstance.github.io/quilt/landing/quilt-live.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%97%B3%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --bg-2: #14171c;
+    --bg-3: #1c2027;
+    --fg: #e6e6e6;
+    --fg-dim: #8a8f99;
+    --border: #2a2f37;
+    --accent: #4ea1ff;
+    --accent-2: #67e8f9;
+    --ok: #4ade80;
+    --warn: #facc15;
+    --err: #ef4444;
+    --value: #4ea1ff;
+    --formula: #4ade80;
+    --program: #c084fc;
+    --sensor: #67e8f9;
+    --listener: #f87171;
+    --router: #c084fc;
+    --io: #facc15;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow: hidden;
+  }
+
+  /* ====================== Layout ====================== */
+  .app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+  }
+  header.topbar {
+    background: linear-gradient(180deg, #14171c 0%, #0d0f12 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+  header.topbar h1 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+  header.topbar h1 .glyph {
+    display: inline-block;
+    transform: translateY(1px);
+    margin-right: 4px;
+  }
+  header.topbar .tag {
+    font-size: 0.7rem;
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  header.topbar .spacer { flex: 1; }
+  header.topbar .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-3);
+    color: var(--fg-dim);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    border: 1px solid var(--border);
+  }
+  header.topbar .pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+  }
+  header.topbar .pill.saving .dot { background: var(--warn); }
+  header.topbar .pill.dirty .dot { background: var(--err); }
+  header.topbar a.back {
+    color: var(--fg-dim);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    transition: all 0.1s;
+  }
+  header.topbar a.back:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+    background: var(--bg-3);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 240px 1fr 280px;
+    overflow: hidden;
+  }
+  aside.left, aside.right {
+    background: var(--bg-2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 0.75rem;
+  }
+  aside.right { border-right: 0; border-left: 1px solid var(--border); }
+  section.grid {
+    overflow: auto;
+    padding: 0.5rem;
+  }
+
+  /* ====================== Sidebar sections ====================== */
+  .side-section {
+    margin-bottom: 1.25rem;
+  }
+  .side-section h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+  .side-section ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .side-section li {
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--fg);
+    transition: background 0.1s;
+  }
+  .side-section li:hover { background: var(--bg-3); }
+  .side-section li.active { background: var(--accent); color: #0d0f12; }
+  .side-section li .kind {
+    font-size: 0.65rem;
+    color: var(--fg-dim);
+    margin-left: 0.5rem;
+    text-transform: uppercase;
+  }
+  .side-section li.active .kind { color: rgba(0,0,0,0.6); }
+  .side-section li .meta {
+    font-size: 0.7rem;
+    color: var(--fg-dim);
+  }
+  .side-section li.active .meta { color: rgba(0,0,0,0.6); }
+
+  /* ====================== Cell grid ====================== */
+  .cell {
+    display: grid;
+    grid-template-columns: 220px 100px 1fr 100px;
+    align-items: center;
+    padding: 0.45rem 0.7rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.08s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+  .cell:hover { background: rgba(255, 255, 255, 0.03); }
+  .cell.selected {
+    background: rgba(78, 161, 255, 0.08);
+    border-color: var(--accent);
+  }
+  .cell .id {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85rem;
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cell .kind {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .cell.kind-value .kind { color: var(--value); }
+  .cell.kind-formula .kind { color: var(--formula); }
+  .cell.kind-api .kind { color: var(--io); }
+  .cell.kind-program .kind { color: var(--program); }
+  .cell.kind-sensor .kind { color: var(--sensor); }
+  .cell.kind-listener .kind { color: var(--listener); }
+  .cell.kind-router .kind { color: var(--router); }
+  .cell.kind-io .kind { color: var(--io); }
+  .cell .value {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cell .value.placeholder { color: var(--fg-dim); font-style: italic; }
+  .cell .value.error { color: var(--err); }
+  .cell .status {
+    font-size: 0.65rem;
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .cell .status.ready { color: var(--ok); }
+  .cell .status.stale { color: var(--warn); }
+  .cell .status.error { color: var(--err); }
+  .cell .status.idle { color: var(--fg-dim); }
+  .cell .status.computing { color: var(--accent); }
+
+  .cell .editor {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    width: 100%;
+    outline: none;
+  }
+  .cell textarea.editor {
+    resize: none;
+    min-height: 20px;
+    max-height: 200px;
+    line-height: 1.4;
+  }
+
+  /* ====================== Buttons ====================== */
+  button {
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  button:hover { background: #232830; border-color: #3a4049; }
+  button.primary {
+    background: var(--accent);
+    color: #0d0f12;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  button.primary:hover { background: #6cb2ff; }
+  button.ghost {
+    background: transparent;
+    border-color: var(--border);
+  }
+  button.danger {
+    background: transparent;
+    border-color: var(--err);
+    color: var(--err);
+  }
+  button.danger:hover { background: rgba(239, 68, 68, 0.1); }
+
+  /* ====================== Bottom bar ====================== */
+  footer.statusbar {
+    background: var(--bg-2);
+    border-top: 1px solid var(--border);
+    padding: 0.4rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+  }
+  footer.statusbar .spacer { flex: 1; }
+
+  /* ====================== Detail panel ====================== */
+  .detail {
+    margin-bottom: 0.75rem;
+  }
+  .detail .label {
+    font-size: 0.7rem;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+  }
+  .detail .body {
+    font-size: 0.8rem;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 240px;
+    overflow: auto;
+  }
+  .detail .body.error { color: var(--err); border-color: var(--err); }
+  .detail .body code {
+    background: var(--bg-3);
+    padding: 0 4px;
+    border-radius: 2px;
+    font-size: 0.75rem;
+  }
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .pill-row .pill {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: var(--bg-3);
+    color: var(--fg);
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    cursor: pointer;
+  }
+  .pill-row .pill:hover { background: var(--accent); color: #0d0f12; }
+  .pill-row .empty { color: var(--fg-dim); font-size: 0.8rem; font-style: italic; }
+
+  /* ====================== Modals ====================== */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 560px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: auto;
+  }
+  .modal h2 { margin: 0 0 1rem 0; color: var(--accent); }
+  .modal p { color: var(--fg); }
+  .modal pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.5rem;
+    border-radius: 4px;
+    overflow: auto;
+    font-size: 0.75rem;
+  }
+  .modal .actions {
+    display: flex; gap: 0.5rem; justify-content: flex-end;
+    margin-top: 1rem;
+  }
+  .modal label {
+    display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0;
+  }
+
+  /* ====================== Toast ====================== */
+  .toast-stack {
+    position: fixed; bottom: 3rem; right: 1rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    z-index: 200;
+  }
+  .toast {
+    background: var(--bg-3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 0.6rem 0.9rem;
+    border-radius: 4px;
+    color: var(--fg);
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: toast-in 0.2s ease-out;
+  }
+  .toast.error { border-left-color: var(--err); }
+  .toast.ok { border-left-color: var(--ok); }
+  @keyframes toast-in {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ====================== Help / onboarding overlay ====================== */
+  .onboarding {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+  }
+  .onboarding .card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 540px;
+    width: 90%;
+  }
+  .onboarding h2 { margin: 0 0 0.5rem 0; color: var(--accent); }
+  .onboarding p { color: var(--fg); }
+  .onboarding .step {
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border-left: 3px solid var(--accent);
+  }
+  .onboarding .step h4 { margin: 0 0 0.25rem 0; color: var(--fg); }
+  .onboarding .step p { margin: 0; font-size: 0.85rem; color: var(--fg-dim); }
+  .onboarding .actions { margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+  /* ====================== Misc ====================== */
+  .empty-hint {
+    text-align: center; color: var(--fg-dim); padding: 3rem 1rem; font-size: 0.9rem;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4049; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <a class="back" href="https://superinstance.github.io/quilt/" title="Back to Quilt">← Quilt</a>
+    <h1><span class="glyph">◳</span> Quilt Live</h1>
+    <span class="tag" id="sheet-name">untitled</span>
+    <span class="spacer"></span>
+    <button class="ghost" id="btn-examples" title="Browse example sheets">📚 Examples</button>
+    <button class="ghost" id="btn-add-cell" title="Add a new cell">+ Cell</button>
+    <button class="ghost" id="btn-save" title="Save state to a cookie">💾 Save</button>
+    <button class="ghost" id="btn-download" title="Download this entire app with state baked in">⬇ Download</button>
+    <button class="ghost" id="btn-reset" title="Reset to a fresh sheet">⟲ Reset</button>
+    <span class="pill" id="save-status"><span class="dot"></span><span id="save-status-text">saved</span></span>
+  </header>
+
+  <main>
+    <aside class="left">
+      <div class="side-section">
+        <h3>Cells</h3>
+        <ul id="cell-list"></ul>
+      </div>
+      <div class="side-section">
+        <h3>Examples</h3>
+        <ul id="example-list"></ul>
+      </div>
+    </aside>
+
+    <section class="grid" id="grid">
+      <div class="empty-hint">Loading…</div>
+    </section>
+
+    <aside class="right" id="detail">
+      <div class="empty-hint">Select a cell to see its dependencies and dependents.</div>
+    </aside>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status-text">Ready.</span>
+    <span class="spacer"></span>
+    <span id="cell-count">0 cells</span>
+    <span class="pill" id="dirty-pill" style="display:none">unsaved</span>
+    <button class="ghost" id="btn-help" title="Show help">?</button>
+  </footer>
+</div>
+
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- ============================================================ -->
+<!-- Examples modal                                                -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modal-examples" style="display:none">
+  <div class="modal">
+    <h2>📚 Examples</h2>
+    <p>Pre-built sheets you can load with one click. They replace the current state (you can save first if you want to keep it).</p>
+    <ul id="examples-grid" style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;"></ul>
+    <div class="actions">
+      <button class="ghost" id="btn-close-examples">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Help / onboarding modal                                       -->
+<!-- ============================================================ -->
+<div class="onboarding" id="onboarding" style="display:none">
+  <div class="card">
+    <h2>◳ Welcome to Quilt Live</h2>
+    <p>A portable, reactive data OS — in one HTML file. You own the data.</p>
+    <div class="step">
+      <h4>1. Click a cell to inspect it</h4>
+      <p>The right panel shows its dependencies, dependents, and raw value. Click any id to jump there.</p>
+    </div>
+    <div class="step">
+      <h4>2. Press <code>s</code> on a value cell to set it</h4>
+      <p>Or <code>e</code> to edit a formula. The grid reactively recomputes everything that depends on it.</p>
+    </div>
+    <div class="step">
+      <h4>3. Press <code>+</code> to add a new cell</h4>
+      <p>Pick a kind (value, formula, program…) and give it an id and body. It joins the live graph instantly.</p>
+    </div>
+    <div class="step">
+      <h4>4. Save your work</h4>
+      <p><strong>Save</strong> stores it in a browser cookie (auto-loads next time). <strong>Download</strong> gives you a single .html with the state baked in — you can email it, commit it, or run it offline forever.</p>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btn-onboard-done">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Add-cell modal                                                -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modal-add" style="display:none">
+  <div class="modal">
+    <h2>+ New cell</h2>
+    <label>
+      <span style="width:80px">id</span>
+      <input id="new-id" placeholder="my.cell.id" style="flex:1; padding:4px 8px; background:var(--bg); color:var(--fg); border:1px solid var(--border); border-radius:4px; font-family:inherit">
+    </label>
+    <label>
+      <span style="width:80px">kind</span>
+      <select id="new-kind" style="flex:1; padding:4px 8px; background:var(--bg); color:var(--fg); border:1px solid var(--border); border-radius:4px; font-family:inherit">
+        <option value="value">value</option>
+        <option value="formula">formula</option>
+        <option value="api">api</option>
+        <option value="program">program</option>
+        <option value="sensor">sensor</option>
+        <option value="router">router</option>
+      </select>
+    </label>
+    <label style="align-items: flex-start">
+      <span style="width:80px; padding-top:4px">body</span>
+      <textarea id="new-body" rows="5" style="flex:1; padding:6px 8px; background:var(--bg); color:var(--fg); border:1px solid var(--border); border-radius:4px; font-family:ui-monospace,monospace; font-size:0.8rem; resize:vertical" placeholder="42  /  =a + b  /  model:gpt-4o  /  return { foo: runtime.get('a') }"></textarea>
+    </label>
+    <div class="actions">
+      <button class="ghost" id="btn-add-cancel">Cancel</button>
+      <button class="primary" id="btn-add-confirm">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Quilt engine: ~400 lines of vanilla JS. No build step.       -->
+<!-- ============================================================ -->
+<script>window.__QUILT_BOOT_STATE__ = null;</script>
+<script>
+// quilt-lite.js — a minimal Quilt engine in ~400 lines of vanilla JS.
+// No build step. No dependencies. Just one file you can drop into
+// any HTML page.
+//
+// Implements the eight cell kinds (value, formula, api, program,
+// sensor, listener, router, io) plus reactive propagation and
+// per-context memoization. Exposes a QuiltLite class via window.QuiltEngine
+// (kept that name for app compat) — a minimal browser-friendly version.
+//
+// Design goals:
+//   1. Self-contained (no external deps, no build, no fetch).
+//   2. Readable end-to-end in one file.
+//   3. The full power of Quilt in the browser.
+//
+// The formula DSL is JS itself, with a `with(cells)` block —
+// so the user can use any JS syntax. Program cells use
+// AsyncFunction. Router cells pick a destination by evaluating
+// rule conditions.
+
+'use strict';
+
+// Wrap the whole module in an IIFE so the helper functions (compileFormula,
+// evalFormula, parseSheet, etc.) don't pollute the global scope when
+// this file is inlined into an HTML page with other scripts.
+(function () {
+
+// =============================================================================
+// Types — defined as plain JS shapes (no TypeScript runtime).
+// =============================================================================
+
+const CellStatus = Object.freeze({
+  IDLE: 'idle',
+  READY: 'ready',
+  STALE: 'stale',
+  ERROR: 'error',
+  COMPUTING: 'computing',
+});
+
+function makeCell(id, def) {
+  return {
+    id,
+    def: { kind: 'value', value: null, ...def },
+    value: { data: undefined, status: CellStatus.IDLE, error: null, computedAt: null },
+    dependencies: new Set(),
+    dependents: new Set(),
+    contextCache: new Map(),
+  };
+}
+
+function makeCellValue(data, status = CellStatus.READY, error = null) {
+  return { data, status, error, computedAt: status === CellStatus.READY ? Date.now() : null };
+}
+
+function cloneCellValue(v) {
+  if (v === null || v === undefined) return v;
+  if (Array.isArray(v)) return v.map(cloneCellValue);
+  if (typeof v === 'object') {
+    const out = {};
+    for (const k of Object.keys(v)) out[k] = cloneCellValue(v[k]);
+    return out;
+  }
+  return v;
+}
+
+// =============================================================================
+// Sheet parser — minimal YAML subset for Quilt sheets.
+// We support the document format we ship in examples/.
+//   id, title, description (block scalar), version, cells (list of objects).
+//   Each cell: id, kind, value, expr, code, endpoint, source, default, deps.
+//   Block scalars (|) for multi-line strings.
+//   No anchors, no flow-style maps, no !!tags — keep it simple.
+// =============================================================================
+
+function parseSheet(yaml) {
+  const sheet = { cells: [], title: null, description: null, version: null };
+  const lines = yaml.split('\n');
+
+  // Walk through lines, tracking current top-level key.
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line || line.match(/^\s*#/)) { i++; continue; }
+
+    // Top-level key.
+    const topM = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+    if (topM) {
+      const key = topM[1];
+      let v = topM[2].trim();
+      if (v === '' || v === '|') {
+        // Block scalar or list follows.
+        if (key === 'cells') {
+          i++;
+          sheet.cells = readCells(lines, i);
+          // skip past the cells block
+          i = skipCellsBlock(lines, i);
+          continue;
+        }
+        if (v === '|') {
+          i++;
+          const block = [];
+          while (i < lines.length && (lines[i].startsWith('  ') || lines[i] === '')) {
+            block.push(lines[i].replace(/^  /, ''));
+            i++;
+          }
+          sheet[key] = block.join('\n').replace(/\n+$/, '');
+          continue;
+        }
+        // Empty value: just skip
+        i++;
+        continue;
+      }
+      // Scalar value.
+      sheet[key] = coerceScalar(v);
+      i++;
+      continue;
+    }
+    i++;
+  }
+  return sheet;
+}
+
+function coerceScalar(v) {
+  if (v === '~' || v === 'null' || v === '') return null;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (/^-?\d+$/.test(v)) return Number(v);
+  if (/^-?\d+\.\d+$/.test(v)) return Number(v);
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    return v.slice(1, -1);
+  }
+  if (v.startsWith('{') && v.endsWith('}')) {
+    return parseFlowMap(v);
+  }
+  return v;
+}
+
+function parseFlowMap(v) {
+  // Naive inline flow-style map: { key: value, key: value }
+  const inner = v.slice(1, -1).trim();
+  if (inner === '') return {};
+  const obj = {};
+  // Split on commas not inside quotes.
+  const parts = [];
+  let depth = 0, cur = '', inStr = null;
+  for (const c of inner) {
+    if (inStr) {
+      cur += c;
+      if (c === inStr) inStr = null;
+    } else if (c === '"' || c === "'") {
+      cur += c;
+      inStr = c;
+    } else if (c === '{' || c === '[') { depth++; cur += c; }
+    else if (c === '}' || c === ']') { depth--; cur += c; }
+    else if (c === ',' && depth === 0) { parts.push(cur); cur = ''; }
+    else cur += c;
+  }
+  if (cur) parts.push(cur);
+  for (const part of parts) {
+    const colonAt = part.indexOf(':');
+    if (colonAt === -1) continue;
+    const k = part.slice(0, colonAt).trim();
+    const val = part.slice(colonAt + 1).trim();
+    obj[k] = coerceScalar(val);
+  }
+  return obj;
+}
+
+function skipCellsBlock(lines, i) {
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.match(/^[A-Za-z_]/) && line.match(/^[\w-]+:/)) return i; // back at top level
+    i++;
+  }
+  return i;
+}
+
+function readCells(lines, start) {
+  const cells = [];
+  let i = start;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.match(/^\s*#/)) { i++; continue; }
+    // New top-level key — stop.
+    if (line.match(/^[A-Za-z_][\w-]*:\s*/)) break;
+    // Empty line.
+    if (line.trim() === '') { i++; continue; }
+    // Cell start: "  - id: foo"
+    const cellStart = line.match(/^\s*-\s+id:\s*(.*)$/);
+    if (cellStart) {
+      const cell = { id: cellStart[1].trim().replace(/^["']|["']$/g, ''), kind: 'value' };
+      i++;
+      // Read sub-keys.
+      while (i < lines.length) {
+        const sub = lines[i];
+        if (sub.trim() === '') { i++; continue; }
+        if (sub.match(/^\s+-\s+id:/)) break; // next cell
+        if (sub.match(/^[A-Za-z_][\w-]*:/)) break; // top-level key
+        const m = sub.match(/^    (\w+):\s*(.*)$/);
+        if (!m) { i++; continue; }
+        const k = m[1];
+        let v = m[2].trim();
+        let brokeAtNextCell = false;
+        // Block list: a `key:` followed by `  - item` lines.
+        // Example:
+        //   rules:
+        //     - when: "..."
+        //       route: { ... }
+        //     - when: "..."
+        if (v === '' && lines[i + 1] && lines[i + 1].match(/^      -\s+/)) {
+          i++;
+          const items = [];
+          while (i < lines.length && lines[i].match(/^      -\s+/)) {
+            const itemLines = [lines[i].replace(/^      -\s+/, '')];
+            i++;
+            while (i < lines.length && (lines[i].startsWith('        ') || lines[i] === '')) {
+              if (lines[i] === '') break;
+              itemLines.push(lines[i].replace(/^        /, ''));
+              i++;
+            }
+            // Parse the item as a mini-YAML object.
+            items.push(parseObject(itemLines));
+          }
+          v = items;
+        } else if (v === '' || v === '|') {
+          // block scalar (multi-line)
+          i++;
+          const block = [];
+          while (i < lines.length) {
+            const b = lines[i];
+            if (b === '' || b.startsWith('      ')) {
+              block.push(b.replace(/^      /, ''));
+              i++;
+            } else if (b.match(/^\s*-\s+id:/)) {
+              brokeAtNextCell = true;
+              break;
+            } else if (b.match(/^    \w+:/) || b.match(/^[A-Za-z_][\w-]*:/)) {
+              break;
+            } else {
+              break;
+            }
+          }
+          v = block.join('\n').replace(/\n+$/, '');
+        } else if (v === '~' || v === 'null') {
+          v = null;
+        } else if (v === 'true') {
+          v = true;
+        } else if (v === 'false') {
+          v = false;
+        } else if (/^-?\d+$/.test(v)) {
+          v = Number(v);
+        } else if (/^-?\d+\.\d+$/.test(v)) {
+          v = Number(v);
+        } else if (v.startsWith('[') && v.endsWith(']')) {
+          v = parseInlineList(v);
+        } else if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
+        }
+        cell[k] = v;
+        if (!brokeAtNextCell) i++;
+      }
+      cells.push(cell);
+      continue;
+    }
+    i++;
+  }
+  return cells;
+}
+
+function parseInlineList(v) {
+  // Naive: [a, b, c] or ["a", "b"]
+  const inner = v.slice(1, -1).trim();
+  if (inner === '') return [];
+  return inner.split(',').map(s => {
+    s = s.trim();
+    if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);
+    if (s.startsWith("'") && s.endsWith("'")) return s.slice(1, -1);
+    if (/^-?\d+$/.test(s)) return Number(s);
+    return s;
+  });
+}
+
+function parseObject(lines) {
+  // Parse a list of "key: value" lines into an object. Handles
+  // inline flow-style maps like `{ cell: greeting.formal }`.
+  const obj = {};
+  for (const raw of lines) {
+    const m = raw.match(/^(\w+):\s*(.*)$/);
+    if (!m) continue;
+    const k = m[1];
+    const v = m[2].trim();
+    obj[k] = coerceScalar(v);
+  }
+  return obj;
+}
+
+// =============================================================================
+// Formula engine
+// =============================================================================
+
+function compileFormula(expr, knownIds, selfId) {
+  let body = expr.startsWith('=') ? expr.slice(1) : expr;
+  // First pass: substitute all bare cell ids with unique placeholders.
+  // This avoids the rewrite interfering with itself when the replacement
+  // contains a substring that matches another cell id.
+  const sorted = [...knownIds].sort((a, b) => b.length - a.length);
+  const subs = new Map();
+  let nextPlaceholder = 0;
+  for (const id of sorted) {
+    if (id === selfId) continue;
+    const safe = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(?<![A-Za-z0-9_.])${safe}(?![A-Za-z0-9_(])`, 'g');
+    const placeholder = `__Q${nextPlaceholder++}__`;
+    if (re.test(body)) {
+      subs.set(placeholder, `cells[${JSON.stringify(id)}]`);
+      // Re-create the regex since we used test() (lastIndex moves on /g).
+      const re2 = new RegExp(`(?<![A-Za-z0-9_.])${safe}(?![A-Za-z0-9_(])`, 'g');
+      body = body.replace(re2, placeholder);
+    }
+  }
+  // Second pass: replace placeholders with the actual cells[...] access.
+  for (const [ph, replacement] of subs) {
+    body = body.split(ph).join(replacement);
+  }
+  return new Function('cells', 'abs', 'min', 'max', 'clamp', 'caller',
+    `return (${body});`);
+}
+
+function evalFormula(cell, ctx, allCells) {
+  const knownIds = [...allCells.keys()];
+  const fn = compileFormula(cell.def.expr || '', knownIds, cell.id);
+  const cellsObj = {};
+  for (const [id, other] of allCells) {
+    cellsObj[id] = other.value.data;
+  }
+  const proxy = new Proxy(cellsObj, {
+    get(t, p) { return typeof p === 'string' && p in t ? t[p] : undefined; },
+    has(t, p) { return typeof p === 'string' && p in t; },
+  });
+  const caller = ctx || {};
+  try {
+    const data = fn(proxy, Math.abs, Math.min, Math.max,
+      (n, lo, hi) => Math.min(Math.max(n, lo), hi), caller);
+    return makeCellValue(data);
+  } catch (err) {
+    return { data: null, status: CellStatus.ERROR, error: { message: String(err.message || err) }, computedAt: null };
+  }
+}
+
+// =============================================================================
+// Program cell — JS expression or block, async. We use AsyncFunction
+// so the user can `await` things. The script gets `runtime` with
+// .get/.set/.call/.list and `input` (the call input) and `caller`.
+// =============================================================================
+
+async function evalProgram(cell, ctx, input, engine) {
+  const code = cell.def.code || '';
+  // Pre-evaluate any formula/program dependencies so they're cached
+  // before the program runs. This is best-effort; we don't await any
+  // top-level await errors that aren't related to the dep itself.
+  for (const dep of cell.dependencies) {
+    const depCell = engine.cells.get(dep);
+    if (depCell && (depCell.def.kind === 'formula' || depCell.def.kind === 'program' || depCell.def.kind === 'value' || depCell.def.kind === 'sensor')) {
+      try { await engine.get(dep, ctx); } catch { /* ignore */ }
+    }
+  }
+  try {
+    const fn = new Function('runtime', 'input', 'caller',
+      `return (async () => { ${code} })();`);
+    const runtime = makeProgramRuntime(engine, ctx);
+    const result = await fn(runtime, input ?? null, ctx || {});
+    return makeCellValue(result === undefined ? null : result);
+  } catch (err) {
+    return { data: null, status: CellStatus.ERROR, error: { message: String(err.message || err) }, computedAt: null };
+  }
+}
+
+function makeProgramRuntime(engine, ctx) {
+  return {
+    get(id) {
+      // Synchronous read from the last known value.
+      const c = engine.cells.get(id);
+      if (!c) return undefined;
+      return c.value;
+    },
+    async set(id, value) {
+      await engine.set(id, value, ctx);
+      return true;
+    },
+    async call(id, input) {
+      return await engine.call(id, input, ctx);
+    },
+    list() {
+      return engine.listCells().map(c => c.id);
+    },
+  };
+}
+
+// =============================================================================
+// Router cell — picks a destination by evaluating rule conditions.
+// =============================================================================
+
+async function evalRouter(cell, ctx, input, engine) {
+  for (const rule of (cell.def.rules || [])) {
+    if (evalRuleCondition(rule.when, ctx, input, engine)) {
+      const route = rule.route;
+      if (typeof route === 'string') {
+        return await engine.call(route, input, ctx);
+      } else if (route && typeof route === 'object') {
+        if (route.value !== undefined) return makeCellValue(route.value);
+        if (route.cell) return await engine.call(route.cell, input, ctx);
+        if (route.model) return makeCellValue({ model: route.model, note: 'model swap (not implemented in lite)' });
+      }
+    }
+  }
+  return makeCellValue(input ?? null);
+}
+
+function evalRuleCondition(when, ctx, input, engine) {
+  if (!when) return false;
+  const w = when.trim();
+  if (w === 'true') return true;
+  if (w === 'false') return false;
+  // caller.row > N, caller.row == 'X', input == X
+  let m = w.match(/^caller\.row\s*([<>=!]+)\s*(.+)$/);
+  if (m) {
+    const op = m[1];
+    const rhs = JSON.parse(m[2].replace(/'/g, '"'));
+    return compare(ctx.row, op, rhs);
+  }
+  m = w.match(/^caller\.column\s*([<>=!]+)\s*(.+)$/);
+  if (m) {
+    const op = m[1];
+    const rhs = JSON.parse(m[2].replace(/'/g, '"'));
+    return compare(ctx.column, op, rhs);
+  }
+  m = w.match(/^input\s*([<>=!]+)\s*(.+)$/);
+  if (m) {
+    const op = m[1];
+    const rhs = JSON.parse(m[2].replace(/'/g, '"'));
+    return compare(input, op, rhs);
+  }
+  // .includes / .equals
+  if (w.includes('.includes(')) {
+    const [obj, val] = w.split('.includes(');
+    const v = val.replace(/\)$/, '').replace(/'/g, '');
+    const target = obj.includes('caller.row') ? ctx.row : null;
+    if (Array.isArray(target)) return target.includes(v);
+  }
+  // bare id (cell truthy?)
+  const cell = engine.cells.get(w);
+  if (cell) return Boolean(cell.value.data);
+  return false;
+}
+
+function compare(a, op, b) {
+  if (op === '==') return a == b;
+  if (op === '!=') return a != b;
+  if (op === '>') return a > b;
+  if (op === '<') return a < b;
+  if (op === '>=') return a >= b;
+  if (op === '<=') return a <= b;
+  return false;
+}
+
+// =============================================================================
+// API cell — fetches the endpoint. In the browser, we use the
+// global `fetch`. Real-world deployments would proxy through a
+// CORS-friendly backend; for demo, we handle the `model:` and
+// `mcp://` pseudo-endpoints and try fetch for everything else.
+// =============================================================================
+
+async function evalApi(cell, ctx, input) {
+  const ep = cell.def.endpoint || '';
+  const method = (cell.def.method || 'GET').toUpperCase();
+  if (ep.startsWith('model:')) {
+    return makeCellValue({ model: ep.slice(6), note: 'model endpoint (synthetic in lite)' });
+  }
+  if (ep.startsWith('mcp://')) {
+    return makeCellValue({ mcp: ep.slice(6), note: 'mcp endpoint (synthetic in lite)' });
+  }
+  try {
+    const res = await fetch(ep, {
+      method,
+      headers: { 'content-type': 'application/json', ...(cell.def.headers || {}) },
+      body: (method === 'GET' || method === 'HEAD') ? undefined : JSON.stringify(input),
+    });
+    const text = await res.text();
+    let body;
+    try { body = JSON.parse(text); } catch { body = text; }
+    return makeCellValue({ status: res.status, body });
+  } catch (err) {
+    return { data: null, status: CellStatus.ERROR, error: { message: 'fetch: ' + err.message }, computedAt: null };
+  }
+}
+
+// =============================================================================
+// Engine
+// =============================================================================
+
+class QuiltLite {
+  constructor(id) {
+    this.id = id || 'quilt';
+    this.cells = new Map();
+    this.subscriptions = new Map();
+    this._subCounter = 0;
+  }
+
+  defineCell(def) {
+    if (this.cells.has(def.id)) throw new Error(`cell already defined: ${def.id}`);
+    let initial = { data: undefined, status: CellStatus.IDLE, error: null, computedAt: null };
+    if (def.value !== undefined) {
+      initial = makeCellValue(cloneCellValue(def.value));
+    } else if (def.kind === 'sensor' && def.default !== undefined) {
+      initial = makeCellValue(cloneCellValue(def.default));
+    }
+    const cell = makeCell(def.id, def);
+    cell.value = initial;
+    this.cells.set(def.id, cell);
+    return cell;
+  }
+
+  loadSheet(sheet) {
+    this.cells.clear();
+    for (const def of sheet.cells) this.defineCell(def);
+    // First pass: register explicit deps.
+    for (const cell of this.cells.values()) {
+      for (const dep of (cell.def.deps || [])) this._addDep(cell.id, dep);
+    }
+    // Second pass: auto-detect formula deps from the expression.
+    for (const cell of this.cells.values()) {
+      if (cell.def.kind === 'formula' && cell.def.expr) {
+        this._autoDetectDeps(cell);
+      }
+    }
+    // Third pass: auto-detect program deps from runtime.get('...') calls.
+    for (const cell of this.cells.values()) {
+      if (cell.def.kind === 'program' && cell.def.code) {
+        this._autoDetectProgramDeps(cell);
+      }
+    }
+  }
+
+  _autoDetectProgramDeps(cell) {
+    // Find all runtime.get("...") or runtime.get('...') or
+    // runtime.set("...", ...) or runtime.call("...", ...) calls.
+    const re = /runtime\.(get|set|call)\(\s*['"]([^'"]+)['"]/g;
+    const seen = new Set();
+    let m;
+    while ((m = re.exec(cell.def.code || '')) !== null) {
+      const id = m[2];
+      if (id === cell.id) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      if (this.cells.has(id)) this._addDep(cell.id, id);
+    }
+  }
+
+  _autoDetectDeps(cell) {
+    const expr = (cell.def.expr || '').replace(/^=/, '');
+    for (const [id, other] of this.cells) {
+      if (id === cell.id) continue;
+      if (this._exprContainsToken(expr, id)) this._addDep(cell.id, id);
+    }
+  }
+
+  _tokenizeIds(expr) {
+    // Match bare identifiers (not strings, not property access).
+    return [...new Set(expr.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [])];
+  }
+
+  _exprContainsToken(expr, id) {
+    const safe = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(?<![A-Za-z0-9_])${safe}(?![A-Za-z0-9_.])`);
+    return re.test(expr);
+  }
+
+  _addDep(from, to) {
+    if (!this.cells.has(from) || !this.cells.has(to)) return;
+    this.cells.get(from).dependencies.add(to);
+    this.cells.get(to).dependents.add(from);
+  }
+
+  listCells() { return [...this.cells.values()]; }
+
+  getCell(id) { return this.cells.get(id); }
+
+  subscribe(cellId) {
+    if (!this.cells.has(cellId)) throw new Error('cell not found: ' + cellId);
+    const subId = 'sub-' + (++this._subCounter);
+    const sub = { id: subId, cellId, callback: null };
+    this.subscriptions.set(subId, sub);
+    return sub;
+  }
+
+  unsubscribe(subId) { this.subscriptions.delete(subId); }
+
+  subscribeAll(callback) {
+    const subId = 'sub-all-' + (++this._subCounter);
+    this.subscriptions.set(subId, { id: subId, cellId: '*', callback });
+    return subId;
+  }
+
+  _notifyChange(cellId) {
+    const cell = this.cells.get(cellId);
+    if (!cell) return;
+    const event = { cellId, newValue: cell.value };
+    for (const [id, sub] of this.subscriptions) {
+      if (sub.cellId === '*' || sub.cellId === cellId) {
+        if (sub.callback) sub.callback(event);
+      }
+    }
+  }
+
+  async get(id, ctx) {
+    ctx = ctx || {};
+    const cell = this.cells.get(id);
+    if (!cell) return { data: null, status: CellStatus.ERROR, error: { message: 'no such cell: ' + id }, computedAt: null };
+    const fullCtx = { ...ctx, caller: cell.id };
+    const key = JSON.stringify(fullCtx);
+    if (cell.contextCache.has(key) && cell.contextCache.get(key).status === CellStatus.READY && !cell.contextCache.get(key).error) {
+      // Return a fresh clone so callers can mutate freely.
+      return cloneCellValue(cell.contextCache.get(key));
+    }
+    let result;
+    switch (cell.def.kind) {
+      case 'value': {
+        // Use the latest known value (which set() updates), falling back to def.
+        const data = cell.value.data !== undefined ? cell.value.data : cell.def.value;
+        result = makeCellValue(cloneCellValue(data));
+        break;
+      }
+      case 'formula': result = this._evalFormulaChain(cell, fullCtx); break;
+      case 'api': result = await evalApi(cell, fullCtx, null); break;
+      case 'program': result = await evalProgram(cell, fullCtx, null, this); break;
+      case 'router': result = await evalRouter(cell, fullCtx, null, this); break;
+      case 'sensor':
+      case 'io':
+      case 'listener':
+        result = makeCellValue(cloneCellValue(cell.value.data));
+        result.status = cell.value.status;
+        result.error = cell.value.error;
+        result.computedAt = cell.value.computedAt;
+        break;
+      default:
+        result = { data: null, status: CellStatus.ERROR, error: { message: 'unknown kind: ' + cell.def.kind }, computedAt: null };
+    }
+    cell.contextCache.set(key, result);
+    cell.value = result;
+    cell.lastContext = fullCtx;
+    return cloneCellValue(result);
+  }
+
+  _evalFormulaChain(cell, ctx) {
+    // Pre-evaluate formula dependencies (recursively).
+    for (const dep of cell.dependencies) {
+      const depCell = this.cells.get(dep);
+      if (depCell && depCell.def.kind === 'formula') {
+        // Recursive: will be cached.
+        this.get(dep, ctx);
+      }
+    }
+    return evalFormula(cell, ctx, this.cells);
+  }
+
+  async set(id, value, ctx) {
+    const cell = this.cells.get(id);
+    if (!cell) throw new Error('no such cell: ' + id);
+    cell.value = makeCellValue(cloneCellValue(value));
+    cell.contextCache.clear();
+    this._notifyChange(id);
+    // Invalidate transitive dependents — mark stale and clear caches.
+    const stack = [...cell.dependents];
+    const seen = new Set();
+    while (stack.length) {
+      const depId = stack.pop();
+      if (seen.has(depId)) continue;
+      seen.add(depId);
+      const dep = this.cells.get(depId);
+      if (dep) {
+        dep.value = { data: null, status: CellStatus.STALE, error: null, computedAt: null };
+        dep.contextCache.clear();
+        for (const t of dep.dependents) stack.push(t);
+      }
+    }
+  }
+
+  async push(id, data) {
+    return this.set(id, data);
+  }
+
+  async call(id, input, ctx) {
+    return this.get(id, ctx);
+  }
+
+  // Serialize the engine state to a portable JSON object.
+  static fromJSON(snapshot) {
+    const e = new QuiltLite(snapshot.id);
+    e.cells.clear();
+    for (const c of snapshot.cells) {
+      const cell = makeCell(c.id, c.def);
+      cell.value = c.value;
+      cell.contextCache = new Map(Object.entries(c.contextCache || {}));
+      e.cells.set(c.id, cell);
+    }
+    // Re-establish dep edges.
+    for (const cell of e.cells.values()) {
+      for (const depId of (cell.def.deps || [])) e._addDep(cell.id, depId);
+    }
+    for (const cell of e.cells.values()) {
+      if (cell.def.kind === 'formula' && cell.def.expr) e._autoDetectDeps(cell);
+    }
+    return e;
+  }
+
+  // Serialize the engine state to a portable JSON object.
+  toJSON() {
+    return {
+      id: this.id,
+      cells: this.listCells().map(c => ({
+        id: c.id,
+        def: c.def,
+        value: c.value,
+        contextCache: Object.fromEntries(c.contextCache),
+      })),
+    };
+  }
+}
+
+// =============================================================================
+// Export
+// =============================================================================
+
+const QuiltLiteExports = { QuiltLite, parseSheet, CellStatus };
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = QuiltLiteExports;
+}
+if (typeof window !== 'undefined') {
+  window.QuiltEngine = QuiltLite;
+  window.QuiltLite = QuiltLite;
+  window.parseSheet = parseSheet;
+  window.CellStatus = CellStatus;
+}
+
+})();  // end IIFE
+
+</script>
+
+<!-- ============================================================ -->
+<!-- The app: grid UI, edit-in-place, save/download.               -->
+<!-- ============================================================ -->
+<script>
+'use strict';
+(function() {
+
+const { QuiltEngine, parseSheet, CellStatus } = window;
+const SAVE_COOKIE = 'quilt-live-state-v1';
+const COOKIE_CONSENT = 'quilt-live-consent';
+const ONBOARD_KEY = 'quilt-live-onboarded';
+const COOKIE_DAYS = 365;
+
+// ============================================================
+// Cookie helpers (no library, no tracking, no third party)
+// ============================================================
+function setCookie(name, value, days) {
+  const expires = days ? `; expires=${new Date(Date.now() + days * 864e5).toUTCString()}` : '';
+  const secure = location.protocol === 'https:' ? '; secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax${expires}${secure}`;
+}
+function getCookie(name) {
+  const m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));
+  return m ? decodeURIComponent(m[2]) : null;
+}
+function delCookie(name) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
+
+// ============================================================
+// Built-in examples — embedded directly so this file is fully
+// self-contained. The user can also paste their own YAML.
+// ============================================================
+const EXAMPLES = {
+  'starter': {
+    name: 'Starter',
+    desc: 'Two values, one formula, one listener',
+    yaml: `id: starter
+title: "Starter"
+description: "Click any cell to inspect, press s to set, e to edit."
+version: 0.2.0
+cells:
+  - id: a
+    kind: value
+    value: 10
+    description: "A static value cell"
+  - id: b
+    kind: value
+    value: 32
+    description: "Another static value"
+  - id: sum
+    kind: formula
+    expr: "=a + b"
+    description: "A formula that depends on a and b"
+  - id: doubled
+    kind: formula
+    expr: "=sum * 2"
+    description: "Chained formula — recomputes when sum changes"
+  - id: is_big
+    kind: formula
+    expr: "=sum > 100"
+    description: "Boolean test"
+`,
+  },
+  'weather': {
+    name: 'Weather monitor',
+    desc: 'Sensors → formulas → listener alerts',
+    yaml: `id: weather
+title: "Weather"
+description: "Three sensors, derived heat index, alerts on extremes."
+cells:
+  - id: sensor.temp
+    kind: sensor
+    source: simulated
+    default: 22.0
+    unit: celsius
+  - id: sensor.humidity
+    kind: sensor
+    source: simulated
+    default: 55.0
+  - id: feels_like
+    kind: formula
+    expr: "=sensor.temp - ((100 - sensor.humidity) / 5)"
+    unit: celsius
+  - id: is_dangerous
+    kind: formula
+    expr: "=feels_like > 35 || sensor.temp < 5"
+  - id: log.alert
+    kind: io
+    direction: out
+    port: log:stderr
+`,
+  },
+  'tracker': {
+    name: 'Habit tracker',
+    desc: 'Track 3 daily habits, see your streak',
+    yaml: `id: tracker
+title: "Habit tracker"
+description: "Three daily habits, computed streaks."
+cells:
+  - id: config.days
+    kind: value
+    value: 30
+  - id: habit.read.checked
+    kind: value
+    value: 12
+  - id: habit.write.checked
+    kind: value
+    value: 7
+  - id: habit.exercise.checked
+    kind: value
+    value: 4
+  - id: habit.read.percent
+    kind: formula
+    expr: "=habit.read.checked / config.days"
+  - id: habit.write.percent
+    kind: formula
+    expr: "=habit.write.checked / config.days"
+  - id: habit.exercise.percent
+    kind: formula
+    expr: "=habit.exercise.checked / config.days"
+  - id: habit.total
+    kind: formula
+    expr: "=habit.read.checked + habit.write.checked + habit.exercise.checked"
+  - id: habit.weekly_avg
+    kind: formula
+    expr: "=habit.total / (config.days / 7)"
+`,
+  },
+  'counter': {
+    name: 'Program cell demo',
+    desc: 'A real running counter via JS',
+    yaml: `id: counter
+title: "Counter"
+description: "A program cell running a JS expression."
+cells:
+  - id: n
+    kind: value
+    value: 0
+  - id: counter.next
+    kind: program
+    code: "const cur = runtime.get('n').data || 0; return cur + 1;"
+  - id: counter.doubled
+    kind: program
+    code: "return (runtime.get('n').data || 0) * 2;"
+`,
+  },
+  'router': {
+    name: 'Caller-aware router',
+    desc: 'Same cell, different result by caller',
+    yaml: `id: router-demo
+title: "Router demo"
+description: "Caller row picks the destination."
+cells:
+  - id: greeting.friendly
+    kind: value
+    value: "Hey there! 👋"
+  - id: greeting.formal
+    kind: value
+    value: "Good day to you, sir/madam."
+  - id: greeting.casual
+    kind: value
+    value: "yo"
+  - id: greeting
+    kind: router
+    rules:
+      - when: "caller.row == 'formal'"
+        route: { cell: greeting.formal }
+      - when: "caller.row == 'casual'"
+        route: { cell: greeting.casual }
+      - when: "true"
+        route: { cell: greeting.friendly }
+`,
+  },
+};
+
+// ============================================================
+// State
+// ============================================================
+let engine = new QuiltEngine('untitled');
+// Expose for debugging / tests. Use a getter so it always reflects the
+// current engine even when we reassign.
+Object.defineProperty(window, 'engine', {
+  get() { return engine; },
+  set(v) { engine = v; },
+});
+let sheetId = 'untitled';
+let sheetTitle = 'untitled';
+let selectedCell = null;
+let saveState = 'saved'; // 'saved' | 'dirty' | 'saving'
+
+// ============================================================
+// Persistence
+// ============================================================
+function snapshotEngine() {
+  return JSON.stringify(engine.toJSON());
+}
+function loadSnapshot(snap) {
+  try {
+    const obj = JSON.parse(snap);
+    engine = QuiltEngine.fromJSON(obj);
+    sheetId = engine.id;
+    sheetTitle = engine.id;
+    return true;
+  } catch (e) {
+    console.warn('failed to load snapshot:', e);
+    return false;
+  }
+}
+
+function saveToCookie() {
+  if (getCookie(COOKIE_CONSENT) !== 'yes') return false;
+  setCookie(SAVE_COOKIE, snapshotEngine(), COOKIE_DAYS);
+  setSaveStatus('saved');
+  return true;
+}
+function loadFromCookie() {
+  const snap = getCookie(SAVE_COOKIE);
+  if (!snap) return false;
+  return loadSnapshot(snap);
+}
+
+function setSaveStatus(state) {
+  saveState = state;
+  const pill = document.getElementById('save-status');
+  const text = document.getElementById('save-status-text');
+  pill.classList.remove('saving', 'dirty');
+  if (state === 'saving') {
+    pill.classList.add('saving');
+    text.textContent = 'saving';
+  } else if (state === 'dirty') {
+    pill.classList.add('dirty');
+    text.textContent = 'unsaved';
+  } else {
+    text.textContent = 'saved';
+  }
+}
+function markDirty() {
+  if (saveState === 'saved') setSaveStatus('dirty');
+  document.getElementById('dirty-pill').style.display = 'inline';
+}
+function markSaved() {
+  setSaveStatus('saved');
+  document.getElementById('dirty-pill').style.display = 'none';
+}
+
+// ============================================================
+// Auto-save (debounced)
+// ============================================================
+let autoSaveTimer = null;
+function scheduleAutoSave() {
+  markDirty();
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    if (getCookie(COOKIE_CONSENT) === 'yes') saveToCookie();
+  }, 1500);
+}
+
+// ============================================================
+// Render
+// ============================================================
+function renderAll() {
+  renderHeader();
+  renderCellList();
+  renderGrid();
+  renderDetail();
+  renderExamplesList();
+  document.getElementById('cell-count').textContent =
+    engine.cells.size + ' cell' + (engine.cells.size === 1 ? '' : 's');
+}
+
+function renderHeader() {
+  document.getElementById('sheet-name').textContent = sheetTitle || 'untitled';
+  document.title = (sheetTitle || 'untitled') + ' — Quilt Live';
+}
+
+function renderCellList() {
+  const ul = document.getElementById('cell-list');
+  ul.innerHTML = '';
+  const cells = [...engine.cells.values()].sort((a, b) => a.id.localeCompare(b.id));
+  if (cells.length === 0) {
+    ul.innerHTML = '<li class="meta" style="cursor:default; color:var(--fg-dim)">(no cells)</li>';
+    return;
+  }
+  for (const cell of cells) {
+    const li = document.createElement('li');
+    li.className = (cell.id === selectedCell) ? 'active' : '';
+    li.innerHTML = `<span>${escapeHtml(cell.id)}</span><span class="kind">${cell.def.kind}</span>`;
+    li.addEventListener('click', () => { selectedCell = cell.id; renderAll(); });
+    ul.appendChild(li);
+  }
+}
+
+function renderExamplesList() {
+  const ul = document.getElementById('example-list');
+  ul.innerHTML = '';
+  for (const [key, ex] of Object.entries(EXAMPLES)) {
+    const li = document.createElement('li');
+    li.innerHTML = `<div>${escapeHtml(ex.name)}</div><div class="meta">${escapeHtml(ex.desc)}</div>`;
+    li.addEventListener('click', () => loadExample(key));
+    ul.appendChild(li);
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const cells = [...engine.cells.values()].sort((a, b) => a.id.localeCompare(b.id));
+  if (cells.length === 0) {
+    grid.innerHTML = `<div class="empty-hint">No cells. Press <strong>+ Cell</strong> to add one, or open <strong>📚 Examples</strong>.</div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  for (const cell of cells) {
+    const row = document.createElement('div');
+    row.className = `cell kind-${cell.def.kind}` + (cell.id === selectedCell ? ' selected' : '');
+    row.dataset.id = cell.id;
+    row.innerHTML = `
+      <div class="id">${escapeHtml(cell.id)}</div>
+      <div class="kind">${cell.def.kind}</div>
+      <div class="value" data-value-for="${escapeHtml(cell.id)}"></div>
+      <div class="status ${cell.value.status}">${cell.value.status}</div>
+    `;
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('input,textarea,button')) return;
+      selectedCell = cell.id;
+      renderAll();
+    });
+    grid.appendChild(row);
+    renderCellValue(cell);
+  }
+}
+
+async function renderCellValue(cell) {
+  const el = document.querySelector(`[data-value-for="${cssEscape(cell.id)}"]`);
+  if (!el) return;
+  const v = await engine.get(cell.id);
+  el.classList.remove('placeholder', 'error');
+  if (v.error) {
+    el.textContent = `<error: ${v.error.message || v.error}>`;
+    el.classList.add('error');
+  } else if (cell.def.kind === 'value' || cell.def.kind === 'sensor') {
+    el.innerHTML = '';
+    const input = document.createElement('input');
+    input.className = 'editor';
+    input.value = formatValueForEdit(v.data);
+    input.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        let parsed;
+        try { parsed = JSON.parse(input.value); }
+        catch { parsed = input.value; }
+        await engine.set(cell.id, parsed);
+        scheduleAutoSave();
+        renderAll();
+      } else if (e.key === 'Escape') {
+        renderAll();
+      }
+    });
+    el.appendChild(input);
+  } else {
+    el.textContent = formatValue(v.data);
+    if (v.data === undefined || v.data === null) el.classList.add('placeholder');
+  }
+}
+
+function renderDetail() {
+  const panel = document.getElementById('detail');
+  if (!selectedCell) {
+    panel.innerHTML = '<div class="empty-hint">Select a cell to see its dependencies and dependents.</div>';
+    return;
+  }
+  const cell = engine.getCell(selectedCell);
+  if (!cell) {
+    panel.innerHTML = '<div class="empty-hint">Cell not found.</div>';
+    return;
+  }
+  const deps = [...cell.dependencies];
+  const dependents = [...cell.dependents];
+  const valueStr = JSON.stringify(cell.value, null, 2);
+  const defStr = JSON.stringify(cell.def, null, 2);
+  const exprStr = cell.def.expr || cell.def.code || cell.def.endpoint || '';
+  panel.innerHTML = `
+    <div class="detail">
+      <div class="label">id</div>
+      <div class="body">${escapeHtml(cell.id)}</div>
+    </div>
+    <div class="detail">
+      <div class="label">kind</div>
+      <div class="body">${escapeHtml(cell.def.kind)}</div>
+    </div>
+    ${exprStr ? `<div class="detail">
+      <div class="label">${cell.def.kind === 'program' ? 'code' : (cell.def.kind === 'api' ? 'endpoint' : 'expr')}</div>
+      <div class="body">${escapeHtml(exprStr)}</div>
+    </div>` : ''}
+    <div class="detail">
+      <div class="label">value</div>
+      <div class="body ${cell.value.error ? 'error' : ''}">${escapeHtml(valueStr)}</div>
+    </div>
+    <div class="detail">
+      <div class="label">dependencies (reads)</div>
+      <div class="pill-row">
+        ${deps.length === 0 ? '<span class="empty">(none)</span>' :
+          deps.map(d => `<span class="pill" data-jump="${escapeHtml(d)}">${escapeHtml(d)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="detail">
+      <div class="label">used by (dependents)</div>
+      <div class="pill-row">
+        ${dependents.length === 0 ? '<span class="empty">(none)</span>' :
+          dependents.map(d => `<span class="pill" data-jump="${escapeHtml(d)}">${escapeHtml(d)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="detail">
+      <div class="label">definition</div>
+      <div class="body">${escapeHtml(defStr)}</div>
+    </div>
+    <div class="detail">
+      <button class="danger" id="btn-delete-cell" style="width:100%">Delete this cell</button>
+    </div>
+  `;
+  document.querySelectorAll('[data-jump]').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedCell = el.dataset.jump;
+      renderAll();
+    });
+  });
+  document.getElementById('btn-delete-cell')?.addEventListener('click', () => {
+    if (!confirm(`Delete cell "${cell.id}"?`)) return;
+    engine.cells.delete(cell.id);
+    for (const other of engine.cells.values()) {
+      other.dependencies.delete(cell.id);
+      other.dependents.delete(cell.id);
+    }
+    selectedCell = null;
+    scheduleAutoSave();
+    renderAll();
+    toast(`Deleted ${cell.id}`, 'ok');
+  });
+}
+
+// ============================================================
+// Helpers
+// ============================================================
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function cssEscape(s) {
+  if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(s);
+  return String(s).replace(/[^\w-]/g, c => '\\' + c);
+}
+function formatValue(v) {
+  if (v === undefined) return '∅';
+  if (v === null) return 'null';
+  const s = JSON.stringify(v);
+  return s.length > 80 ? s.slice(0, 80) + '…' : s;
+}
+function formatValueForEdit(v) {
+  if (typeof v === 'string') return v;
+  return JSON.stringify(v);
+}
+function toast(msg, kind) {
+  const stack = document.getElementById('toast-stack');
+  const div = document.createElement('div');
+  div.className = 'toast ' + (kind || '');
+  div.textContent = msg;
+  stack.appendChild(div);
+  setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 200); }, 3000);
+}
+
+// ============================================================
+// Examples + load/reset
+// ============================================================
+function loadExample(key) {
+  const ex = EXAMPLES[key];
+  if (!ex) return;
+  if (engine.cells.size > 0 && !confirm(`Load "${ex.name}"? Current sheet will be replaced.`)) return;
+  try {
+    const sheet = parseSheet(ex.yaml);
+    const fresh = new QuiltEngine(sheet.id);
+    fresh.loadSheet(sheet);
+    engine = fresh;
+    sheetId = sheet.id;
+    sheetTitle = sheet.title || sheet.id;
+    selectedCell = null;
+    closeModal('modal-examples');
+    scheduleAutoSave();
+    renderAll();
+    toast(`Loaded "${ex.name}"`, 'ok');
+  } catch (e) {
+    toast(`Failed to load: ${e.message}`, 'error');
+  }
+}
+function resetSheet() {
+  if (engine.cells.size > 0 && !confirm('Reset to a fresh empty sheet? This will discard your current sheet.')) return;
+  engine = new QuiltEngine('untitled');
+  sheetId = 'untitled';
+  sheetTitle = 'untitled';
+  selectedCell = null;
+  scheduleAutoSave();
+  renderAll();
+  toast('Reset.', 'ok');
+}
+
+// ============================================================
+// Add cell
+// ============================================================
+function openAddCell() {
+  document.getElementById('new-id').value = '';
+  document.getElementById('new-kind').value = 'value';
+  document.getElementById('new-body').value = '';
+  document.getElementById('new-body').placeholder = {
+    value: '42  (or any JSON value)',
+    formula: '=a + b  (a and b must already exist)',
+    api: 'https://api.example.com/data  (or model:foo)',
+    program: "return { foo: 42, bar: runtime.get('a').data };",
+    sensor: 'simulated  (or any source name)',
+    router: 'rules:\n  - when: "true"\n    route: { value: 1 }',
+  }.value;
+  document.getElementById('modal-add').style.display = 'flex';
+  document.getElementById('new-id').focus();
+}
+function closeAddCell() {
+  document.getElementById('modal-add').style.display = 'none';
+}
+function confirmAddCell() {
+  const id = document.getElementById('new-id').value.trim();
+  const kind = document.getElementById('new-kind').value;
+  const body = document.getElementById('new-body').value;
+  if (!id) { toast('id is required', 'error'); return; }
+  if (engine.cells.has(id)) { toast('cell "' + id + '" already exists', 'error'); return; }
+  try {
+    const def = { id, kind };
+    if (kind === 'value') {
+      let v;
+      try { v = JSON.parse(body); } catch { v = body; }
+      def.value = v;
+    } else if (kind === 'formula') {
+      def.expr = body.startsWith('=') ? body : '=' + body;
+    } else if (kind === 'api') {
+      def.endpoint = body;
+    } else if (kind === 'program') {
+      def.code = body;
+    } else if (kind === 'sensor') {
+      def.source = body || 'simulated';
+    } else if (kind === 'router') {
+      try {
+        const rules = JSON.parse(body);
+        def.rules = rules;
+      } catch (e) {
+        toast('Router rules must be JSON: [{when: "...", route: ...}]', 'error');
+        return;
+      }
+    }
+    engine.defineCell(def);
+    if (kind === 'formula') engine._autoDetectDeps(engine.cells.get(id));
+    closeAddCell();
+    scheduleAutoSave();
+    selectedCell = id;
+    renderAll();
+    toast('Added ' + id, 'ok');
+  } catch (e) {
+    toast('Failed: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// Save / download
+// ============================================================
+function openSaveDialog() {
+  if (getCookie(COOKIE_CONSENT) === 'yes') {
+    saveToCookie();
+    return;
+  }
+  const html = `
+    <h2>💾 Save your sheet</h2>
+    <p>Two ways to save. Both keep your data private — nothing leaves your browser.</p>
+    <p><strong>Cookie (recommended for quick iteration):</strong> stored in this browser. Auto-loads next time. Cleared when you clear cookies.</p>
+    <p><strong>Download .html (recommended for sharing, archiving, or moving devices):</strong> a single file with your sheet's state baked in. Open it on any device, even offline.</p>
+    <label><input type="checkbox" id="consent-cookie" checked> Allow cookie save (recommended)</label>
+    <div class="actions">
+      <button class="ghost" id="btn-save-cancel">Cancel</button>
+      <button class="primary" id="btn-save-cookie">Save to cookie</button>
+      <button class="primary" id="btn-save-download">Download .html</button>
+    </div>
+  `;
+  showModal(html, () => {
+    document.getElementById('btn-save-cancel').onclick = closeModal;
+    document.getElementById('btn-save-cookie').onclick = () => {
+      if (document.getElementById('consent-cookie').checked) setCookie(COOKIE_CONSENT, 'yes', 9999);
+      saveToCookie();
+      closeModal();
+    };
+    document.getElementById('btn-save-download').onclick = () => {
+      if (document.getElementById('consent-cookie').checked) setCookie(COOKIE_CONSENT, 'yes', 9999);
+      downloadApp();
+      closeModal();
+    };
+  });
+}
+
+function showModal(htmlContent, onMount) {
+  let modal = document.getElementById('modal-generic');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.id = 'modal-generic';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div class="modal">${htmlContent}</div>`;
+  modal.style.display = 'flex';
+  if (onMount) onMount();
+}
+function closeModal(id) {
+  if (id) {
+    document.getElementById(id).style.display = 'none';
+  } else {
+    const m = document.getElementById('modal-generic');
+    if (m) m.style.display = 'none';
+  }
+}
+
+function downloadApp() {
+  const docHtml = document.documentElement.outerHTML;
+  const stateJson = snapshotEngine();
+  // Note: avoid literal "close-script" sequences inside this script block.
+  const bootScript = '<scr' + 'ipt>window.__QUILT_BOOT_STATE__ = ' + stateJson + ';</scr' + 'ipt>';
+  let patched;
+  if (/<script>window\.__QUILT_BOOT_STATE__[\s\S]*?<\/script>/.test(docHtml)) {
+    patched = docHtml.replace(
+      /<script>window\.__QUILT_BOOT_STATE__[\s\S]*?<\/script>/,
+      bootScript
+    );
+  } else {
+    patched = docHtml.replace(
+      /<script>\s*\n?\s*\/\/ quilt-lite\.js/,
+      bootScript + '\n<script>\n// quilt-lite.js'
+    );
+    if (patched === docHtml) {
+      patched = docHtml.replace(/<script>/, bootScript + '\n<script>');
+    }
+  }
+  const blob = new Blob([patched], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sheetId || 'quilt'}-${Date.now()}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('Downloaded. Open the .html in any browser.', 'ok');
+}
+
+// ============================================================
+// Keyboard
+// ============================================================
+function handleKeydown(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    if (e.key === 'Escape') e.target.blur();
+    return;
+  }
+  if (e.key === '?') { openHelp(); return; }
+  if (e.key === 's' || e.key === 'S') { openSaveDialog(); return; }
+  if (e.key === 'd' || e.key === 'D') { downloadApp(); return; }
+  if (e.key === '+' || e.key === '=') { openAddCell(); return; }
+  if (e.key === '/') { openHelp(); return; }
+  if (e.key === 'q' || e.key === 'Q') {
+    if (confirm('Quit? Your state is saved in the cookie and in any downloaded .html.')) {
+      toast('Close this tab to exit.', 'ok');
+    }
+    return;
+  }
+  if (e.key === 'j' || e.key === 'ArrowDown') { moveSelection(1); e.preventDefault(); return; }
+  if (e.key === 'k' || e.key === 'ArrowUp') { moveSelection(-1); e.preventDefault(); return; }
+}
+
+function moveSelection(delta) {
+  const cells = [...engine.cells.values()].sort((a, b) => a.id.localeCompare(b.id));
+  if (cells.length === 0) return;
+  let idx = cells.findIndex(c => c.id === selectedCell);
+  if (idx === -1) idx = 0;
+  else idx = Math.max(0, Math.min(cells.length - 1, idx + delta));
+  selectedCell = cells[idx].id;
+  renderAll();
+}
+
+function openHelp() {
+  showModal(`
+    <h2>⌨ Keyboard shortcuts</h2>
+    <p>Everything works without a keyboard, but if you like them:</p>
+    <div class="step"><h4>j / ↓</h4><p>Select next cell</p></div>
+    <div class="step"><h4>k / ↑</h4><p>Select previous cell</p></div>
+    <div class="step"><h4>s</h4><p>Save (cookie or download)</p></div>
+    <div class="step"><h4>d</h4><p>Download this app with state baked in</p></div>
+    <div class="step"><h4>+</h4><p>Add a new cell</p></div>
+    <div class="step"><h4>?</h4><p>Show this help</p></div>
+    <div class="step"><h4>Click an editable cell, type a new value, press Enter</h4><p>Updates live. Press Escape to cancel.</p></div>
+    <div class="actions"><button class="primary" id="btn-help-close">Close</button></div>
+  `, () => {
+    document.getElementById('btn-help-close').onclick = closeModal;
+  });
+}
+
+// ============================================================
+// Wire up
+// ============================================================
+function init() {
+  document.getElementById('btn-examples').onclick = openExamples;
+  document.getElementById('btn-add-cell').onclick = openAddCell;
+  document.getElementById('btn-save').onclick = openSaveDialog;
+  document.getElementById('btn-download').onclick = downloadApp;
+  document.getElementById('btn-reset').onclick = resetSheet;
+  document.getElementById('btn-help').onclick = openHelp;
+
+  document.getElementById('btn-close-examples').onclick = () => closeModal('modal-examples');
+  document.getElementById('btn-onboard-done').onclick = () => {
+    setCookie(ONBOARD_KEY, '1', 9999);
+    document.getElementById('onboarding').style.display = 'none';
+  };
+  document.getElementById('btn-add-confirm').onclick = confirmAddCell;
+  document.getElementById('btn-add-cancel').onclick = closeAddCell;
+
+  document.addEventListener('keydown', handleKeydown);
+
+  let restored = false;
+  if (getCookie(SAVE_COOKIE)) restored = loadFromCookie();
+  if (!restored && window.__QUILT_BOOT_STATE__) restored = loadSnapshot(JSON.stringify(window.__QUILT_BOOT_STATE__));
+  if (!restored) loadExample('starter');
+
+  if (!getCookie(ONBOARD_KEY)) {
+    document.getElementById('onboarding').style.display = 'flex';
+  }
+
+  const grid = document.getElementById('grid');
+  if (grid.querySelector('.empty-hint')) {
+    grid.innerHTML = '';
+  }
+
+  renderAll();
+  setStatus('Ready. ' + engine.cells.size + ' cells loaded.');
+}
+
+function setStatus(s) {
+  document.getElementById('status-text').textContent = s;
+}
+
+function openExamples() {
+  const grid = document.getElementById('examples-grid');
+  grid.innerHTML = '';
+  for (const [key, ex] of Object.entries(EXAMPLES)) {
+    const li = document.createElement('li');
+    li.style.cssText = 'background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; cursor: pointer; transition: border-color 0.1s;';
+    li.innerHTML = `
+      <div style="font-weight: 600; color: var(--accent); margin-bottom: 0.25rem">${escapeHtml(ex.name)}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-dim)">${escapeHtml(ex.desc)}</div>
+    `;
+    li.onmouseover = () => li.style.borderColor = 'var(--accent)';
+    li.onmouseout = () => li.style.borderColor = 'var(--border)';
+    li.onclick = () => loadExample(key);
+    grid.appendChild(li);
+  }
+  document.getElementById('modal-examples').style.display = 'flex';
+}
+
+window.addEventListener('beforeunload', () => {
+  if (getCookie(COOKIE_CONSENT) === 'yes') {
+    setCookie(SAVE_COOKIE, snapshotEngine(), COOKIE_DAYS);
+  }
+});
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+window.renderAll = renderAll;
+window.openSaveDialog = openSaveDialog;
+window.downloadApp = downloadApp;
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.setCookie = setCookie;
+window.getCookie = getCookie;
+window.saveToCookie = saveToCookie;
+window.loadFromCookie = loadFromCookie;
+window.snapshotEngine = snapshotEngine;
+window.loadSnapshot = loadSnapshot;
+window.openHelp = openHelp;
+window.openAddCell = openAddCell;
+window.closeAddCell = closeAddCell;
+window.confirmAddCell = confirmAddCell;
+
+})();
+</script>
+</body>
+</html>
