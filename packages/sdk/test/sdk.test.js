@@ -33,7 +33,7 @@ const store = () => new InMemoryArtifactStore();
 test('resolveTemplate: substitutes simple variables', () => {
   assert.equal(
     resolveTemplate('quilt://ml/models/{{name}}', { name: 'classifier' }),
-    'quilt://ml/models/classifier'
+    'quilt://ml/models/classifier',
   );
 });
 
@@ -44,21 +44,21 @@ test('resolveTemplate: handles multiple variables in one string', () => {
       name: 'model',
       version: 'v1',
     }),
-    'quilt://ml/model:v1'
+    'quilt://ml/model:v1',
   );
 });
 
 test('resolveTemplate: tolerates whitespace inside braces', () => {
   assert.equal(
     resolveTemplate('quilt://ml/{{ run_id }}', { run_id: 'r01' }),
-    'quilt://ml/r01'
+    'quilt://ml/r01',
   );
 });
 
 test('resolveTemplate: throws on missing variable', () => {
   assert.throws(
     () => resolveTemplate('quilt://{{missing}}', {}),
-    TemplateError
+    TemplateError,
   );
 });
 
@@ -79,7 +79,7 @@ test('resolveArtifact: pure resolve (no store) for templated URI', async () => {
 test('resolveArtifact: rejects non-quilt URIs', async () => {
   await assert.rejects(
     () => resolveArtifact('http://example.com/foo'),
-    ResolveError
+    ResolveError,
   );
 });
 
@@ -109,7 +109,7 @@ test('resolveArtifact: returns metadata from store', async () => {
 test('resolveArtifact: templating error is wrapped in ResolveError', async () => {
   await assert.rejects(
     () => resolveArtifact('quilt://ml/{{undefined_var}}', {}),
-    ResolveError
+    ResolveError,
   );
 });
 
@@ -130,16 +130,16 @@ test('validateManifest: accepts a fully-decorated manifest', async () => {
     title: 'Train Classifier',
     description: 'Train on staged data',
     inputs: [
-      { name: 'dataset', uri: 'quilt://data/staged:latest', required: true, type: 'dataset' }
+      { name: 'dataset', uri: 'quilt://data/staged:latest', required: true, type: 'dataset' },
     ],
     outputs: [
-      { name: 'model', uri: 'quilt://models/clf:{{run_id}}', type: 'model' }
+      { name: 'model', uri: 'quilt://models/clf:{{run_id}}', type: 'model' },
     ],
     preconditions: [
-      { type: 'artifact_exists', uri: 'quilt://data/staged:latest' }
+      { type: 'artifact_exists', uri: 'quilt://data/staged:latest' },
     ],
     postconditions: [
-      { type: 'artifact_exists', uri: 'quilt://models/clf:{{run_id}}' }
+      { type: 'artifact_exists', uri: 'quilt://models/clf:{{run_id}}' },
     ],
     rollback: { type: 'manifest', manifest_id: 'rollback-train' },
     resource_hints: { gpu: 1, memory_gb: 32, timeout_s: 7200 },
@@ -180,7 +180,7 @@ test('validateManifest: with checkExists — passes when artifact is present', a
       id: 'needs-data',
       preconditions: [{ type: 'artifact_exists', uri: 'quilt://data/staged:latest' }],
     },
-    { store: s, checkExists: true }
+    { store: s, checkExists: true },
   );
   assert.equal(r.valid, true, JSON.stringify(r.errors));
 });
@@ -192,7 +192,7 @@ test('validateManifest: with checkExists — fails when artifact is absent', asy
       id: 'needs-data',
       preconditions: [{ type: 'artifact_exists', uri: 'quilt://artifacts/never-published:latest' }],
     },
-    { store: s, checkExists: true }
+    { store: s, checkExists: true },
   );
   assert.equal(r.valid, false);
   assert.ok(r.errors.length > 0, 'should have at least one error');
@@ -207,7 +207,7 @@ test('validateManifest: with checkExists — substitutes templates in preconditi
       id: 'needs-payload',
       preconditions: [{ type: 'artifact_exists', uri: 'quilt://payload/{{runId}}' }],
     },
-    { store: s, checkExists: true, runContext: { runId: 'r-42' } }
+    { store: s, checkExists: true, runContext: { runId: 'r-42' } },
   );
   assert.equal(r.valid, true, JSON.stringify(r.errors));
 });
@@ -221,7 +221,7 @@ test('publishArtifact: returns canonical URI and content hash', async () => {
   const result = await publishArtifact(
     'hello world',
     { manifestId: 'greeting', runId: 'r-01', tags: ['test'] },
-    s
+    s,
   );
   assert.ok(result.uri.startsWith('quilt://artifacts/greeting/r-01:'));
   assert.equal(result.contentHash.length, 64);
@@ -294,7 +294,7 @@ test('publishRunTrace: requires runId', async () => {
   const s = store();
   await assert.rejects(
     () => publishRunTrace({ runId: '', status: 'running', nodes: [] }, s),
-    /must have a runId/
+    /must have a runId/,
   );
 });
 
@@ -302,7 +302,7 @@ test('publishRunTrace: requires at least one node', async () => {
   const s = store();
   await assert.rejects(
     () => publishRunTrace({ runId: 'r', status: 'running', nodes: [] }, s),
-    /at least one node/
+    /at least one node/,
   );
 });
 

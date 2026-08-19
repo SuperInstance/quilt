@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Quilt Engineering Bar — what "done right" means for every repo</title>
+<meta name="description" content="The standard every Quilt repo is held to. 8 layers (L1 hygiene → L8 ecosystem), 15 repos audited, top 10 fixes, and a 1-year bar. Clone, build, test, read docs, find an example, ship a change — in under an hour.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a14;--panel:#14141f;--pe:#1a1a26;--b:#252535;--bs:#353548;--t:#f0f0f5;--td:#a0a0b0;--tf:#6a6a7a;--a1:#f59e0b;--a2:#ea580c;--g:linear-gradient(135deg,#f59e0b 0%,#ea580c 100%);--ok:#7ec699;--err:#e07a8a;--w:#e6c87a;--fire:radial-gradient(circle,rgba(245,158,11,.18) 0%,rgba(234,88,12,.07) 35%,transparent 70%)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;line-height:1.6}
+a{color:var(--a1);text-decoration:none}a:hover{color:var(--a2)}
+code,pre,.m{font-family:'JetBrains Mono',monospace}
+p{color:var(--td);margin-bottom:12px}ul{color:var(--td);padding-left:22px;margin-bottom:14px}ul li{margin:4px 0}
+h1,h2,h3,h4{color:var(--t)}.grad-text{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;align-items:center;justify-content:space-between;padding:11px 24px;background:rgba(10,10,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700}
+.mark{width:22px;height:22px;background:var(--g);border-radius:4px}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}
+.nav-links a{padding:5px 9px;font-size:.8rem;color:var(--td);border-radius:6px}
+.nav-links a:hover,.nav-links a.active{background:var(--panel);color:var(--t)}
+.anchor-nav{display:flex;gap:4px;flex-wrap:wrap;padding:8px 24px;background:var(--panel);border-bottom:1px solid var(--b);position:sticky;top:46px;z-index:49;font-size:.72rem}
+.anchor-nav a{padding:3px 8px;color:var(--tf);border-radius:4px;font-family:'JetBrains Mono',monospace}
+.anchor-nav a:hover{color:var(--t);background:var(--bg)}
+.hero{padding:64px 24px 30px;text-align:center;max-width:880px;margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:var(--fire);pointer-events:none;z-index:-1}
+.hero h1{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:14px}
+.hero p.lead{color:var(--td);font-size:1.06rem;max-width:740px;margin:0 auto 18px;line-height:1.55}
+.hero .quote{border-left:3px solid var(--a1);background:var(--panel);padding:14px 18px;margin:18px auto;max-width:680px;border-radius:0 8px 8px 0;text-align:left}
+.hero .quote p{margin:0;color:var(--t);font-size:.98rem;line-height:1.5}
+.hero .quote .attr{color:var(--tf);font-size:.78rem;margin-top:6px}
+.hero .cta-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+.btn{padding:10px 20px;border-radius:8px;font-weight:600;font-size:.87rem;transition:all .2s;border:1px solid transparent;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.btn-primary{background:var(--g);color:#fff}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(245,158,11,.35);color:#fff}
+.btn-ghost{background:transparent;border-color:var(--bs);color:var(--t)}.btn-ghost:hover{border-color:var(--a1);color:var(--t)}
+.badges{display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--b);color:var(--td)}
+.badge.a{color:var(--a1);border-color:rgba(245,158,11,.4)}.badge.b{color:var(--a2);border-color:rgba(234,88,12,.4)}
+.badge.g{color:var(--ok);border-color:rgba(126,198,153,.3)}.badge.w{color:var(--w);border-color:rgba(230,200,122,.3)}
+main{max-width:960px;margin:0 auto;padding:0 24px 60px}
+section{margin:50px 0;scroll-margin-top:96px}
+section h2{font-size:1.6rem;font-weight:700;margin-bottom:12px;letter-spacing:-.02em}
+section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-right:10px;font-size:.82rem;vertical-align:middle}
+.pyramid{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px 18px;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.4;color:var(--t);overflow-x:auto;border-left:3px solid var(--a1)}
+.pyramid .l1{color:#7ec699}.pyramid .l2{color:#a8c87a}.pyramid .l3{color:#e6c87a}.pyramid .l4{color:#e6a87a}
+.pyramid .l5{color:#e6896a}.pyramid .l6{color:#e6895a}.pyramid .l7{color:#ea8450}.pyramid .l8{color:#f59e0b;font-weight:700}
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+@media(max-width:720px){.layers{grid-template-columns:1fr}}
+.layer-card{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;transition:all .15s;cursor:pointer}
+.layer-card:hover{border-color:var(--a1);background:var(--pe)}
+.layer-card .ln{font-family:'JetBrains Mono',monospace;font-size:.68rem;background:var(--pe);color:var(--a1);padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0;min-width:26px;text-align:center}
+.layer-card h4{font-size:.9rem;margin-bottom:2px}.layer-card .desc{font-size:.78rem;color:var(--td);line-height:1.4}
+.at{width:100%;border-collapse:collapse;margin:16px 0;font-size:.83rem}
+.at th,.at td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--b);vertical-align:middle}
+.at th{color:var(--tf);font-weight:600;text-transform:uppercase;font-size:.66rem;letter-spacing:.1em}
+.at tr:last-child td{border-bottom:none}.at tr:hover td{background:rgba(245,158,11,.04)}
+.at td.r{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--t)}
+.at td.s7,.at td.s6,.at td.s4,.at td.s3,.at td.s2{font-weight:600;font-family:'JetBrains Mono',monospace;text-align:center}
+.at td.s7{color:var(--ok)}.at td.s6{color:#a8c87a}.at td.s4{color:var(--w)}.at td.s3{color:#e6896a}.at td.s2{color:var(--err)}
+.at td.m{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.92rem}
+.at td.m .ok{color:var(--ok)}.at td.m .no{color:var(--err)}.at td.m .pr{color:var(--w)}
+.improve{display:grid;grid-template-columns:1fr;gap:6px;margin:16px 0}
+.improve-row{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:var(--panel);border:1px solid var(--b);border-radius:8px;transition:all .15s}
+.improve-row:hover{border-color:var(--a1)}
+.improve-row .rank{width:26px;height:26px;border-radius:50%;background:var(--g);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.82rem;flex-shrink:0}
+.improve-row .body{flex:1;min-width:0}
+.improve-row .title{font-weight:600;color:var(--t);font-size:.95rem;margin-bottom:2px}
+.improve-row .detail{font-size:.82rem;color:var(--td);line-height:1.4}
+.improve-row .meta{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.callout{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(234,88,12,.05));border:1px solid var(--a1);border-radius:12px;padding:14px 16px;margin:18px 0}
+.callout h4{color:var(--a1);margin-bottom:5px;font-size:.76rem;text-transform:uppercase;letter-spacing:.1em}
+.callout p{margin:0}
+.callout.green{border-color:var(--ok)}.callout.green h4{color:var(--ok)}
+.callout.red{border-color:var(--err)}.callout.red h4{color:var(--err)}
+.layer-detail{background:var(--panel);border:1px solid var(--b);border-radius:12px;padding:16px 18px;margin:14px 0;position:relative}
+.layer-detail::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g);border-radius:12px 0 0 12px}
+.layer-detail .head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.layer-detail .head .tag{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:var(--pe);color:var(--a1);padding:3px 8px;border-radius:4px;font-weight:600}
+.layer-detail .head h3{margin:0;font-size:1.05rem}
+.layer-detail .head .scope{font-size:.76rem;color:var(--tf);font-family:'JetBrains Mono',monospace}
+.layer-detail .why{color:var(--td);font-size:.88rem;margin:5px 0 10px}
+.checklist{list-style:none;padding:0;margin:8px 0 0}
+.checklist li{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px dashed var(--b);font-size:.87rem;color:var(--t)}
+.checklist li:last-child{border-bottom:none}
+.checklist .box{width:17px;height:17px;border:1px solid var(--bs);border-radius:4px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;cursor:pointer;background:var(--bg);transition:all .15s;font-size:.75rem;font-weight:700;color:#fff}
+.checklist .box:hover{border-color:var(--a1)}.checklist .box.on{background:var(--g);border-color:var(--a1)}
+.checklist .lbl{flex:1;cursor:pointer}.checklist .lbl b{color:var(--t);font-weight:600}.checklist .lbl span{color:var(--td)}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:720px){.cmp{grid-template-columns:1fr}}
+.cmp-card{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:14px}
+.cmp-card.bad{border-left:3px solid var(--err)}.cmp-card.good{border-left:3px solid var(--ok)}
+.cmp-card .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:4px}
+.cmp-card h4{font-size:.95rem;margin-bottom:6px}
+.cmp-card.bad h4{color:var(--err)}.cmp-card.good h4{color:var(--ok)}
+.cmp-card ul{font-size:.82rem;margin:0}
+.roadmap{display:grid;grid-template-columns:1fr;gap:6px;margin:14px 0}
+.roadmap-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border:1px solid var(--b);border-radius:8px}
+.roadmap-row .status{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.78rem;flex-shrink:0}
+.roadmap-row .status.next{background:rgba(245,158,11,.15);color:var(--a1);border:1px solid rgba(245,158,11,.4)}
+.roadmap-row .status.far{background:rgba(106,106,122,.15);color:var(--tf);border:1px solid var(--b)}
+.roadmap-row .label{flex:1;min-width:0}
+.roadmap-row .label .name{font-weight:600;color:var(--t)}.roadmap-row .label .desc{font-size:.78rem;color:var(--td);margin-top:1px}
+.roadmap-row .when{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--tf);white-space:nowrap}
+.scorer{background:var(--panel);border:1px solid var(--b);border-radius:12px;padding:16px;margin:16px 0}
+.scorer h3{margin-top:0;display:flex;align-items:center;gap:8px;font-size:1rem}
+.scorer h3 .dot{width:9px;height:9px;background:var(--g);border-radius:50%;display:inline-block}
+.scorer .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b);font-size:.85rem}
+.scorer .row .l{color:var(--t)}.scorer .row .r{font-family:'JetBrains Mono',monospace;color:var(--a1);font-weight:600}
+.scorer .bar{height:6px;background:var(--bg);border-radius:999px;overflow:hidden;margin:3px 0 7px;border:1px solid var(--b)}
+.scorer .bar .fill{height:100%;background:var(--g);width:0%;transition:width .3s}
+.scorer .grade{text-align:center;padding:12px;background:var(--bg);border-radius:8px;margin-top:10px;border:1px solid var(--b)}
+.scorer .grade .n{font-size:1.7rem;font-weight:700;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:'JetBrains Mono',monospace}
+.scorer .grade .l{font-size:.72rem;color:var(--tf);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.next{display:flex;gap:10px;margin:24px 0;flex-wrap:wrap}
+.next a{padding:12px 14px;background:var(--panel);border:1px solid var(--b);border-radius:8px;color:var(--t);text-decoration:none;flex:1;min-width:200px;transition:all .2s}
+.next a:hover{border-color:var(--a1);transform:translateY(-2px)}
+.next a .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf)}
+.next a .t{display:block;font-size:.92rem;font-weight:600;color:var(--t);margin:3px 0}
+.next a .d{font-size:.78rem;color:var(--td)}
+footer{padding:30px 24px;text-align:center;color:var(--tf);border-top:1px solid var(--b);margin-top:48px;font-size:.82rem}
+footer a{color:var(--td)}footer a:hover{color:var(--a1)}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:1px 5px;background:var(--pe);border:1px solid var(--bs);border-radius:4px;color:var(--t)}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}.pulse{animation:pulse 2.4s ease-in-out infinite}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}.anim-grad{background-size:200% 200%;animation:gradShift 8s ease infinite}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="brand"><span class="mark"></span><span>Quilt</span></a>
+  <div class="nav-links">
+    <a href="index.html">Home</a><a href="neural-cells.html">Neural Cells</a><a href="universe-model.html">Universe</a>
+    <a href="tavern.html">Tavern</a><a href="evolve.html">Evolve</a><a href="vibe.html">Vibe</a>
+    <a href="agent-substrate.html">⚡ Substrate</a><a href="engineering.html" class="active">🔥 Bar</a>
+    <a href="quilt-live.html" style="background:var(--g);color:#fff">Open Live</a>
+  </div>
+</nav>
+
+<div class="anchor-nav">
+  <a href="#bar">#01 bar</a><a href="#layers">#02 8 layers</a><a href="#repos">#03 15 repos</a>
+  <a href="#top10">#04 top 10</a><a href="#l1">#05 L1</a><a href="#l2">#06 L2</a>
+  <a href="#l3">#07 L3</a><a href="#l4">#08 L4</a><a href="#year">#09 1-year</a>
+  <a href="#not">#10 not</a><a href="#score">#11 score</a>
+</div>
+
+<div class="hero">
+  <h1>The Quilt <span class="grad-text anim-grad">Engineering Bar</span></h1>
+  <p class="lead">What "done right" means for every repo in the Quilt ecosystem. Not marketing. Not aspiration. A working checklist a contributor can run through on a Tuesday afternoon.</p>
+  <div class="quote">
+    <p><b>Done right</b> means a new contributor can clone, build, test, read docs, find an example, and ship a change in under an hour. Everything else is decoration.</p>
+    <div class="attr">— the bar, in one sentence</div>
+  </div>
+  <div class="badges">
+    <span class="badge a">8 layers</span><span class="badge b">15 repos audited</span>
+    <span class="badge g">top 10 fixes</span><span class="badge w">1-year target</span>
+    <span class="badge">Apache-2.0</span>
+  </div>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="#repos">View Audit ↓</a>
+    <a class="btn btn-ghost" href="#layers">Read the Bar ↓</a>
+    <a class="btn btn-ghost" href="https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md" target="_blank" rel="noopener">Open on GitHub →</a>
+  </div>
+</div>
+
+<main>
+
+<section id="bar">
+  <h2><span class="num">01</span>The bar, in one sentence</h2>
+  <p>Every Quilt repo — whether a 200-line CLI or a 50k-line monorepo — is held to the same standard. Not a different bar for "internal" vs "public", not a different bar for "research" vs "production", not a different bar for hardware vs software. <b>One bar, one set of rules, audited quarterly.</b></p>
+  <p>The bar has eight layers. Each is a <b>prerequisite</b> for the next — you can't claim L5 (great docs) on a repo that fails L1 (no LICENSE). The layers stack bottom-up: foundation (L1) is the price of admission; ecosystem (L8) is the long game.</p>
+  <div class="callout">
+    <h4>The hour-clock test</h4>
+    <p>If a new contributor can't go from <code>git clone</code> to a merged PR in under 60 minutes, the bar has been failed. Not because the contributor is bad — because the repo is unprepared. Every gap between "I want to help" and "here is my PR" is a layer the repo is missing.</p>
+  </div>
+</section>
+
+<section id="layers">
+  <h2><span class="num">02</span>The 8 layers</h2>
+  <p>Each layer is named, scoped, and auditable. The pyramid below stacks them from L1 (foundation) to L8 (ecosystem). Click a layer to jump to its detail.</p>
+<pre class="pyramid"><span class="d">                            △
+                          ╱   ╲
+                        ╱  L8   ╲       </span><span class="l8">Ecosystem</span><span class="d">  — monorepo, Nix, fleet ops
+                      ╱─────────╲
+                    ╱    L7      ╲     </span><span class="l7">Operations</span><span class="d"> — issues, security policy
+                  ╱─────────────╲
+                ╱      L6        ╲     </span><span class="l6">Release</span><span class="d">    — semver, SBOM, signing
+              ╱─────────────────╲
+            ╱       L5           ╲    </span><span class="l5">Docs</span><span class="d">       — landing, API ref, tutorial
+          ╱─────────────────────╲
+        ╱        L4              ╲   </span><span class="l4">Quality</span><span class="d">    — lint, types, security
+      ╱─────────────────────────╲
+    ╱          L3                ╲  </span><span class="l3">Test</span><span class="d">       — unit, integration, e2e
+  ╱─────────────────────────────╲
+╱            L2                  ╲ </span><span class="l2">Build</span><span class="d">      — lockfile, reproducible
+─────────────────────────────────
+          L1                     </span><span class="l1">Hygiene</span><span class="d">    — license, README, git
+═════════════════════════════════
+          FOUNDATION</span></pre>
+
+  <div class="layers">
+    <div class="layer-card" data-jump="l1"><span class="ln">L1</span><div><h4>Hygiene</h4><div class="desc">LICENSE, README, CHANGELOG, .gitignore, .editorconfig, CODE_OF_CONDUCT — the price of admission.</div></div></div>
+    <div class="layer-card" data-jump="l2"><span class="ln">L2</span><div><h4>Build</h4><div class="desc">Lockfile, single command to build, single command to test, reproducible, versioned, pinned toolchain.</div></div></div>
+    <div class="layer-card" data-jump="l3"><span class="ln">L3</span><div><h4>Test</h4><div class="desc">Unit tests for every public function, integration tests for cross-module flows, e2e in CI, coverage reported.</div></div></div>
+    <div class="layer-card" data-jump="l4"><span class="ln">L4</span><div><h4>Quality</h4><div class="desc">Lint passes with zero warnings, strict types, no compiler warnings, no advisories, public API documented.</div></div></div>
+    <div class="layer-card" data-jump="year"><span class="ln">L5</span><div><h4>Docs</h4><div class="desc">Landing page, full API reference, working tutorial, every public function has a docstring with example.</div></div></div>
+    <div class="layer-card" data-jump="year"><span class="ln">L6</span><div><h4>Release</h4><div class="desc">Strict semver, signed tags, generated SBOM, changelog auto-derived from commits, deprecation policy.</div></div></div>
+    <div class="layer-card" data-jump="year"><span class="ln">L7</span><div><h4>Operations</h4><div class="desc">Triage rotation, security advisory process, monthly release cadence, public roadmap, RFC process.</div></div></div>
+    <div class="layer-card" data-jump="year"><span class="ln">L8</span><div><h4>Ecosystem</h4><div class="desc">Cross-repo monorepo build, Nix flake, fleet-wide CI, shared release tooling, internal package registry.</div></div></div>
+  </div>
+</section>
+
+<section id="repos">
+  <h2><span class="num">03</span>The 15 repos — current state</h2>
+  <p>Every repo in the Quilt ecosystem, audited against L1–L4. The score is a weighted average (25% per layer) of the four auditable layers. L5–L8 are tracked separately because they're harder to score numerically.</p>
+  <p>Status cells: <span class="ok">✓</span> = present and current · <span class="pr">~</span> = partial or stale · <span class="no">✗</span> = missing.</p>
+  <table class="at">
+    <thead><tr><th>Repo</th><th>Type</th><th>License</th><th>CHANGELOG</th><th>CI</th><th>Tests</th><th>Examples</th><th>Score</th></tr></thead>
+    <tbody>
+      <tr><td class="r">quilt</td><td>TS core, monorepo</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="s6">6/10</td></tr>
+      <tr><td class="r">quilt-live</td><td>TS, demo studio</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="s7">7/10</td></tr>
+      <tr><td class="r">quilt-rust</td><td>Rust, core bindings</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s6">6/10</td></tr>
+      <tr><td class="r">quilt-time</td><td>TS, time-series</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-vault</td><td>TS, secrets</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-zk</td><td>TS, zero-knowledge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-flow</td><td>TS, dataflow</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-cloudflare</td><td>TS, workers</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-ai</td><td>TS, model bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-evolve</td><td>TS, self-improve</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-codespace</td><td>TS, IDE bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s4">4/10</td></tr>
+      <tr><td class="r">quilt-esp32</td><td>C++, embedded</td><td class="m"><span class="ok">✓</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s3">3/10</td></tr>
+      <tr><td class="r">quilt-agent</td><td>TS, agent class</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s3">3/10</td></tr>
+      <tr><td class="r">quilt-mesh</td><td>TS, p2p mesh</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s2">2/10</td></tr>
+      <tr><td class="r">quilt-vision</td><td>TS, vision bridge</td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="no">✗</span></td><td class="m"><span class="pr">~</span></td><td class="m"><span class="no">✗</span></td><td class="s2">2/10</td></tr>
+    </tbody>
+  </table>
+  <p>The picture is clear: <b>two repos above the bar, twelve at or below the half-way line, one in the cellar</b>. The good news: most of the gaps are mechanical — copy a LICENSE, drop in a <code>ci.yml</code>, write a CHANGELOG. That's why the top-10 list is short, concrete, and finishable in a single quarter.</p>
+</section>
+
+<section id="top10">
+  <h2><span class="num">04</span>The top 10 improvements</h2>
+  <p>Ranked by leverage — repos affected divided by effort. <b>Impact</b> = repos touched. <b>Effort</b> = person-hours for a competent contributor.</p>
+  <div class="improve">
+    <div class="improve-row"><span class="rank">1</span><div class="body"><div class="title">Add <code>Apache-2.0 LICENSE</code> to 11 repos</div><div class="detail">Four repos have it. The other eleven need the standard Apache-2.0 file at the root. 30-second copy-paste per repo and the single highest-leverage change in the audit — without it, none of the repos can be safely depended on by external code.</div><div class="meta"><span class="badge b">11 repos</span><span class="badge w">~1 hour</span><span class="badge a">11×</span></div></div></div>
+    <div class="improve-row"><span class="rank">2</span><div class="body"><div class="title">Add <code>ci.yml</code> to all 15 repos</div><div class="detail">Every repo needs a GitHub Actions workflow that runs lint + test on every PR. The same template works for all of them. Without CI, every PR is a coin-flip on whether it broke anything.</div><div class="meta"><span class="badge b">15 repos</span><span class="badge w">~4 hours</span><span class="badge a">4×</span></div></div></div>
+    <div class="improve-row"><span class="rank">3</span><div class="body"><div class="title">Add <code>CHANGELOG.md</code> to 14 repos</div><div class="detail">One repo has one. The "Keep a Changelog" format is fine. A single sentence per release is enough; perfection is the enemy of done. Without a changelog, users have no way to know what changed.</div><div class="meta"><span class="badge b">14 repos</span><span class="badge w">~4 hours</span><span class="badge a">3.5×</span></div></div></div>
+    <div class="improve-row"><span class="rank">4</span><div class="body"><div class="title">Add <code>CODEOWNERS</code> and <code>SECURITY.md</code> to 15 repos</div><div class="detail">CODEOWNERS auto-assigns reviewers by path. SECURITY.md tells researchers how to report vulnerabilities responsibly. Both are org-level files — write once, copy to every repo.</div><div class="meta"><span class="badge b">15 repos</span><span class="badge w">~2 hours</span><span class="badge a">7.5×</span></div></div></div>
+    <div class="improve-row"><span class="rank">5</span><div class="body"><div class="title">Add Dependabot to 14 TS repos</div><div class="detail">A single <code>dependabot.yml</code> per repo. Weekly group updates for npm + GitHub Actions. Dependabot opens the PRs; we just review and merge. Catches security advisories automatically.</div><div class="meta"><span class="badge b">14 repos</span><span class="badge w">~3 hours</span><span class="badge a">4.7×</span></div></div></div>
+    <div class="improve-row"><span class="rank">6</span><div class="body"><div class="title">Strict TypeScript across <code>quilt</code> core</div><div class="detail">Turn on <code>strict: true</code>, <code>noUncheckedIndexedAccess: true</code>, <code>exactOptionalPropertyTypes: true</code>. Fix what breaks. The core ships to the most users — worth the one-time pain to make the types actually mean something.</div><div class="meta"><span class="badge b">1 repo, ~50k LOC</span><span class="badge w">2–3 days</span><span class="badge a">high</span></div></div></div>
+    <div class="improve-row"><span class="rank">7</span><div class="body"><div class="title"><code>cargo clippy -- -D warnings</code> in Rust repos</div><div class="detail">quilt-rust and any future Rust crates. Clippy is the strictest linter in the ecosystem; treating warnings as errors in CI is the only way to actually fix them. Zero-warning Rust is a competitive advantage.</div><div class="meta"><span class="badge b">2 repos</span><span class="badge w">~1 day</span><span class="badge a">high</span></div></div></div>
+    <div class="improve-row"><span class="rank">8</span><div class="body"><div class="title">Cross-reference audit</div><div class="detail">Every repo should link to the other 14 in its README. Every example should link back to a doc. Every doc should link to a runnable example. The result is a mesh where you can hop from any artifact to any related one in two clicks.</div><div class="meta"><span class="badge b">15 repos</span><span class="badge w">~1 day</span><span class="badge a">5×</span></div></div></div>
+    <div class="improve-row"><span class="rank">9</span><div class="body"><div class="title">Verify all examples run in CI</div><div class="detail">An example that doesn't run is worse than no example — it teaches by negative example. The fix: a CI step that walks every <code>examples/*</code> directory, installs deps, and runs the example. Fail CI if any example errors.</div><div class="meta"><span class="badge b">all repos</span><span class="badge w">~1 week</span><span class="badge a">trust</span></div></div></div>
+    <div class="improve-row"><span class="rank">10</span><div class="body"><div class="title">VitePress docs sites for top 5 packages</div><div class="detail"><code>quilt</code>, <code>quilt-live</code>, <code>quilt-rust</code>, <code>quilt-time</code>, <code>quilt-vault</code>. Each gets a VitePress site with: landing, getting-started, API ref generated from TSDoc/rustdoc, a working tutorial, a changelog mirror. The others link to these.</div><div class="meta"><span class="badge b">5 packages</span><span class="badge w">~2 weeks</span><span class="badge a">ecosystem</span></div></div></div>
+  </div>
+</section>
+
+<section id="l1">
+  <h2><span class="num">05</span>L1 — Hygiene</h2>
+  <p>Foundation. The six files every repo must have. A repo that fails L1 can't be depended on, can't be vendored, can't be legally used. Tick the boxes below as you check each one off — the score at the bottom updates live.</p>
+  <div class="layer-detail">
+    <div class="head"><span class="tag">L1</span><h3>Hygiene</h3><span class="scope">price of admission</span></div>
+    <div class="why">A repo that can't be legally used, can't be found, and can't be understood is not a repo — it's a folder. L1 is the absolute minimum a contributor needs before they can do anything useful.</div>
+    <ul class="checklist" data-layer="l1">
+      <li><span class="box" data-key="l1-license"></span><span class="lbl" data-key="l1-license"><b>LICENSE</b> — <span>Apache-2.0 at the repo root. No exceptions, no "MIT for now". The full Apache-2.0 text, not a one-liner link.</span></span></li>
+      <li><span class="box" data-key="l1-readme"></span><span class="lbl" data-key="l1-readme"><b>README</b> — <span>badges (CI, npm/crates, license), one-paragraph "what is this", quick-start that runs in &lt;5 minutes, 1–3 code examples.</span></span></li>
+      <li><span class="box" data-key="l1-changelog"></span><span class="lbl" data-key="l1-changelog"><b>CHANGELOG.md</b> — <span>or <code>RELEASE-v*.md</code> notes. "Keep a Changelog" format. One line per change is enough; just keep it current.</span></span></li>
+      <li><span class="box" data-key="l1-gitignore"></span><span class="lbl" data-key="l1-gitignore"><b>.gitignore</b> — <span>language-appropriate, excludes <code>node_modules</code>/<code>target</code>/<code>.env</code>/<code>dist</code>. Never commit a build artifact.</span></span></li>
+      <li><span class="box" data-key="l1-editorconfig"></span><span class="lbl" data-key="l1-editorconfig"><b>.editorconfig</b> — <span>UTF-8, LF line endings, 2-space indent (4 for Python), trailing newline. Contributors with different editors produce the same diff.</span></span></li>
+      <li><span class="box" data-key="l1-coc"></span><span class="lbl" data-key="l1-coc"><b>CODE_OF_CONDUCT</b> — <span>or a link to the org-level one (Contributor Covenant is the default). A repo with no CoC is a repo where bad behavior becomes "the maintainer's problem" later.</span></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="l2">
+  <h2><span class="num">06</span>L2 — Build</h2>
+  <p>Reproducibility. A repo that builds differently on your machine than on mine is broken. L2 is about removing "works on my machine" as an acceptable answer.</p>
+  <div class="layer-detail">
+    <div class="head"><span class="tag">L2</span><h3>Build</h3><span class="scope">reproducible, single-command</span></div>
+    <div class="why">Builds that take more than one command, require unstated global tools, or produce different output on different days are not builds — they're ceremonies. L2 forces the build to be a function: same inputs, same outputs, every time.</div>
+    <ul class="checklist" data-layer="l2">
+      <li><span class="box" data-key="l2-lockfile"></span><span class="lbl" data-key="l2-lockfile"><b>Lockfile committed</b> — <span><code>package-lock.json</code>, <code>yarn.lock</code>, <code>pnpm-lock.yaml</code>, <code>Cargo.lock</code>, or <code>poetry.lock</code>. The lockfile is the build's memory; without it, "build" is a fresh guess every time.</span></span></li>
+      <li><span class="box" data-key="l2-build-cmd"></span><span class="lbl" data-key="l2-build-cmd"><b>Single command to build</b> — <span><code>npm run build</code>, <code>cargo build</code>, <code>make</code>. The README's quick-start must end with this command. No <code>cd src &amp;&amp; ./configure &amp;&amp; make &amp;&amp; make install</code>.</span></span></li>
+      <li><span class="box" data-key="l2-test-cmd"></span><span class="lbl" data-key="l2-test-cmd"><b>Single command to test</b> — <span><code>npm test</code>, <code>cargo test</code>, <code>make test</code>. One command, exit 0 = green, anything else = broken.</span></span></li>
+      <li><span class="box" data-key="l2-reproducible"></span><span class="lbl" data-key="l2-reproducible"><b>Reproducible builds</b> — <span>Two clones on two machines produce byte-identical artifacts. Requires deterministic timestamps (<code>SOURCE_DATE_EPOCH</code>), no embedded machine paths, no non-deterministic ordering.</span></span></li>
+      <li><span class="box" data-key="l2-semver"></span><span class="lbl" data-key="l2-semver"><b>Versioned (semver)</b> — <span>Every release follows MAJOR.MINOR.PATCH. Breaking change = MAJOR bump. Version in the package manifest, in the tag, and (where the language allows) in the importable symbol.</span></span></li>
+      <li><span class="box" data-key="l2-toolchain"></span><span class="lbl" data-key="l2-toolchain"><b>Pinned toolchain</b> — <span><code>.nvmrc</code> with the exact Node version, <code>rust-toolchain.toml</code> with the exact Rust channel, <code>.python-version</code> for pyenv, <code>go.mod</code> with the Go directive. Even a README line is better than nothing.</span></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="l3">
+  <h2><span class="num">07</span>L3 — Test</h2>
+  <p>Trust. A repo with no tests is a repo where every change is a roll of the dice. L3 is what turns "I think this works" into "CI says this works".</p>
+  <div class="layer-detail">
+    <div class="head"><span class="tag">L3</span><h3>Test</h3><span class="scope">unit, integration, e2e</span></div>
+    <div class="why">Tests are the contract between the maintainer and the contributor. Without them, every PR is a debate about whether it broke something. With them, the debate is settled by CI in 90 seconds. The goal isn't 100% coverage — it's confidence.</div>
+    <ul class="checklist" data-layer="l3">
+      <li><span class="box" data-key="l3-unit"></span><span class="lbl" data-key="l3-unit"><b>Unit tests for every public function</b> — <span>Every exported function has at least one test covering the happy path. Edge cases (empty, null, max-int) get tests too, but happy path is non-negotiable.</span></span></li>
+      <li><span class="box" data-key="l3-integration"></span><span class="lbl" data-key="l3-integration"><b>Integration tests for cross-module flows</b> — <span>Tests that touch two or more internal modules. Catches the bug where A and B both pass unit tests but together produce nonsense. Usually in <code>test/integration/</code>.</span></span></li>
+      <li><span class="box" data-key="l3-e2e"></span><span class="lbl" data-key="l3-e2e"><b>End-to-end tests</b> — <span>At least one test that exercises the repo as a black box — runs the binary, calls the API, runs the CLI. Catches the bug where every unit test passes but the binary segfaults on startup.</span></span></li>
+      <li><span class="box" data-key="l3-ci"></span><span class="lbl" data-key="l3-ci"><b>CI runs on every PR</b> — <span>GitHub Actions (or equivalent). Runs lint + test on every push and PR. Required status checks prevent merge if CI is red.</span></span></li>
+      <li><span class="box" data-key="l3-coverage"></span><span class="lbl" data-key="l3-coverage"><b>Coverage reported</b> — <span><code>nyc</code>, <code>cargo-tarpaulin</code>, <code>coverage.py</code>, or language equivalent. Target 80% for core, 60% for adapters. Coverage is a smell-test, not a goal.</span></span></li>
+      <li><span class="box" data-key="l3-smoke"></span><span class="lbl" data-key="l3-smoke"><b>Smoke tests for binaries</b> — <span>If the repo produces a binary (CLI, server, daemon), a CI job that downloads the build artifact, runs <code>--version</code>, and exits cleanly. Catches the "succeeded but non-functional" build.</span></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="l4">
+  <h2><span class="num">08</span>L4 — Quality</h2>
+  <p>Discipline. A repo that builds and tests but emits 200 warnings and 47 TODOs is a repo that has stopped caring. L4 is what separates "works" from "is well-made".</p>
+  <div class="layer-detail">
+    <div class="head"><span class="tag">L4</span><h3>Quality</h3><span class="scope">lint, types, security, docs</span></div>
+    <div class="why">Warnings rot. The day a maintainer merges a PR with 3 new warnings "to fix later" is the day the warning count stops meaning anything. L4 forces the count to zero and keeps it there.</div>
+    <ul class="checklist" data-layer="l4">
+      <li><span class="box" data-key="l4-lint"></span><span class="lbl" data-key="l4-lint"><b>Lint passes with zero warnings</b> — <span>ESLint with <code>--max-warnings=0</code>, Clippy with <code>-D warnings</code>, <code>golangci-lint run --max-issues-per-linter=0</code>. Warnings in CI block the merge.</span></span></li>
+      <li><span class="box" data-key="l4-types"></span><span class="lbl" data-key="l4-types"><b>Type check passes with strict settings</b> — <span>TypeScript: <code>strict: true</code>, <code>noUncheckedIndexedAccess: true</code>. Rust: deny on <code>unsafe_code</code> in the public API. Go: <code>go vet</code> + <code>staticcheck</code>.</span></span></li>
+      <li><span class="box" data-key="l4-compile"></span><span class="lbl" data-key="l4-compile"><b>No compiler warnings</b> — <span>C++: <code>-Wall -Wextra -Wpedantic -Werror</code>. C#: treat warnings as errors. If a warning can't be fixed, an explicit <code>// ignore: reason</code> comment, not silence.</span></span></li>
+      <li><span class="box" data-key="l4-security"></span><span class="lbl" data-key="l4-security"><b>No security advisories</b> — <span><code>npm audit</code> / <code>cargo audit</code> / <code>pip-audit</code> clean. Dependabot enabled and not behind on updates. Critical and high CVEs fixed within 7 days.</span></span></li>
+      <li><span class="box" data-key="l4-comments"></span><span class="lbl" data-key="l4-comments"><b>Heavy header comments</b> — <span>Every public file starts with a 5–15 line block comment: what this file is, why it exists, what it depends on, who owns it. A maintainer can <code>cat</code> any file and know in 30 seconds.</span></span></li>
+      <li><span class="box" data-key="l4-api"></span><span class="lbl" data-key="l4-api"><b>Public API documented</b> — <span>TSDoc / rustdoc / JSDoc / godoc on every exported symbol. One-line summary, parameters with types, return value, errors, 1-line example. No <code>/** TODO */</code> stubs.</span></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="year">
+  <h2><span class="num">09</span>The 1-year bar — where we want to be</h2>
+  <p>The audit is the floor, not the ceiling. The 1-year bar is what we hold ourselves to as a growing ecosystem. By the end of next year, every Quilt repo should pass the full L1–L8 audit.</p>
+  <div class="roadmap">
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">L1–L3 by next month</div><div class="desc">License, CHANGELOG, CI, CODEOWNERS, Dependabot, and the test infra across all 15 repos. Mostly mechanical.</div></div><span class="when">+1 month</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">Cross-reference audit + example-CI</div><div class="desc">Every example runs in CI. Every repo links to every other relevant repo. Every doc links to a runnable example.</div></div><span class="when">+2 months</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">L4 by Q1 2027</div><div class="desc">Strict TypeScript across the core. Clippy <code>-D warnings</code> across the Rust. Zero-warning builds. Documented public APIs.</div></div><span class="when">Q1 2027</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">L5 — VitePress docs for the top 5</div><div class="desc">quilt, quilt-live, quilt-rust, quilt-time, quilt-vault. Landing, getting-started, API ref, tutorial, changelog.</div></div><span class="when">Q2 2027</span></div>
+    <div class="roadmap-row"><span class="status next">→</span><div class="label"><div class="name">L6 — release engineering</div><div class="desc">Signed tags. Generated SBOM. Automated release notes. Deprecation policy. Monthly release cadence.</div></div><span class="when">Q3 2027</span></div>
+    <div class="roadmap-row"><span class="status far">·</span><div class="label"><div class="name">L7–L8 — operations &amp; ecosystem</div><div class="desc">Triage rotation, security advisory inbox, public roadmap, RFC process. Cross-repo monorepo build via Nix, fleet-wide CI, shared release tooling, internal package registry.</div></div><span class="when">Q4 2027</span></div>
+  </div>
+  <div class="callout green">
+    <h4>The vision</h4>
+    <p>By the end of next year, the Quilt ecosystem should be a <b>peer to Rust, React, or Postgres</b> in engineering quality. Not in users — in the calm confidence a senior engineer feels when they <code>git clone</code> a Quilt repo, run the tests, read the docs, and ship a change without ever needing to ask permission.</p>
+  </div>
+</section>
+
+<section id="not">
+  <h2><span class="num">10</span>What done right is not</h2>
+  <p>The bar is easy to mistake for a checklist of good feelings. It is not. It is a checklist of measurable things a new contributor can verify in an hour. The following are all things that <em>look</em> like progress and aren't.</p>
+  <div class="cmp">
+    <div class="cmp-card bad">
+      <div class="lbl">Not this</div>
+      <h4>"It builds and tests pass"</h4>
+      <ul><li>That's L2 (and maybe L3)</li><li>Says nothing about docs, examples, security, or how the next contributor gets unblocked</li><li>"Passes" with 0% coverage is a coin flip</li><li>A passing CI is the floor, not the ceiling</li></ul>
+    </div>
+    <div class="cmp-card good">
+      <div class="lbl">This</div>
+      <h4>Hour-clock test passes</h4>
+      <ul><li>Clone → install → test in &lt;10 min</li><li>README points to a working example</li><li>Example runs in &lt;5 min on a fresh machine</li><li>Docs answer "where do I start?" in one sentence</li><li>The next contributor can ship in &lt;60 min total</li></ul>
+    </div>
+  </div>
+  <ul>
+    <li><b>Not: "It has a fancy landing page."</b> A landing page with no working example is L5 with no L3 — it's marketing, not engineering. The first thing a contributor sees should be <code>git clone</code>, not hero copy.</li>
+    <li><b>Not: "I rewrote it in Rust."</b> A rewrite trades one set of maintenance costs for another, and unless the new implementation is also L1–L4 compliant, the rewrite <em>reduces</em> engineering quality. A TS repo that passes the bar is better than a Rust repo that doesn't.</li>
+    <li><b>Not: "I added a logo."</b> Decoration. The only thing a logo proves is that someone opened Figma. The bar measures whether a contributor can ship a change, not whether the repo looks good in a browser tab.</li>
+    <li><b>Not: "It has a Discord."</b> Community is downstream of the bar, not a substitute for it. People join Discords for repos that are worth depending on. Chasing the order is a fool's errand.</li>
+    <li><b>Not: "Most of the warnings are pre-existing."</b> There is no such thing as a "pre-existing" warning. Every warning in the codebase is a vote against the next contributor's time. The right number is zero.</li>
+  </ul>
+  <div class="callout red">
+    <h4>The standard, restated</h4>
+    <p>Clone, build, test, read docs, find an example, ship a change — <b>in under an hour</b>. If any of those six steps takes longer than 10 minutes, the bar has been failed. There is no other metric. The hour is the metric.</p>
+  </div>
+</section>
+
+<section id="score">
+  <h2><span class="num">11</span>Score yourself</h2>
+  <p>Tick the boxes in the L1–L4 sections above as you check each item off in your own fork. The bar compliance score updates live — at 100%, your repo passes the L1–L4 audit and is eligible for the org-level <code>quilt</code> monorepo (L8).</p>
+  <div class="scorer">
+    <h3><span class="dot pulse"></span> Bar compliance · live</h3>
+    <div class="row"><span class="l">L1 Hygiene</span><span class="r" id="l1-pct">0 / 6</span></div>
+    <div class="bar"><div class="fill" id="l1-fill"></div></div>
+    <div class="row"><span class="l">L2 Build</span><span class="r" id="l2-pct">0 / 6</span></div>
+    <div class="bar"><div class="fill" id="l2-fill"></div></div>
+    <div class="row"><span class="l">L3 Test</span><span class="r" id="l3-pct">0 / 6</span></div>
+    <div class="bar"><div class="fill" id="l3-fill"></div></div>
+    <div class="row"><span class="l">L4 Quality</span><span class="r" id="l4-pct">0 / 6</span></div>
+    <div class="bar"><div class="fill" id="l4-fill"></div></div>
+    <div class="grade">
+      <div class="n" id="grade-n">0%</div>
+      <div class="l" id="grade-l">Start checking items above</div>
+    </div>
+  </div>
+  <p>Until the score reads 100%, the repo is on the audit list and is reviewed against this bar on every quarterly cycle. The audit template lives at <code>docs/audit-2026-q1.md</code> in the org repo.</p>
+</section>
+
+<section>
+  <h2>Where to go from here</h2>
+  <p>Three doors, depending on what brought you here.</p>
+  <div class="next">
+    <a href="https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md" target="_blank" rel="noopener"><div class="l">Spec</div><div class="t">engineering-bar.md</div><div class="d">The full text. The rationale for each layer, the rejection criteria, the audit template. If you're auditing a repo, start here.</div></a>
+    <a href="https://github.com/SuperInstance/quilt/blob/main/docs/audit-2026-q1.md" target="_blank" rel="noopener"><div class="l">Audit</div><div class="t">audit-2026-q1.md</div><div class="d">The current audit. The 15 repos, the scores, the per-repo notes, the action items. Updated every quarter.</div></a>
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener"><div class="l">Repo</div><div class="t">github.com/SuperInstance/quilt</div><div class="d">The monorepo. Where the bar is enforced in CI. Where new repos land once they pass L1–L4.</div></a>
+    <a href="agent-substrate.html"><div class="l">Companion</div><div class="t">Quilt as Agent Substrate</div><div class="d">The substrate layer above the bar — the 5 primitives, the registry, the run traces. What the engineering bar exists to support.</div></a>
+    <a href="quilt-live.html"><div class="l">Try it</div><div class="t">Quilt Live</div><div class="d">Open the studio. Build a sheet, validate it, run it, inspect the trace. See the substrate — and the bar — in action.</div></a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>Quilt · The Engineering Bar · what "done right" means for every repo</p>
+  <p style="margin-top:6px">
+    <a href="index.html">Home</a> · <a href="neural-cells.html">Neural Cells</a> · <a href="universe-model.html">Universe</a> ·
+    <a href="evolve.html">Evolve</a> · <a href="vibe.html">Vibe</a> ·
+    <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">GitHub</a>
+  </p>
+  <p style="margin-top:6px;font-size:.76rem"><code class="kbd">L1 hygiene</code> <code class="kbd">L2 build</code> <code class="kbd">L3 test</code> <code class="kbd">L4 quality</code> <code class="kbd">L5 docs</code> <code class="kbd">L6 release</code> <code class="kbd">L7 operations</code> <code class="kbd">L8 ecosystem</code></p>
+</footer>
+
+<script>
+const LAYERS={l1:6,l2:6,l3:6,l4:6},TOTAL=Object.values(LAYERS).reduce((a,b)=>a+b,0),state={};
+function update(){
+  let total=0;
+  for(const[layer,max]of Object.entries(LAYERS)){
+    const done=state[layer]||0;
+    document.getElementById(layer+'-pct').textContent=done+' / '+max;
+    document.getElementById(layer+'-fill').style.width=(done/max)*100+'%';
+    total+=done;
+  }
+  const pct=Math.round((total/TOTAL)*100);
+  document.getElementById('grade-n').textContent=pct+'%';
+  document.getElementById('grade-l').textContent=
+    pct===100?'Bar passed — eligible for L8 merge':
+    pct>=75?'Almost there — finish the gaps':
+    pct>=50?'Past halfway — keep going':
+    pct>0?'Started — keep checking':
+    'Start checking items above';
+}
+document.querySelectorAll('.checklist .box').forEach(box=>{
+  box.addEventListener('click',()=>{
+    const k=box.dataset.key,layer=k.split('-')[0];
+    box.classList.toggle('on');
+    box.textContent=box.classList.contains('on')?'✓':'';
+    state[layer]=(state[layer]||0)+(box.classList.contains('on')?1:-1);
+    update();
+  });
+});
+document.querySelectorAll('.checklist .lbl').forEach(lbl=>{
+  lbl.addEventListener('click',()=>{
+    const box=document.querySelector('.checklist .box[data-key="'+lbl.dataset.key+'"]');
+    if(box)box.click();
+  });
+});
+document.querySelectorAll('.layer-card').forEach(card=>{
+  card.addEventListener('click',()=>{
+    const id=card.dataset.jump;
+    if(id)document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+document.querySelectorAll('.anchor-nav a, .hero .btn[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const id=a.getAttribute('href');
+    if(id&&id.startsWith('#')){
+      e.preventDefault();
+      document.querySelector(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+});
+update();
+</script>
+
+</body>
+</html>

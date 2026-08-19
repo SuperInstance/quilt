@@ -90,6 +90,7 @@ test('shows error state in red', () => {
   });
   const out = render(state);
   // The red ANSI code is \x1b[31m.
+  // eslint-disable-next-line no-control-regex
   assert.match(out, /\x1b\[31m/);
   assert.match(out, /boom/);
 });

@@ -38,11 +38,11 @@
 //! - The `quilt-tui` binary in `bin/`.
 //! - Future: agents that prefer text output over structured JSON.
 
-import { QuiltEngine, CellDef, CellStatus, CellValue } from '@quilt/core';
+import type { QuiltEngine, CellDef, CellValue } from '@quilt/core';
 import { render } from './render.js';
 import { KeyReader } from './input.js';
 import type { TuiKey } from './input.js';
-import { CellKind, CellRow, TuiState } from './types.js';
+import type { CellKind, CellRow, TuiState } from './types.js';
 
 // =============================================================================
 // The TUI class
@@ -297,7 +297,7 @@ export class QuiltTui {
       const v = raw.startsWith('"') || raw.startsWith('{') || raw.startsWith('[') || raw === 'null' || raw === 'true' || raw === 'false' || /^-?\d/.test(raw)
         ? JSON.parse(raw)
         : raw;
-      await this.engine.set(cell.id, v as any, { timestamp: Date.now() });
+      await this.engine.set(cell.id, v as unknown, { timestamp: Date.now() });
       this.state.status = `set ${cell.id} = ${JSON.stringify(v)}`;
       this.refreshCells();
     } catch (e) {

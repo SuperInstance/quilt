@@ -34,7 +34,7 @@ cells:
   });
 
   it('returns an error when no AI engine is configured', async () => {
-    const engine = new QuiltEngine('test');  // no ai
+    const engine = new QuiltEngine('test'); // no ai
     const sheet = parseSheet(`id: test2
 cells:
   - id: answer
@@ -79,7 +79,7 @@ cells:
   it('caches results by input hash', async () => {
     let callCount = 0;
     const stubEngine: AIEngineLike = {
-      call: async (config) => { callCount++; return `call-${callCount}`; },
+      call: async (_config) => { callCount++; return `call-${callCount}`; },
     };
     const engine = new QuiltEngine('test', { ai: stubEngine });
     const sheet = parseSheet(`id: test4
@@ -97,7 +97,7 @@ cells:
     engine.loadSheet(sheet);
     await engine.get('a');
     await engine.get('a');
-    expect(callCount).toBe(1);  // cached
+    expect(callCount).toBe(1); // cached
   });
 
   it('handles all 7 sub-kinds', async () => {

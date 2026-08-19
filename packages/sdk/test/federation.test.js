@@ -13,7 +13,6 @@ import assert from 'node:assert/strict';
 import {
   parseCellRef,
   resolveCell,
-  subscribeCell,
   CellRouter,
   detectTier,
   tierInfoFor,
@@ -168,7 +167,7 @@ test('resolveCell: rejects wildcard', async () => {
   const transport = new LocalCellTransport(new Map([['local', engine]]));
   await assert.rejects(
     () => resolveCell('quilt://*/sheet#x', transport),
-    CellRefError
+    CellRefError,
   );
 });
 
@@ -191,7 +190,7 @@ test('LocalCellTransport: rejects unknown instance', async () => {
   const transport = new LocalCellTransport(new Map([['local', engine]]));
   await assert.rejects(
     () => transport.get('jetson', 'sheet', 'x'),
-    CellRefError
+    CellRefError,
   );
 });
 
@@ -237,7 +236,7 @@ test('CellRouter: rejects unknown instance', async () => {
   const router = new CellRouter();
   await assert.rejects(
     () => router.resolve('quilt://nonexistent/sheet#x'),
-    CellRefError
+    CellRefError,
   );
 });
 

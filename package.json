@@ -24,12 +24,16 @@
     "test": "npm run test --workspaces --if-present",
     "test:core": "cd packages/core && npm run test",
     "dev": "cd packages/cli && npm run dev",
-    "lint": "echo 'lint placeholder'",
+    "lint": "eslint . --ext .ts,.js,.mjs,.cjs",
+    "lint:fix": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "format": "echo 'format placeholder'"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
     "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "eslint": "^8.57.1",
+    "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   },
   "dependencies": {

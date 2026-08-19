@@ -493,7 +493,7 @@ export class QuiltEngine implements ProgramRuntime {
       } else {
         // Recursively resolve upstream cell values for {{id}} substitution
         const resolved = new Set<string>();
-        const resolver = (id: string): any => {
+        const resolver = (id: string): unknown => {
           if (resolved.has(id)) return null;
           resolved.add(id);
           const c = this.cells.get(id);
@@ -510,12 +510,12 @@ export class QuiltEngine implements ProgramRuntime {
           if (c.value.status === 'error') return null;
           return c.value.data;
         };
-        const aiResult = await evaluateAI(cell.def as any, ctx, this.options.ai, resolver);
+        const aiResult = await evaluateAI(cell.def as unknown as Parameters<typeof evaluateAI>[0], ctx, this.options.ai, resolver);
         result = {
           data: aiResult.value,
           status: aiResult.error ? 'error' : 'ready',
           error: aiResult.error ? { message: aiResult.error } : undefined,
-          effects: [{ kind: 'model', provider: (cell.def as any).provider || 'unknown' }],
+          effects: [{ kind: 'model', provider: (cell.def as { provider?: string }).provider || 'unknown' }],
           computedAt: Date.now(),
         };
       }
@@ -631,10 +631,10 @@ export class QuiltEngine implements ProgramRuntime {
    * {{cell.id}} references.
    */
   private autoDetectDeps(cell: Cell): void {
-    let fields: string[] = [];
+    const fields: string[] = [];
     if (cell.def.expr) fields.push(cell.def.expr);
     if (cell.def.kind === 'ai') {
-      const ai = cell.def as any;
+      const ai = cell.def as { prompt?: string; input?: string; image?: string };
       if (ai.prompt) fields.push(ai.prompt);
       if (ai.input) fields.push(ai.input);
       if (ai.image) fields.push(ai.image);

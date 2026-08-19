@@ -214,7 +214,7 @@ export function resolveTemplate(input: string, context: RunContext = {}): string
     if (v === undefined) {
       throw new TemplateError(
         `Missing template variable: ${key}. ` +
-        `Provide it in the run context. Available: ${Object.keys(context).join(', ') || '(none)'}`
+        `Provide it in the run context. Available: ${Object.keys(context).join(', ') || '(none)'}`,
       );
     }
     return v;
@@ -251,13 +251,13 @@ export class TemplateError extends Error {
 export async function resolveArtifact(
   uri: QuiltURI,
   context: RunContext = {},
-  store?: ArtifactStore
+  store?: ArtifactStore,
 ): Promise<ResolvedArtifact> {
   // 1. Validate URI shape
   if (!uri.startsWith('quilt://') && !uri.startsWith('cell://')) {
     throw new ResolveError(
       `Invalid Quilt URI: "${uri}". Must start with "quilt://" or "cell://".`,
-      uri
+      uri,
     );
   }
 
@@ -359,7 +359,7 @@ export class ResolveError extends Error {
  */
 export async function validateManifest(
   manifest: unknown,
-  options: { store?: ArtifactStore; checkExists?: boolean; runContext?: RunContext } = {}
+  options: { store?: ArtifactStore; checkExists?: boolean; runContext?: RunContext } = {},
 ): Promise<ValidationResult> {
   // Lazy-load ajv so consumers that only use resolveTemplate don't pay
   // the cost. Use unknown casts because ajv is a CJS module whose types
@@ -445,7 +445,7 @@ export async function validateManifest(
 export async function publishArtifact(
   source: Uint8Array | string | { path: string },
   metadata: ArtifactMetadata,
-  store: ArtifactStore
+  store: ArtifactStore,
 ): Promise<{ uri: QuiltURI; version: string; contentHash: string }> {
   let bytes: Uint8Array;
   if (typeof source === 'string') {
@@ -463,7 +463,6 @@ export async function publishArtifact(
   // Logical URI: derive from metadata or generate a UUID
   const logicalName = (metadata.manifestId ?? 'artifact') + '/' + (metadata.runId ?? shortHash(bytes));
   const logicalUri = `quilt://artifacts/${logicalName}`;
-  const version = metadata.version ?? contentHash.slice(0, 12);
 
   const enrichedMetadata: ArtifactMetadata = {
     ...metadata,
@@ -517,7 +516,7 @@ function shortHash(bytes: Uint8Array): string {
  */
 export async function publishRunTrace(
   trace: RunTrace,
-  store: ArtifactStore
+  store: ArtifactStore,
 ): Promise<{ uri: QuiltURI; version: string }> {
   if (!trace.runId) {
     throw new Error('RunTrace must have a runId');
@@ -658,7 +657,7 @@ export function parseCellRef(uri: string): FederatedCellRef {
   if (pathSegments.length < 2) {
     throw new CellRefError(
       `Cell ref needs both instance and sheet: ${uri}. ` +
-      `Expected: quilt://[instance]/[sheet]#[cell-path]`
+      `Expected: quilt://[instance]/[sheet]#[cell-path]`,
     );
   }
   const [instance, sheet] = pathSegments;
@@ -746,7 +745,7 @@ export class LocalCellTransport implements CellTransport {
 
   constructor(
     private readonly engines: Map<string, LocalEngine>,
-    private readonly localInstanceId: string = 'local'
+    private readonly localInstanceId: string = 'local',
   ) {}
 
   async get(instance: string, sheet: string, cellPath: string): Promise<unknown> {
@@ -763,7 +762,7 @@ export class LocalCellTransport implements CellTransport {
     instance: string,
     sheet: string,
     cellPath: string,
-    callback: (value: unknown) => void
+    callback: (value: unknown) => void,
   ): () => void {
     const engine = this.engineFor(instance);
     const unsub = engine.subscribe(sheet, cellPath, callback);
@@ -784,7 +783,7 @@ export class LocalCellTransport implements CellTransport {
     if (!engine) {
       throw new CellRefError(
         `No engine registered for instance "${instance}". ` +
-        `Registered: ${Array.from(this.engines.keys()).join(', ') || '(none)'}`
+        `Registered: ${Array.from(this.engines.keys()).join(', ') || '(none)'}`,
       );
     }
     return engine;
@@ -806,7 +805,7 @@ export class HttpCellTransport implements CellTransport {
 
   constructor(
     private readonly baseUrl: string,
-    private readonly token: string
+    private readonly token: string,
   ) {}
 
   private headers(): Record<string, string> {
@@ -849,7 +848,7 @@ export class HttpCellTransport implements CellTransport {
     instance: string,
     sheet: string,
     cellPath: string,
-    callback: (value: unknown) => void
+    callback: (value: unknown) => void,
   ): () => void {
     const key = `${instance}/${sheet}/${cellPath}`;
     let set = this.listeners.get(key);
@@ -913,7 +912,7 @@ export async function resolveCell(uri: string, transport: CellTransport): Promis
   if (ref.isWildcard) {
     throw new CellRefError(
       `Wildcard cell refs cannot be resolved to a single handle: ${uri}. ` +
-      `Use a routing table or fleet-discovery to expand wildcards first.`
+      `Use a routing table or fleet-discovery to expand wildcards first.`,
     );
   }
 
@@ -966,7 +965,7 @@ export async function resolveCell(uri: string, transport: CellTransport): Promis
 export function subscribeCell(
   uri: string,
   transport: CellTransport,
-  callback: (value: unknown) => void
+  callback: (value: unknown) => void,
 ): () => void {
   let unsub: (() => void) | null = null;
   let cancelled = false;
@@ -1031,7 +1030,7 @@ export class CellRouter {
     if (!transport) {
       throw new CellRefError(
         `No transport registered for instance "${ref.instance}". ` +
-        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`
+        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`,
       );
     }
     return resolveCell(uri, transport);
@@ -1044,7 +1043,7 @@ export class CellRouter {
     if (!transport) {
       throw new CellRefError(
         `No transport registered for instance "${ref.instance}". ` +
-        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`
+        `Registered: ${Array.from(this.transports.keys()).join(', ') || '(none)'}`,
       );
     }
     return subscribeCell(uri, transport, callback);
@@ -1073,12 +1072,12 @@ export class CellRouter {
  *   Lighthouse cloud  -> quilt-codespace persistent (fleet coord)
  */
 export type QuiltTier =
-  | 'esp32'         // bare metal, no_std, sensors + actuators
-  | 'jetson'        // edge, sync + alloc, vision
-  | 'codespace'     // GitHub Codespace, async, ttyd + MCP
-  | 'cloudflare'    // Cloudflare Worker, V8 isolates
-  | 'server'        // generic Node.js server
-  | 'browser'       // browser, Web APIs
+  | 'esp32' // bare metal, no_std, sensors + actuators
+  | 'jetson' // edge, sync + alloc, vision
+  | 'codespace' // GitHub Codespace, async, ttyd + MCP
+  | 'cloudflare' // Cloudflare Worker, V8 isolates
+  | 'server' // generic Node.js server
+  | 'browser' // browser, Web APIs
   | 'unknown';
 
 /**
@@ -1169,11 +1168,11 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
         platform: 'ESP32 (no_std)',
         capabilities: {
           async: false,
-          network: true,           // WiFi
-          filesystem: true,        // NVS / flash
+          network: true, // WiFi
+          filesystem: true, // NVS / flash
           persistent: true,
           gpu: false,
-          llmApi: false,           // too small
+          llmApi: false, // too small
         },
         siblings: ['jetson', 'codespace'],
       };
@@ -1188,7 +1187,7 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
           filesystem: true,
           persistent: true,
           gpu: true,
-          llmApi: true,            // can run small models locally
+          llmApi: true, // can run small models locally
         },
         siblings: ['esp32', 'codespace', 'cloudflare'],
       };
@@ -1201,8 +1200,8 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
           async: true,
           network: true,
           filesystem: true,
-          persistent: false,        // ephemeral by default
-          gpu: false,               // no GPU in codespace
+          persistent: false, // ephemeral by default
+          gpu: false, // no GPU in codespace
           llmApi: true,
         },
         siblings: ['jetson', 'cloudflare', 'server'],
@@ -1215,10 +1214,10 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
         capabilities: {
           async: true,
           network: true,
-          filesystem: false,        // no local FS
-          persistent: true,         // D1, KV, R2
+          filesystem: false, // no local FS
+          persistent: true, // D1, KV, R2
           gpu: false,
-          llmApi: true,             // Workers AI
+          llmApi: true, // Workers AI
         },
         siblings: ['codespace', 'jetson'],
       };
@@ -1232,7 +1231,7 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
           network: true,
           filesystem: true,
           persistent: true,
-          gpu: true,                // if hardware available
+          gpu: true, // if hardware available
           llmApi: true,
         },
         siblings: ['codespace', 'jetson', 'cloudflare'],
@@ -1245,10 +1244,10 @@ export function tierInfoFor(tier: QuiltTier): TierInfo {
         capabilities: {
           async: true,
           network: true,
-          filesystem: false,        // no FS
-          persistent: true,         // IndexedDB / localStorage
-          gpu: true,                // WebGL
-          llmApi: true,             // browser LLM
+          filesystem: false, // no FS
+          persistent: true, // IndexedDB / localStorage
+          gpu: true, // WebGL
+          llmApi: true, // browser LLM
         },
         siblings: ['codespace', 'cloudflare', 'server'],
       };

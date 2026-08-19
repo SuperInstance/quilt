@@ -3,8 +3,8 @@
  * substrate is doing the right thing.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { QuiltEngine, type SheetDef, type CellDef } from '../src/index.js';
+import { describe, it, expect } from 'vitest';
+import { QuiltEngine, type SheetDef } from '../src/index.js';
 
 function define(sheet: SheetDef): QuiltEngine {
   const engine = new QuiltEngine('test');

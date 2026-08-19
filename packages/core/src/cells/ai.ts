@@ -103,12 +103,12 @@ export interface AICellConfig extends Omit<CellDef, 'language'> {
 
 /** The AIEngine interface (a subset of @quilt/ai's AIEngine). */
 export interface AIEngineLike {
-  call(config: any, opts?: { useCache?: boolean; signal?: AbortSignal }): Promise<any>;
+  call(config: AICellConfig, opts?: { useCache?: boolean; signal?: AbortSignal }): Promise<unknown>;
 }
 
 /** Result of evaluating an AI cell. */
 export interface AIEvalResult {
-  value: any;
+  value: unknown;
   error: string | null;
 }
 
@@ -131,7 +131,7 @@ export async function evaluateAI(
   };
 
   // Build the AI config from the cell
-  const config: any = {
+  const config: Record<string, unknown> = {
     id: cell.id,
     kind: cell.ai_kind,
     provider: cell.provider,
@@ -153,7 +153,8 @@ export async function evaluateAI(
   try {
     const result = await engine.call(config, { useCache: true });
     return { value: result, error: null };
-  } catch (e: any) {
-    return { value: null, error: e.message || String(e) };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { value: null, error: message };
   }
 }
