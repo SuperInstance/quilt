@@ -9,112 +9,105 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0a14;--panel:#14141f;--pe:#1a1a26;--b:#252535;--bs:#353548;--t:#f0f0f5;--td:#a0a0b0;--tf:#6a6a7a;--a1:#10b981;--a2:#3b82f6;--g:linear-gradient(135deg,#10b981 0%,#3b82f6 100%);--ok:#7ec699;--err:#e07a8a;--w:#e6c87a;--tan:#c6a87e}
-*{box-sizing:border-box;margin:0;padding:0}html,body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;line-height:1.6}
+:root{--bg:#0a0a14;--panel:#14141f;--pe:#1a1a26;--b:#252535;--bs:#353548;--t:#f0f0f5;--td:#a0a0b0;--tf:#6a6a7a;--a1:#10b981;--a2:#3b82f6;--g:linear-gradient(135deg,#10b981,#3b82f6);--ok:#7ec699;--err:#e07a8a;--w:#e6c87a;--tan:#c6a87e}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--t);font-family:'Inter',-apple-system,sans-serif;line-height:1.6}
 a{color:var(--a2);text-decoration:none}a:hover{color:var(--a1)}
 code,pre,.m{font-family:'JetBrains Mono',monospace}
-pre{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:11px 13px;overflow-x:auto;font-size:.78rem;line-height:1.5;color:var(--td)}
-p{color:var(--td);margin-bottom:11px}ul{color:var(--td);padding-left:22px;margin-bottom:14px}ul li{margin:3px 0}
+pre{background:var(--panel);border:1px solid var(--b);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:.76rem;line-height:1.5;color:var(--td);margin:10px 0}
+p{color:var(--td);margin-bottom:10px}ul{color:var(--td);padding-left:20px;margin-bottom:12px}ul li{margin:3px 0}
 h1,h2,h3,h4{color:var(--t)}.grad-text{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 22px;background:rgba(10,10,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50}
-.brand{display:flex;align-items:center;gap:8px;font-weight:700}.mark{width:22px;height:22px;background:var(--g);border-radius:4px}
-.nav-links{display:flex;gap:2px;flex-wrap:wrap}.nav-links a{padding:5px 9px;font-size:.8rem;color:var(--td);border-radius:6px}
+nav{display:flex;align-items:center;justify-content:space-between;padding:9px 20px;background:rgba(10,10,20,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:7px;font-weight:700;font-size:.92rem}.mark{width:20px;height:20px;background:var(--g);border-radius:4px}
+.nav-links{display:flex;gap:2px;flex-wrap:wrap}.nav-links a{padding:4px 8px;font-size:.78rem;color:var(--td);border-radius:5px}
 .nav-links a:hover{background:var(--panel);color:var(--t)}.nav-links a.active{color:var(--t);background:var(--panel)}
-.anchor-nav{display:flex;gap:4px;flex-wrap:wrap;padding:7px 22px;background:var(--panel);border-bottom:1px solid var(--b);position:sticky;top:44px;z-index:49;font-size:.74rem}
-.anchor-nav a{padding:3px 8px;color:var(--tf);border-radius:4px;font-family:'JetBrains Mono',monospace}
+.anchor-nav{display:flex;gap:3px;flex-wrap:wrap;padding:6px 20px;background:var(--panel);border-bottom:1px solid var(--b);position:sticky;top:42px;z-index:49;font-size:.72rem}
+.anchor-nav a{padding:2px 7px;color:var(--tf);border-radius:3px;font-family:'JetBrains Mono',monospace}
 .anchor-nav a:hover{color:var(--t);background:var(--bg)}
-.hero{padding:58px 22px 30px;text-align:center;max-width:880px;margin:0 auto;position:relative}
-.hero::before{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);width:620px;height:620px;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,rgba(59,130,246,.06) 35%,transparent 70%);pointer-events:none;z-index:-1}
-.hero h1{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:16px}
-.hero p.lead{color:var(--td);font-size:1.05rem;max-width:740px;margin:0 auto 12px}
-.hero p.tagline{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.86rem;max-width:740px;margin:14px auto 4px;line-height:1.7;background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:12px 16px;text-align:left}
-.hero .cta-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-.btn{padding:9px 18px;border-radius:8px;font-weight:600;font-size:.85rem;transition:all .2s;border:1px solid transparent;cursor:pointer;font-family:inherit;display:inline-block}
-.btn-primary{background:var(--g);color:#fff}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(16,185,129,.35);color:#fff}
+.hero{padding:50px 20px 26px;text-align:center;max-width:880px;margin:0 auto;position:relative}
+.hero::before{content:'';position:absolute;top:20px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,rgba(59,130,246,.06) 35%,transparent 70%);pointer-events:none;z-index:-1}
+.hero h1{font-size:clamp(1.9rem,5vw,2.9rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;margin-bottom:14px}
+.hero p.lead{color:var(--td);font-size:1rem;max-width:720px;margin:0 auto 10px}
+.hero p.tagline{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.84rem;max-width:720px;margin:12px auto 4px;line-height:1.65;background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:11px 14px;text-align:left}
+.hero .cta-row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.btn{padding:8px 16px;border-radius:7px;font-weight:600;font-size:.83rem;transition:all .2s;border:1px solid transparent;cursor:pointer;font-family:inherit;display:inline-block}
+.btn-primary{background:var(--g);color:#fff}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.35);color:#fff}
 .btn-ghost{background:transparent;border-color:var(--bs);color:var(--t)}.btn-ghost:hover{border-color:var(--a1);color:var(--t)}
-.btn-sm{padding:5px 11px;font-size:.76rem}
-.badges{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
-.badge{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:2px 7px;border-radius:999px;background:var(--panel);border:1px solid var(--b);color:var(--td)}
+.btn-sm{padding:5px 10px;font-size:.74rem}
+.badges{display:flex;gap:5px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 6px;border-radius:999px;background:var(--panel);border:1px solid var(--b);color:var(--td)}
 .badge.p{color:var(--a1);border-color:rgba(16,185,129,.4)}.badge.b{color:var(--a2);border-color:rgba(59,130,246,.4)}
-.badge.g{color:var(--ok);border-color:rgba(126,198,153,.3)}.badge.t{color:var(--tan);border-color:rgba(198,168,126,.3)}
-.badge.x{color:var(--w);border-color:rgba(230,200,122,.3)}
-main{max-width:1000px;margin:0 auto;padding:0 22px 50px}
-section{margin:50px 0;scroll-margin-top:92px}
-section h2{font-size:1.65rem;font-weight:700;margin-bottom:11px;letter-spacing:-.02em}
-section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-right:10px;font-size:.82rem;vertical-align:middle}
-section h3{font-size:1.05rem;font-weight:600;margin:18px 0 7px}
-.equation{background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:12px 16px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:.84rem;color:var(--t)}
-.at{width:100%;border-collapse:collapse;margin:14px 0;font-size:.85rem}
-.at th,.at td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--b);vertical-align:top}
-.at th{color:var(--tf);font-weight:600;text-transform:uppercase;font-size:.68rem;letter-spacing:.1em}
+.badge.g{color:var(--ok);border-color:rgba(126,198,153,.3)}.badge.t{color:var(--tan);border-color:rgba(198,168,126,.3)}.badge.x{color:var(--w);border-color:rgba(230,200,122,.3)}
+main{max-width:1000px;margin:0 auto;padding:0 20px 40px}
+section{margin:44px 0;scroll-margin-top:90px}
+section h2{font-size:1.55rem;font-weight:700;margin-bottom:10px;letter-spacing:-.02em}
+section h2 .num{color:var(--tf);font-family:'JetBrains Mono',monospace;margin-right:9px;font-size:.8rem;vertical-align:middle}
+section h3{font-size:1rem;font-weight:600;margin:16px 0 6px}
+.equation{background:var(--panel);border:1px solid var(--b);border-left:3px solid var(--a1);border-radius:6px;padding:11px 14px;margin:11px 0;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--t)}
+.at{width:100%;border-collapse:collapse;margin:12px 0;font-size:.83rem}
+.at th,.at td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--b);vertical-align:top}
+.at th{color:var(--tf);font-weight:600;text-transform:uppercase;font-size:.66rem;letter-spacing:.1em}
 .at tr:last-child td{border-bottom:none}.at tr:hover td{background:rgba(16,185,129,.04)}
-.at td.s{color:var(--a1);font-weight:600}.at td.q{color:var(--ok);font-family:'JetBrains Mono',monospace;font-size:.79rem}
-.at td.n{color:var(--td);font-size:.82rem}
-.callout{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(59,130,246,.05));border:1px solid var(--a1);border-radius:10px;padding:13px 16px;margin:16px 0}
-.callout h4{color:var(--a1);margin-bottom:5px;font-size:.76rem;text-transform:uppercase;letter-spacing:.1em}
-.callout p{margin:0}.callout.blue{border-color:var(--a2)}.callout.blue h4{color:var(--a2)}
-.callout.green{border-color:var(--ok)}.callout.green h4{color:var(--ok)}
-.diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:1.5;color:var(--td);white-space:pre;overflow-x:auto}
+.at td.s{color:var(--a1);font-weight:600}.at td.q{color:var(--ok);font-family:'JetBrains Mono',monospace;font-size:.77rem}
+.at td.n{color:var(--td);font-size:.8rem}
+.callout{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(59,130,246,.05));border:1px solid var(--a1);border-radius:10px;padding:12px 14px;margin:14px 0}
+.callout h4{color:var(--a1);margin-bottom:4px;font-size:.74rem;text-transform:uppercase;letter-spacing:.1em}
+.callout p{margin:0}.callout.blue{border-color:var(--a2)}.callout.blue h4{color:var(--a2)}.callout.green{border-color:var(--ok)}.callout.green h4{color:var(--ok)}
+.diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:12px;margin:10px 0;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.5;color:var(--td);white-space:pre;overflow-x:auto}
 .diagram .a{color:var(--a2)}.diagram .a2{color:var(--a1)}.diagram .o{color:var(--ok)}.diagram .w{color:var(--w)}.diagram .d{color:var(--tf)}.diagram .t{color:var(--tan)}.diagram .em{color:#f0f0f5}
-.primitive{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:13px 15px;margin:14px 0;position:relative}
+.primitive{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:12px 14px;margin:12px 0;position:relative}
 .primitive::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--g);border-radius:10px 0 0 10px}
-.primitive h3{margin-top:0;margin-bottom:3px;font-size:1rem}.primitive .sig{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.8rem;padding:3px 8px;background:rgba(16,185,129,.08);border-radius:4px;display:inline-block;margin:3px 0 6px}
-.primitive .meta{display:flex;gap:5px;margin:5px 0 0;flex-wrap:wrap}
-.class-block{background:var(--panel);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin:14px 0}
-.class-block .head{display:flex;justify-content:space-between;align-items:center;padding:7px 13px;background:var(--pe);border-bottom:1px solid var(--b)}
-.class-block .head .name{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--t);font-size:.82rem}
-.class-block .head .meta{font-size:.68rem;color:var(--tf);font-family:'JetBrains Mono',monospace}
+.primitive h3{margin-top:0;margin-bottom:3px;font-size:.98rem}.primitive .sig{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.78rem;padding:3px 7px;background:rgba(16,185,129,.08);border-radius:4px;display:inline-block;margin:2px 0 6px}
+.primitive .meta{display:flex;gap:4px;margin:4px 0 0;flex-wrap:wrap}
+.class-block{background:var(--panel);border:1px solid var(--b);border-radius:10px;overflow:hidden;margin:12px 0}
+.class-block .head{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:var(--pe);border-bottom:1px solid var(--b)}
+.class-block .head .name{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--t);font-size:.8rem}
+.class-block .head .meta{font-size:.66rem;color:var(--tf);font-family:'JetBrains Mono',monospace}
 .class-block pre{border:none;border-radius:0;margin:0}
-.roadmap{display:grid;grid-template-columns:1fr;gap:6px;margin:14px 0}
-.roadmap-row{display:flex;align-items:center;gap:12px;padding:10px 13px;background:var(--panel);border:1px solid var(--b);border-radius:8px}
-.roadmap-row .status{width:23px;height:23px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.78rem;flex-shrink:0}
+.roadmap{display:grid;grid-template-columns:1fr;gap:5px;margin:12px 0}
+.roadmap-row{display:flex;align-items:center;gap:11px;padding:9px 12px;background:var(--panel);border:1px solid var(--b);border-radius:7px}
+.roadmap-row .status{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.76rem;flex-shrink:0}
 .roadmap-row .status.done{background:rgba(126,198,153,.15);color:var(--ok);border:1px solid rgba(126,198,153,.4)}
 .roadmap-row .status.next{background:rgba(59,130,246,.12);color:var(--a2);border:1px solid rgba(59,130,246,.4)}
 .roadmap-row .label{flex:1}.roadmap-row .label .name{font-weight:600;color:var(--t)}
-.roadmap-row .label .desc{font-size:.77rem;color:var(--td);margin-top:1px}
-.roadmap-row .when{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--tf)}
-.next{display:flex;gap:10px;margin:24px 0;flex-wrap:wrap}
-.next a{padding:11px 13px;background:var(--panel);border:1px solid var(--b);border-radius:8px;color:var(--t);text-decoration:none;flex:1;min-width:200px;transition:all .2s}
+.roadmap-row .label .desc{font-size:.75rem;color:var(--td);margin-top:1px}
+.roadmap-row .when{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--tf)}
+.next{display:flex;gap:9px;margin:22px 0;flex-wrap:wrap}
+.next a{padding:10px 12px;background:var(--panel);border:1px solid var(--b);border-radius:7px;color:var(--t);text-decoration:none;flex:1;min-width:195px;transition:all .2s}
 .next a:hover{border-color:var(--a1);transform:translateY(-2px)}
-.next a .l{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf)}
-.next a .t{display:block;font-size:.92rem;font-weight:600;color:var(--t);margin:3px 0}
-.next a .d{font-size:.78rem;color:var(--td)}
-footer{padding:28px 22px;text-align:center;color:var(--tf);border-top:1px solid var(--b);margin-top:46px;font-size:.8rem}
+.next a .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf)}
+.next a .t{display:block;font-size:.9rem;font-weight:600;color:var(--t);margin:2px 0}
+.next a .d{font-size:.76rem;color:var(--td)}
+footer{padding:24px 20px;text-align:center;color:var(--tf);border-top:1px solid var(--b);margin-top:40px;font-size:.78rem}
 footer a{color:var(--td)}footer a:hover{color:var(--a1)}
-.kbd{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 5px;background:var(--pe);border:1px solid var(--bs);border-radius:4px;color:var(--t)}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:.64rem;padding:1px 4px;background:var(--pe);border:1px solid var(--bs);border-radius:3px;color:var(--t)}
 @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}.pulse{animation:pulse 2.4s ease-in-out infinite}
 @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}.anim-grad{background-size:200% 200%;animation:gradShift 8s ease infinite}
-@keyframes flash{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}100%{box-shadow:0 0 0 12px rgba(16,185,129,0)}}.flash{animation:flash .85s ease-out}
-@keyframes flash-blue{0%{box-shadow:0 0 0 0 rgba(59,130,246,.7)}100%{box-shadow:0 0 0 12px rgba(59,130,246,0)}}.flash-blue{animation:flash-blue .85s ease-out}
-
-/* === DEMO ================================================== */
-.demo-wrap{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:16px;margin:18px 0;position:relative}
-.demo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-.demo-head h3{margin:0;font-size:1rem;display:flex;align-items:center;gap:8px}
-.demo-head h3 .dot{width:9px;height:9px;background:var(--g);border-radius:50%;display:inline-block}
-.demo-controls{display:flex;gap:6px;flex-wrap:wrap}
-.demo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0 12px;position:relative}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}100%{box-shadow:0 0 0 10px rgba(16,185,129,0)}}.flash{animation:flash .8s ease-out}
+@keyframes flash-blue{0%{box-shadow:0 0 0 0 rgba(59,130,246,.7)}100%{box-shadow:0 0 0 10px rgba(59,130,246,0)}}.flash-blue{animation:flash-blue .8s ease-out}
+.demo-wrap{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px;margin:16px 0;position:relative}
+.demo-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:7px}
+.demo-head h3{margin:0;font-size:.98rem;display:flex;align-items:center;gap:7px}
+.demo-head h3 .dot{width:8px;height:8px;background:var(--g);border-radius:50%;display:inline-block}
+.demo-controls{display:flex;gap:5px;flex-wrap:wrap}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin:9px 0 11px;position:relative}
 @media(max-width:820px){.demo-grid{grid-template-columns:1fr}}
-.tier{background:var(--bg);border:1px solid var(--b);border-radius:9px;padding:10px 11px;position:relative;min-height:210px}
+.tier{background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:9px 10px;position:relative;min-height:200px}
 .tier.esp32{border-top:2px solid #f0b85a}.tier.jetson{border-top:2px solid #5fa8d3}.tier.codespace{border-top:2px solid var(--a1)}
-.tier-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--b)}
-.tier-head .icn{font-size:1rem}.tier-head .name{font-weight:600;font-size:.88rem}
-.tier-head .role{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--tf);margin-left:auto}
-.tier-cells{display:flex;flex-direction:column;gap:4px}
-.cell{display:flex;align-items:center;gap:5px;padding:5px 8px;background:var(--panel);border:1px solid var(--b);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.74rem;position:relative;transition:all .2s}
+.tier-head{display:flex;align-items:center;gap:5px;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--b)}
+.tier-head .icn{font-size:.95rem}.tier-head .name{font-weight:600;font-size:.86rem}
+.tier-head .role{font-family:'JetBrains Mono',monospace;font-size:.61rem;color:var(--tf);margin-left:auto}
+.tier-cells{display:flex;flex-direction:column;gap:3px}
+.cell{display:flex;align-items:center;gap:5px;padding:4px 7px;background:var(--panel);border:1px solid var(--b);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.72rem;position:relative;transition:all .2s}
 .cell .id{color:var(--t);font-weight:600;flex:0 0 auto}
-.cell .val{color:var(--td);font-size:.7rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cell .kind{color:var(--tf);font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;flex:0 0 auto;padding:1px 4px;border:1px solid var(--b);border-radius:3px}
-.cell.sensor .kind{color:var(--a2);border-color:rgba(59,130,246,.3)}
-.cell.actuator .kind{color:var(--w);border-color:rgba(230,200,122,.3)}
-.cell.algo .kind{color:var(--a1);border-color:rgba(16,185,129,.3)}
-.cell.mirror .kind{color:var(--tan);border-color:rgba(198,168,126,.3)}
-.cell.formula .kind{color:#c79ee0;border-color:rgba(199,158,224,.3)}
-.cell.listener .kind{color:var(--ok);border-color:rgba(126,198,153,.3)}
+.cell .val{color:var(--td);font-size:.68rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell .kind{color:var(--tf);font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;flex:0 0 auto;padding:1px 4px;border:1px solid var(--b);border-radius:3px}
+.cell.sensor .kind{color:var(--a2);border-color:rgba(59,130,246,.3)}.cell.actuator .kind{color:var(--w);border-color:rgba(230,200,122,.3)}
+.cell.algo .kind{color:var(--a1);border-color:rgba(16,185,129,.3)}.cell.mirror .kind{color:var(--tan);border-color:rgba(198,168,126,.3)}
+.cell.formula .kind{color:#c79ee0;border-color:rgba(199,158,224,.3)}.cell.listener .kind{color:var(--ok);border-color:rgba(126,198,153,.3)}
 .cell.io .kind{color:var(--a2);border-color:rgba(59,130,246,.3)}
-.cell.lit{border-color:var(--a1);background:rgba(16,185,129,.1)}
-.cell.lit-blue{border-color:var(--a2);background:rgba(59,130,246,.1)}
-.cell-btn{padding:2px 6px;font-size:.64rem;background:var(--pe);border:1px solid var(--b);border-radius:3px;color:var(--t);font-family:'JetBrains Mono',monospace;cursor:pointer;flex:0 0 auto;transition:all .15s}
+.cell.lit{border-color:var(--a1);background:rgba(16,185,129,.1)}.cell.lit-blue{border-color:var(--a2);background:rgba(59,130,246,.1)}
+.cell-btn{padding:2px 5px;font-size:.62rem;background:var(--pe);border:1px solid var(--b);border-radius:3px;color:var(--t);font-family:'JetBrains Mono',monospace;cursor:pointer;flex:0 0 auto;transition:all .15s}
 .cell-btn:hover{border-color:var(--a1);background:rgba(16,185,129,.1)}
 .cell-btn.primary{background:rgba(16,185,129,.15);border-color:var(--a1);color:var(--a1)}
 .cell-btn.primary:hover{background:rgba(16,185,129,.25)}
@@ -122,62 +115,62 @@ footer a{color:var(--td)}footer a:hover{color:var(--a1)}
 .edge-svg path{fill:none;stroke:var(--b);stroke-width:1.5;stroke-dasharray:4 3;transition:stroke .2s,stroke-width .2s}
 .edge-svg path.active{stroke:var(--a1);stroke-width:2.5;stroke-dasharray:none}
 .edge-svg path.active-down{stroke:var(--a2);stroke-width:2.5;stroke-dasharray:none}
-.packet{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none;z-index:6;transition:all .55s cubic-bezier(.4,0,.2,1)}
-.packet.up{background:var(--a1);box-shadow:0 0 10px var(--a1)}.packet.down{background:var(--a2);box-shadow:0 0 10px var(--a2)}
-.demo-trace{margin-top:12px;background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:9px 11px;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.5;color:var(--td);max-height:180px;overflow-y:auto;position:relative}
-.demo-trace .trace-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;padding-bottom:5px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg)}
-.demo-trace .trace-head .ttl{color:var(--t);font-weight:600;font-size:.76rem}
-.demo-trace .trace-head .ctr{color:var(--tf);font-size:.66rem}
-.demo-trace .trace-line{padding:1px 0;display:flex;gap:5px;align-items:baseline}
-.demo-trace .ts{color:var(--tf);flex:0 0 56px;font-size:.66rem}
-.demo-trace .arrow{color:var(--a1);flex:0 0 10px}.demo-trace .arrow.down{color:var(--a2)}
-.demo-trace .uri{color:var(--t);flex:0 0 auto}.demo-trace .nv{color:var(--a1);font-size:.68rem;margin-left:5px}
+.packet{position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:6;transition:all .5s cubic-bezier(.4,0,.2,1)}
+.packet.up{background:var(--a1);box-shadow:0 0 8px var(--a1)}.packet.down{background:var(--a2);box-shadow:0 0 8px var(--a2)}
+.demo-trace{margin-top:10px;background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.5;color:var(--td);max-height:160px;overflow-y:auto;position:relative}
+.demo-trace .trace-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg)}
+.demo-trace .trace-head .ttl{color:var(--t);font-weight:600;font-size:.74rem}
+.demo-trace .trace-head .ctr{color:var(--tf);font-size:.64rem}
+.demo-trace .trace-line{padding:1px 0;display:flex;gap:4px;align-items:baseline}
+.demo-trace .ts{color:var(--tf);flex:0 0 54px;font-size:.64rem}
+.demo-trace .arrow{color:var(--a1);flex:0 0 8px}.demo-trace .arrow.down{color:var(--a2)}
+.demo-trace .uri{color:var(--t);flex:0 0 auto}.demo-trace .nv{color:var(--a1);font-size:.66rem;margin-left:4px}
 .demo-trace .empty{color:var(--tf);font-style:italic}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--tf);margin-top:7px;padding-top:7px;border-top:1px solid var(--b)}
+.legend{display:flex;gap:11px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--tf);margin-top:6px;padding-top:6px;border-top:1px solid var(--b)}
 .legend .item{display:flex;align-items:center;gap:4px}.legend .swatch{width:10px;height:3px;border-radius:1px}
 .legend .swatch.up{background:var(--a1)}.legend .swatch.down{background:var(--a2)}
-.flow-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.flow-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
 @media(max-width:720px){.flow-summary{grid-template-columns:1fr}}
-.flow-card{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:10px 11px}
-.flow-card h4{font-size:.8rem;margin-bottom:5px;display:flex;align-items:center;gap:5px}
-.flow-card .lbl{font-size:.63rem;color:var(--tf);text-transform:uppercase;letter-spacing:.06em;margin-top:5px;margin-bottom:2px}
-.flow-card .ctnt{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--td);line-height:1.5}
+.flow-card{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:9px 10px}
+.flow-card h4{font-size:.78rem;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.flow-card .lbl{font-size:.61rem;color:var(--tf);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;margin-bottom:1px}
+.flow-card .ctnt{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--td);line-height:1.5}
 .flow-card .ctnt .em{color:var(--t);font-weight:600}
-.flow-card .ctnt .arr{color:var(--a1);margin:0 3px}.flow-card .ctnt .arr-d{color:var(--a2);margin:0 3px}
+.flow-card .ctnt .arr{color:var(--a1);margin:0 2px}.flow-card .ctnt .arr-d{color:var(--a2);margin:0 2px}
 .flow-card .ctnt .uri{color:var(--a1)}.flow-card .ctnt .uri-d{color:var(--a2)}
-.cell-row{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
-.uri-table{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:14px 0}
+.cell-row{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.uri-table{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:12px 0}
 @media(max-width:720px){.uri-table{grid-template-columns:1fr}}
-.uri-row{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:9px 11px}
-.uri-row .u{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.82rem;word-break:break-all}
-.uri-row .d{font-size:.76rem;color:var(--td);margin-top:2px}
-.stack-diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:14px;margin:14px 0}
-.stack-tier{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:10px 12px;margin:6px 0}
+.uri-row{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:8px 10px}
+.uri-row .u{font-family:'JetBrains Mono',monospace;color:var(--a1);font-size:.8rem;word-break:break-all}
+.uri-row .d{font-size:.74rem;color:var(--td);margin-top:1px}
+.stack-diagram{background:var(--panel);border:1px solid var(--b);border-radius:10px;padding:12px;margin:12px 0}
+.stack-tier{background:var(--bg);border:1px solid var(--b);border-radius:7px;padding:9px 11px;margin:5px 0}
 .stack-tier.cloud{border-left:3px solid var(--a1)}.stack-tier.mid{border-left:3px solid var(--a2)}.stack-tier.edge{border-left:3px solid var(--w)}
-.stack-tier .tier-label{font-size:.63rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:3px}
-.stack-tier .tier-name{font-weight:600;font-size:.92rem;margin-bottom:5px}
-.stack-tier .cells{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:'JetBrains Mono',monospace;font-size:.76rem}
+.stack-tier .tier-label{font-size:.61rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tf);margin-bottom:2px}
+.stack-tier .tier-name{font-weight:600;font-size:.9rem;margin-bottom:4px}
+.stack-tier .cells{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-family:'JetBrains Mono',monospace;font-size:.74rem}
 @media(max-width:620px){.stack-tier .cells{grid-template-columns:1fr}}
 .stack-tier .cells .c{padding:1px 0}.stack-tier .cells .c .n{color:var(--t);font-weight:600}
-.stack-tier .cells .c .d{color:var(--td);font-size:.7rem;margin-left:3px}
+.stack-tier .cells .c .d{color:var(--td);font-size:.68rem;margin-left:2px}
 .stack-tier .cells .c .d::before{content:'← '}
 .stack-tier .cells .c .d.up::before{content:'↑ '}.stack-tier .cells .c .d.dn::before{content:'↓ '}
 .stack-tier .cells .c .d.up{color:var(--a1)}.stack-tier .cells .c .d.dn{color:var(--a2)}
-.stack-conn{display:flex;justify-content:center;align-items:center;flex-direction:column;height:30px;font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--tf)}
-.stack-conn .line{width:1px;height:14px;background:var(--b)}
-.stack-conn .lbl{color:var(--td);font-size:.64rem;background:var(--panel);padding:1px 5px;border-radius:3px;border:1px solid var(--b)}
-.wizard{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.stack-conn{display:flex;justify-content:center;align-items:center;flex-direction:column;height:26px;font-family:'JetBrains Mono',monospace;font-size:.64rem;color:var(--tf)}
+.stack-conn .line{width:1px;height:12px;background:var(--b)}
+.stack-conn .lbl{color:var(--td);font-size:.62rem;background:var(--panel);padding:1px 5px;border-radius:3px;border:1px solid var(--b)}
+.wizard{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}
 @media(max-width:820px){.wizard{grid-template-columns:1fr}}
-.wizard-step{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:11px 13px;position:relative}
-.wizard-step .num{position:absolute;top:9px;right:11px;width:22px;height:22px;background:var(--g);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700}
-.wizard-step h4{font-size:.88rem;margin-bottom:3px}.wizard-step p{font-size:.76rem;margin:0 0 5px}
-.wizard-step .code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--a1);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:5px 8px;margin-top:3px;overflow-x:auto;white-space:pre}
-.security-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.wizard-step{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:10px 12px;position:relative}
+.wizard-step .num{position:absolute;top:8px;right:10px;width:21px;height:21px;background:var(--g);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700}
+.wizard-step h4{font-size:.86rem;margin-bottom:3px}.wizard-step p{font-size:.74rem;margin:0 0 4px}
+.wizard-step .code{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--a1);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:4px 7px;margin-top:3px;overflow-x:auto;white-space:pre}
+.security-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
 @media(max-width:720px){.security-grid{grid-template-columns:1fr}}
-.sec-card{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:10px 12px}
-.sec-card .ttl{display:flex;align-items:center;gap:6px;margin-bottom:4px}.sec-card .ttl .icn{font-size:1rem}
-.sec-card .ttl h4{font-size:.84rem;margin:0}.sec-card p{font-size:.76rem;margin:0 0 3px}
-.sec-card .code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--a2);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:5px 7px;margin-top:3px;overflow-x:auto;white-space:pre}
+.sec-card{background:var(--panel);border:1px solid var(--b);border-radius:7px;padding:9px 11px}
+.sec-card .ttl{display:flex;align-items:center;gap:5px;margin-bottom:3px}.sec-card .ttl .icn{font-size:.95rem}
+.sec-card .ttl h4{font-size:.82rem;margin:0}.sec-card p{font-size:.74rem;margin:0 0 3px}
+.sec-card .code{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--a2);background:var(--bg);border:1px solid var(--b);border-radius:4px;padding:4px 6px;margin-top:3px;overflow-x:auto;white-space:pre}
 .sec-card.warn{border-left:3px solid var(--err)}.sec-card.warn .ttl h4{color:var(--err)}
 </style>
 </head>
@@ -222,7 +215,7 @@ footer a{color:var(--td)}footer a:hover{color:var(--a1)}
 <!-- 01 — INSIGHT ================================================== -->
 <section id="insight">
   <h2><span class="num">01</span>The insight: double-entry is already reactive</h2>
-  <p>In a Quilt sheet, every computed cell has a list of parents — the cells it reads from. When a parent changes, the engine recomputes the child. The child <em>pulls</em> from its parents. But from the parent's perspective, the same event is a <em>push</em> — it just published a new value to whoever depends on it.</p>
+  <p>In a Quilt sheet, every computed cell has a list of parents — the cells it reads from. When a parent changes, the engine recomputes the child. The child <em>pulls</em> from its parents. From the parent's perspective, the same event is a <em>push</em> — it just published a new value to whoever depends on it.</p>
   <p>The engine doesn't care which direction the arrow points. The propagation is symmetric. <b>This is double-entry bookkeeping, and it is already the reactive model.</b> A change in cell A flows to cell B. A and B don't agree on who initiated; they only agree that a propagation happened.</p>
   <div class="equation">
     <span class="em">cell</span> A  <span class="a">─── push ───▶</span>  <span class="em">cell</span> B<br>
@@ -235,7 +228,7 @@ footer a{color:var(--td)}footer a:hover{color:var(--a1)}
   </div>
   <p>Everything else on this page is the consequence of that one observation. The URI scheme, the two new SDK functions, the <code>FederatedQuilt</code> class, the Codespaces-native orchestrator — they are all the <em>same reactive engine</em> with a wider reach.</p>
   <ul>
-    <li><b>Local cell</b> → in-process subscriber object, push via in-memory event</li>
+    <li><b>Local cell</b> → in-process subscriber, push via in-memory event</li>
     <li><b>LAN cell</b> → WebSocket subscriber, push via JSON-over-LAN</li>
     <li><b>Codespace cell</b> → HTTPS subscriber, push via JSON-over-MCP</li>
     <li><b>Fleet cell</b> → wildcard subscriber, push to every matching instance</li>
@@ -254,11 +247,11 @@ footer a{color:var(--td)}footer a:hover{color:var(--a1)}
 
   <h3>Five shapes you will use</h3>
   <div class="uri-table">
-    <div class="uri-row"><div class="u">quilt://local/boat-autopilot#rudder.angle</div><div class="d">A local cell on this device. Resolves to an in-process subscriber. Zero network round-trip.</div></div>
+    <div class="uri-row"><div class="u">quilt://local/boat-autopilot#rudder.angle</div><div class="d">A local cell on this device. In-process subscriber. Zero network round-trip.</div></div>
     <div class="uri-row"><div class="u">quilt://jetson-lab/perception#vision.scene</div><div class="d">A remote cell on a Jetson over LAN. WebSocket subscriber; same JSON push events as local, just slower.</div></div>
     <div class="uri-row"><div class="u">quilt://codespace-7c3/prod#anomaly.detector</div><div class="d">A remote cell hosted in a GitHub Codespace. HTTPS subscriber; push events arrive over MCP. The Codespace IS the orchestrator.</div></div>
     <div class="uri-row"><div class="u">quilt://*#anywhere</div><div class="d">A wildcard. Used in routing tables. The publisher doesn't care which instance — every quilt with a matching cell receives the push.</div></div>
-    <div class="uri-row"><div class="u">quilt://esp32-fleet/+/rudder.angle</div><div class="d">A fleet-wide subscription. Like Prometheus' <code>up{job="node"}</code> — every instance in the <code>esp32-fleet</code> matching the cell <code>rudder.angle</code> receives the push.</div></div>
+    <div class="uri-row"><div class="u">quilt://esp32-fleet/+/rudder.angle</div><div class="d">A fleet-wide subscription. Like Prometheus' <code>up{job="node"}</code> — every instance matching the cell receives the push.</div></div>
   </div>
 
   <h3>Resolution algorithm (10 lines)</h3>
@@ -317,7 +310,6 @@ console.log(rudder.value, anomalies.value);  <span class="d">// current values</
   <span class="a">'quilt://codespace-7c3/prod#tune.pid_kp'</span>,
   (kp, trace) =&gt; {
     console.log(<span class="a">`kp → </span>${kp.value}<span class="a"> by </span>${trace.actor}<span class="a"> at </span>${trace.t}</span>`);
-    <span class="d">// → "kp → 0.42 by user:alice at 2026-01-15T14:22:01Z"</span>
     algoPid.derived_from = [<span class="a">'kp'</span>];  <span class="d">// rewire locally</span>
   }
 );
@@ -335,23 +327,23 @@ off();  <span class="d">// close the subscription, release the socket</span></pr
   <div class="class-block">
     <div class="head">
       <span class="name">federated-quilt.ts</span>
-      <span class="meta">@quilt/federation · ~110 LOC</span>
+      <span class="meta">@quilt/federation · ~90 LOC</span>
     </div>
 <pre><span class="d">// FederatedQuilt — a quilt of quilts. Each "node" is a real Engine (local)</span>
 <span class="d">// or a remote URI handle (remote). One trace log for the whole fleet.</span>
-<span class="a2">import</span> { Engine } <span class="a2">from</span> <span class="a">'@quilt/core'</span>;
-<span class="a2">import</span> { resolveCell } <span class="a2">from</span> <span class="a">'@quilt/federation'</span>;
-<span class="a2">import</span> { transport } <span class="a2">from</span> <span class="a">'@quilt/transport'</span>;
+<span class="a2">import</span> { Engine }        <span class="a2">from</span> <span class="a">'@quilt/core'</span>;
+<span class="a2">import</span> { resolveCell }   <span class="a2">from</span> <span class="a">'@quilt/federation'</span>;
+<span class="a2">import</span> { transport }     <span class="a2">from</span> <span class="a">'@quilt/transport'</span>;
 
 <span class="a2">export class</span> <span class="a">FederatedQuilt</span> {
-  <span class="a2">constructor</span>(<span class="a2">public</span> name: <span class="a">string</span>) {
+  <span class="a2">constructor</span>(name) {
     <span class="a2">this</span>.nodes = <span class="a2">new</span> Map();  <span class="d">// instance-id → Engine | Remote</span>
     <span class="a2">this</span>.edges = [];          <span class="d">// { from, to, kind }</span>
     <span class="a2">this</span>.trace = [];          <span class="d">// every cross-tier change</span>
   }
-  <span class="a2">addLocal</span>(id, engine) {
+  <span class="a">addLocal</span>(id, engine) {
     <span class="a2">this</span>.nodes.set(id, engine);
-    engine.<span class="a">on</span>(<span class="a">'change'</span>, (cell, prev, next, actor) =&gt;
+    engine.<span class="a">on</span>(<span class="a">'change'</span>, (cell, _p, next, actor) =&gt;
       <span class="a2">this</span>.<span class="a">_propagate</span>(id, cell, next, actor));
     <span class="a2">return this</span>;
   }
@@ -362,13 +354,12 @@ off();  <span class="d">// close the subscription, release the socket</span></pr
       <span class="a2">this</span>.<span class="a">_propagate</span>(id, cell, value, actor));
     <span class="a2">return this</span>;
   }
-  <span class="a">wire</span>(from, to, kind = <span class="a">'mirror'</span>) {
-    <span class="a2">this</span>.edges.push({ from, to, kind });
-  }
+  <span class="a">wire</span>(from, to, kind = <span class="a">'mirror'</span>) { <span class="a2">this</span>.edges.push({ from, to, kind }); }
   <span class="a2">async</span> <span class="a">resolve</span>(uri, ctx = {}) { <span class="a2">return</span> resolveCell(uri, ctx); }
+
   <span class="a2">private async</span> <span class="a">_propagate</span>(fromId, cell, value, actor) {
     <span class="a2">this</span>.trace.push({ t: <span class="a2">new</span> Date().toISOString(), from: fromId, cell, value, actor });
-    <span class="a2">for</span> (<span class="a2">const</span> e <span class="a2">of</span> <span class="a2">this</span>.edges.filter(x =&gt; x.from === fromId &amp;&amp; x.to.endsWith(cell))) {
+    <span class="a2">for</span> (<span class="a2">const</span> e <span class="a2">of</span> <span class="a2">this</span>.edges.filter(x =&gt; x.from.startsWith(fromId) &amp;&amp; x.from.endsWith(cell))) {
       <span class="a2">const</span> [tier, path] = e.to.split(<span class="a">/#/</span>);
       <span class="a2">await</span> <span class="a2">this</span>.nodes.get(tier.split(<span class="a">/\//</span>)[<span class="a2">0</span>]).<span class="a">_setCell</span>(path, value, actor);
     }
@@ -382,7 +373,7 @@ fleet.<span class="a">wire</span>(<span class="a">'local#mirror.rudder'</span>, 
 fleet.<span class="a">wire</span>(<span class="a">'jetson-lab#perception.fused'</span>, <span class="a">'codespace-7c3/prod#anomaly.input'</span>);</pre>
   </div>
 
-  <p>That is the entire federation surface. The class is ~110 lines; the rest is transport adapters and routing. <b>Notice what is not there</b>: no message broker, no service mesh, no API gateway, no protocol negotiation. The cells push and pull; the engine routes; the trace is one log.</p>
+  <p>That is the entire federation surface. The class is ~90 lines; the rest is transport adapters and routing. <b>Notice what is not there</b>: no message broker, no service mesh, no API gateway, no protocol negotiation. The cells push and pull; the engine routes; the trace is one log.</p>
 
   <div class="callout green">
     <h4>The same shape, three different transports</h4>
@@ -412,7 +403,7 @@ fleet.<span class="a">wire</span>(<span class="a">'jetson-lab#perception.fused'<
 <span class="d">                          │ </span><span class="o">quilt://jetson-lab/...</span>
 <span class="d">                          │ </span><span class="d">(LAN / mDNS / serial)</span>
 <span class="d">┌──────────────────────────┴───────────────────────────────┐</span>
-<span class="d">│</span> <span class="w">ESP32</span> <span class="d">(tight loop, 50 Hz, sensors + motors)              </span><span class="d">│</span>
+<span class="d">│</span> <span class="w">ESP32</span> <span class="d">(tight loop, 50 Hz, sensors + motors)              </span> <span class="d">│</span>
 <span class="d">│</span>  <span class="a">•</span> <span class="em">sensor.rudder</span>       <span class="t">← potentiometer                  </span> <span class="d">│</span>
 <span class="d">│</span>  <span class="a">•</span> <span class="em">sensor.compass</span>      <span class="t">← IMU                            </span> <span class="d">│</span>
 <span class="d">│</span>  <span class="a">•</span> <span class="em">actuator.motor_pwm</span>  <span class="a">→ motor controller                </span> <span class="d">│</span>
@@ -474,10 +465,10 @@ fleet.<span class="a">wire</span>(<span class="a">'jetson-lab#perception.fused'<
     <thead><tr><th style="width:22%">Edge</th><th style="width:30%">From → To</th><th>What happens</th></tr></thead>
     <tbody>
       <tr><td class="s">ESP32 → Jetson</td><td class="q">rudder.angle → mirror.telem</td><td class="n">Every cycle (20 ms), the ESP32 publishes its current rudder angle. The Jetson subscribes and feeds the perception engine. No polling — push only.</td></tr>
-      <tr><td class="s">ESP32 ← Jetson</td><td class="q">algo.pid.intent → autopilot.intent</td><td class="n">The Jetson publishes a desired heading correction based on perception. The ESP32 subscribes to its local mirror of that cell and adjusts motor PWM.</td></tr>
+      <tr><td class="s">ESP32 ← Jetson</td><td class="q">algo.pid.intent ← autopilot.intent</td><td class="n">The Jetson publishes a desired heading correction based on perception. The ESP32 subscribes to its local mirror and adjusts motor PWM.</td></tr>
       <tr><td class="s">Jetson → Codespace</td><td class="q">perception.fused → anomaly.input</td><td class="n">The Codespace runs an anomaly detector (a model cell) over the full telemetry stream. It doesn't poll; the stream arrives via the federation.</td></tr>
-      <tr><td class="s">Codespace → ESP32</td><td class="q">tune.pid_kp → algo.pid</td><td class="n">A human (or a nightly job) updates the PID gain in the Codespace. The new value is pushed to every boat in the fleet via the wildcard subscription <code>quilt://esp32-fleet/+/algo.pid</code>.</td></tr>
-      <tr><td class="s">Codespace → human</td><td class="q">anomaly.detector → alerts.notify</td><td class="n">When the detector fires, it pushes to <code>alerts.notify</code>, which in turn calls Slack, PagerDuty, or a Twilio cell. Audit is one <code>engine.serialize()</code> away.</td></tr>
+      <tr><td class="s">Codespace → ESP32</td><td class="q">tune.pid_kp → algo.pid</td><td class="n">A human (or a nightly job) updates the PID gain in the Codespace. The new value is pushed to every boat via the wildcard <code>quilt://esp32-fleet/+/algo.pid</code>.</td></tr>
+      <tr><td class="s">Codespace → human</td><td class="q">anomaly.detector → alerts.notify</td><td class="n">When the detector fires, it pushes to <code>alerts.notify</code>, which in turn calls Slack, PagerDuty, or Twilio. Audit is one <code>engine.serialize()</code> away.</td></tr>
     </tbody>
   </table>
 
@@ -559,7 +550,7 @@ quilt.subscribe("tune.pid_kp", kp =&gt; algoPid.kp = kp);</div>
     <div class="wizard-step">
       <div class="num">6</div>
       <h4>The Codespace IS the orchestrator</h4>
-      <p>No more "spin up a server" — the orchestrator is just another Quilt engine, with cells for <code>anomaly.detector</code>, <code>alerts.notify</code>, <code>audit.run_trace</code>. The same reactive graph, the same run trace, the same MCP surface. From the boat's perspective, the cloud is one cell-resolution away.</p>
+      <p>No more "spin up a server" — the orchestrator is just another Quilt engine, with cells for <code>anomaly.detector</code>, <code>alerts.notify</code>, <code>audit.run_trace</code>. The same reactive graph, the same run trace, the same MCP surface.</p>
       <div class="code"># the cloud tier's manifest
 sheets:
   - prod/   # anomaly.detector, alerts, audit
@@ -593,29 +584,17 @@ sheets:
     <div class="demo-grid" id="demo-grid">
 
       <div class="tier esp32" id="t-esp32">
-        <div class="tier-head">
-          <span class="icn">🪛</span>
-          <span class="name">ESP32</span>
-          <span class="role">esp32-fleet/7c3-a1b2</span>
-        </div>
+        <div class="tier-head"><span class="icn">🪛</span><span class="name">ESP32</span><span class="role">esp32-fleet/7c3-a1b2</span></div>
         <div class="tier-cells" id="cells-esp32"></div>
       </div>
 
       <div class="tier jetson" id="t-jetson">
-        <div class="tier-head">
-          <span class="icn">🛰</span>
-          <span class="name">Jetson</span>
-          <span class="role">jetson-lab/perception</span>
-        </div>
+        <div class="tier-head"><span class="icn">🛰</span><span class="name">Jetson</span><span class="role">jetson-lab/perception</span></div>
         <div class="tier-cells" id="cells-jetson"></div>
       </div>
 
       <div class="tier codespace" id="t-codespace">
-        <div class="tier-head">
-          <span class="icn">☁</span>
-          <span class="name">Codespace</span>
-          <span class="role">codespace-7c3/prod</span>
-        </div>
+        <div class="tier-head"><span class="icn">☁</span><span class="name">Codespace</span><span class="role">codespace-7c3/prod</span></div>
         <div class="tier-cells" id="cells-codespace"></div>
       </div>
 
@@ -638,7 +617,7 @@ sheets:
       <div class="item"><span class="swatch down"></span> push downstream (cloud → device)</div>
     </div>
 
-    <h3 style="margin-top:16px">Two scripted flows — click to run</h3>
+    <h3 style="margin-top:14px">Two scripted flows — click to run</h3>
     <div class="flow-summary">
       <div class="flow-card">
         <h4>① Upstream <span class="badge t">device → cloud</span></h4>
@@ -670,7 +649,7 @@ sheets:
     </div>
   </div>
 
-  <p>The buttons above trigger real propagation through the simulated federation. Every cell that receives a value pulses green (upstream) or blue (downstream). Every change appends to the run trace on the right. The SVG edges between tiers are dashed at rest and light up as the value flows through them.</p>
+  <p>The buttons above trigger real propagation through the simulated federation. Every cell that receives a value pulses green (upstream) or blue (downstream). Every change appends to the run trace. The SVG edges between tiers are dashed at rest and light up as the value flows through them.</p>
 </section>
 
 <!-- 07 — OBSERVABILITY ========================================== -->
@@ -686,29 +665,22 @@ sheets:
   <span class="a2">"origin_tier"</span>:  <span class="a">"esp32-7c3-a1b2"</span>,
   <span class="a2">"origin_actor"</span>: <span class="a">"sensor:rudder-pot"</span>,
   <span class="a2">"hops"</span>: [
-    { <span class="a2">"tier"</span>: <span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>: <span class="a">"sensor.rudder"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">null</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">0</span> },
-    { <span class="a2">"tier"</span>: <span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>: <span class="a">"mirror.rudder"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">null</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">0</span>, <span class="a2">"kind"</span>: <span class="a">"mirror"</span> },
-    { <span class="a2">"tier"</span>: <span class="a">"jetson-lab"</span>,    <span class="a2">"cell"</span>: <span class="a">"mirror.telem"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">0.39</span>,  <span class="a2">"value"</span>: <span class="a2">0.42</span>, <span class="a2">"ms"</span>: <span class="a2">11</span>, <span class="a2">"transport"</span>: <span class="a">"websocket/lan"</span> },
-    { <span class="a2">"tier"</span>: <span class="a">"jetson-lab"</span>,    <span class="a2">"cell"</span>: <span class="a">"perception.fused"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">0.41</span>,  <span class="a2">"value"</span>: <span class="a2">0.44</span>, <span class="a2">"ms"</span>: <span class="a2">28</span>, <span class="a2">"kind"</span>: <span class="a">"formula"</span> },
-    { <span class="a2">"tier"</span>: <span class="a">"codespace-7c3"</span>, <span class="a2">"cell"</span>: <span class="a">"anomaly.input"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">0.39</span>,  <span class="a2">"value"</span>: <span class="a2">0.44</span>, <span class="a2">"ms"</span>: <span class="a2">187</span>, <span class="a2">"transport"</span>: <span class="a">"https/mcp"</span> },
-    { <span class="a2">"tier"</span>: <span class="a">"codespace-7c3"</span>, <span class="a2">"cell"</span>: <span class="a">"anomaly.detector"</span>,
-      <span class="a2">"prev"</span>: <span class="a2">false</span>, <span class="a2">"value"</span>: <span class="a2">true</span>,  <span class="a2">"ms"</span>: <span class="a2">203</span>, <span class="a2">"kind"</span>: <span class="a">"ai"</span> }
+    { <span class="a2">"tier"</span>:<span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>:<span class="a">"sensor.rudder"</span>,    <span class="a2">"value"</span>:<span class="a2">0.42</span>, <span class="a2">"ms"</span>:<span class="a2">0</span>   },
+    { <span class="a2">"tier"</span>:<span class="a">"esp32-7c3-a1b2"</span>, <span class="a2">"cell"</span>:<span class="a">"mirror.rudder"</span>,    <span class="a2">"value"</span>:<span class="a2">0.42</span>, <span class="a2">"ms"</span>:<span class="a2">0</span>,   <span class="a2">"kind"</span>:<span class="a">"mirror"</span> },
+    { <span class="a2">"tier"</span>:<span class="a">"jetson-lab"</span>,     <span class="a2">"cell"</span>:<span class="a">"mirror.telem"</span>,     <span class="a2">"value"</span>:<span class="a2">0.42</span>, <span class="a2">"ms"</span>:<span class="a2">11</span>,  <span class="a2">"transport"</span>:<span class="a">"websocket/lan"</span> },
+    { <span class="a2">"tier"</span>:<span class="a">"jetson-lab"</span>,     <span class="a2">"cell"</span>:<span class="a">"perception.fused"</span>, <span class="a2">"value"</span>:<span class="a2">0.44</span>, <span class="a2">"ms"</span>:<span class="a2">28</span>,  <span class="a2">"kind"</span>:<span class="a">"formula"</span> },
+    { <span class="a2">"tier"</span>:<span class="a">"codespace-7c3"</span>,  <span class="a2">"cell"</span>:<span class="a">"anomaly.input"</span>,    <span class="a2">"value"</span>:<span class="a2">0.44</span>, <span class="a2">"ms"</span>:<span class="a2">187</span>, <span class="a2">"transport"</span>:<span class="a">"https/mcp"</span> },
+    { <span class="a2">"tier"</span>:<span class="a">"codespace-7c3"</span>,  <span class="a2">"cell"</span>:<span class="a">"anomaly.detector"</span>, <span class="a2">"value"</span>:<span class="a2">true</span>, <span class="a2">"ms"</span>:<span class="a2">203</span>, <span class="a2">"kind"</span>:<span class="a">"ai"</span> }
   ],
-  <span class="a2">"totals"</span>:    { <span class="a2">"ms"</span>: <span class="a2">429</span>, <span class="a2">"cells_changed"</span>: <span class="a2">6</span>, <span class="a2">"tiers_touched"</span>: <span class="a2">3</span> },
-  <span class="a2">"prev_hash"</span>: <span class="a">"sha256:c8e2...3a"</span>,
-  <span class="a2">"hash"</span>:      <span class="a">"sha256:f1b4...7e"</span>
+  <span class="a2">"totals"</span>:{ <span class="a2">"ms"</span>:<span class="a2">429</span>,<span class="a2">"cells"</span>:<span class="a2">6</span>,<span class="a2">"tiers"</span>:<span class="a2">3</span> },
+  <span class="a2">"hash"</span>:<span class="a">"sha256:f1b4...7e"</span>
 }</pre>
 
   <h3>The ledger view</h3>
   <p>Each Quilt is its own "book" in the double-entry sense. The local trace is one ledger; the federated trace is a merge of ledgers with a common hash chain. To audit "what did the fleet do on Tuesday", you concatenate every per-quilt trace for that day and verify the chain.</p>
 
   <table class="at">
-    <thead><tr><th style="width:18%">Quilt</th><th style="width:22%">Role</th><th>What the ledger records</th></tr></thead>
+    <thead><tr><th style="width:18%">Quilt</th><th style="width:20%">Role</th><th>What the ledger records</th></tr></thead>
     <tbody>
       <tr><td class="q">esp32-7c3-a1b2</td><td class="n">edge</td><td class="n">Every sensor read, every motor write, every PID cycle. 50 Hz × N cells. Sampled and shipped to Jetson once per second.</td></tr>
       <tr><td class="q">jetson-lab</td><td class="n">mid</td><td class="n">Every perception inference, every fused output, every push to/from ESP32 and Codespace. 5 Hz per upstream feed.</td></tr>
@@ -870,82 +842,63 @@ $ quilt set actuator.motor_pwm 0.95
 
 <footer>
   <p>Quilt · Federation · quilts that link to other quilts</p>
-  <p style="margin-top:6px">
+  <p style="margin-top:5px">
     <a href="index.html">Home</a> · <a href="neural-cells.html">Neural Cells</a> · <a href="universe-model.html">Universe</a> ·
     <a href="agent-substrate.html">Substrate</a> · <a href="engines.html">Engines</a> ·
     <a href="https://github.com/SuperInstance/quilt" target="_blank" rel="noopener">GitHub</a>
   </p>
-  <p style="margin-top:6px;font-size:.74rem"><code class="kbd">quilt://</code> · <code class="kbd">resolveCell</code> · <code class="kbd">subscribeCell</code> · <code class="kbd">FederatedQuilt</code> · <code class="kbd">irreversible</code> · <code class="kbd">audit</code></p>
+  <p style="margin-top:5px;font-size:.72rem"><code class="kbd">quilt://</code> · <code class="kbd">resolveCell</code> · <code class="kbd">subscribeCell</code> · <code class="kbd">FederatedQuilt</code> · <code class="kbd">irreversible</code> · <code class="kbd">audit</code></p>
 </footer>
 
 <script>
-// ============================================================================
 // LIVE 3-TIER DEMO — simulated federation, real propagation
-// ============================================================================
 const TIERS = {
-  esp32: {
-    instance: 'esp32-7c3-a1b2',
-    cells: {
-      'sensor.rudder':      { kind:'sensor',   value:0.38 },
-      'sensor.compass':     { kind:'sensor',   value:0.12 },
-      'algo.pid.intent':    { kind:'formula',  value:0.41 },
-      'algo.pid':           { kind:'algo',     value:0.00, parents:['sensor.rudder','sensor.compass'] },
-      'actuator.motor_pwm': { kind:'actuator', value:0.00, parents:['algo.pid'] },
-      'led.display':        { kind:'formula',  value:'idle', parents:['actuator.motor_pwm'] },
-      'mirror.rudder':      { kind:'mirror',   value:0.38, parents:['sensor.rudder'] }
-    }
-  },
-  jetson: {
-    instance: 'jetson-lab',
-    cells: {
-      'vision.scene':        { kind:'sensor',  value:'frame-0' },
-      'mirror.telem':        { kind:'mirror',  value:0.38, parents:[] },
-      'perception.fused':    { kind:'formula', value:0.41, parents:['mirror.telem','vision.scene'] },
-      'autopilot.intent':    { kind:'formula', value:0.41, parents:['perception.fused'] }
-    }
-  },
-  codespace: {
-    instance: 'codespace-7c3',
-    cells: {
-      'anomaly.input':        { kind:'io',      value:0.38, parents:[] },
-      'tune.pid_kp':          { kind:'value',   value:0.65 },
-      'tune.threshold':       { kind:'value',   value:0.85 },
-      'anomaly.detector':     { kind:'formula', value:false, parents:['anomaly.input','tune.threshold'] },
-      'audit.run_trace':      { kind:'listener',value:[] },
-      'alerts.notify':        { kind:'listener',value:[], parents:['anomaly.detector'] }
-    }
-  }
+  esp32: { instance:'esp32-7c3-a1b2', cells:{
+    'sensor.rudder':      {kind:'sensor',  value:0.38},
+    'sensor.compass':     {kind:'sensor',  value:0.12},
+    'algo.pid.intent':    {kind:'formula', value:0.41},
+    'algo.pid':           {kind:'algo',    value:0.00, parents:['sensor.rudder','sensor.compass']},
+    'actuator.motor_pwm': {kind:'actuator',value:0.00, parents:['algo.pid']},
+    'led.display':        {kind:'formula', value:'idle', parents:['actuator.motor_pwm']},
+    'mirror.rudder':      {kind:'mirror',  value:0.38, parents:['sensor.rudder']}
+  }},
+  jetson: { instance:'jetson-lab', cells:{
+    'vision.scene':        {kind:'sensor',  value:'frame-0'},
+    'mirror.telem':        {kind:'mirror',  value:0.38, parents:[]},
+    'perception.fused':    {kind:'formula', value:0.41, parents:['mirror.telem','vision.scene']},
+    'autopilot.intent':    {kind:'formula', value:0.41, parents:['perception.fused']}
+  }},
+  codespace: { instance:'codespace-7c3', cells:{
+    'anomaly.input':        {kind:'io',      value:0.38, parents:[]},
+    'tune.pid_kp':          {kind:'value',   value:0.65},
+    'tune.threshold':       {kind:'value',   value:0.85},
+    'anomaly.detector':     {kind:'formula', value:false, parents:['anomaly.input','tune.threshold']},
+    'audit.run_trace':      {kind:'listener',value:[]},
+    'alerts.notify':        {kind:'listener',value:[], parents:['anomaly.detector']}
+  }}
 };
-
 const EDGES = [
-  { from:'esp32:mirror.rudder',     to:'jetson:mirror.telem',          dir:'up',   label:'mirror.rudder' },
-  { from:'jetson:perception.fused', to:'codespace:anomaly.input',      dir:'up',   label:'perception.fused' },
-  { from:'jetson:autopilot.intent', to:'esp32:algo.pid.intent',        dir:'down', label:'autopilot.intent' },
-  { from:'codespace:tune.pid_kp',   to:'esp32:algo.pid',               dir:'down', label:'tune.pid_kp' }
+  {from:'esp32:mirror.rudder',     to:'jetson:mirror.telem',       dir:'up'},
+  {from:'jetson:perception.fused', to:'codespace:anomaly.input',   dir:'up'},
+  {from:'jetson:autopilot.intent', to:'esp32:algo.pid.intent',     dir:'down'},
+  {from:'codespace:tune.pid_kp',   to:'esp32:algo.pid',            dir:'down'}
 ];
-
-const TRACE = [];
-const KL = { sensor:'sens', actuator:'act', algo:'algo', formula:'f(x)', mirror:'mir', listener:'lst', io:'io', value:'val' };
+const TRACE = [], KL = {sensor:'sens',actuator:'act',algo:'algo',formula:'f(x)',mirror:'mir',listener:'lst',io:'io',value:'val'};
 
 function tracePush(from, cell, value, dir) {
-  const t = new Date().toISOString().split('T')[1].slice(0,12);
-  TRACE.push({ ts:t, from, cell, value, dir });
+  TRACE.push({ts:new Date().toISOString().split('T')[1].slice(0,12), from, cell, value, dir});
   renderTrace();
 }
 function renderTrace() {
-  const body = document.getElementById('trace-body');
-  const ctr  = document.getElementById('trace-count');
-  if (TRACE.length === 0) {
-    body.innerHTML = '<div class="trace-line empty">click "Push rudder" below, or any cell button on a tier, to start the trace…</div>';
-  } else {
-    body.innerHTML = TRACE.slice().reverse().map(e => {
-      const v = typeof e.value === 'number' ? e.value.toFixed(3) : JSON.stringify(e.value);
-      return `<div class="trace-line"><span class="ts">${e.ts}</span><span class="arrow ${e.dir==='down'?'down':''}">${e.dir==='down'?'◀':'▶'}</span><span class="uri">${e.from}#${e.cell}</span><span class="nv">→ ${v}</span></div>`;
-    }).join('');
-  }
+  const body = document.getElementById('trace-body'), ctr = document.getElementById('trace-count');
+  body.innerHTML = TRACE.length === 0
+    ? '<div class="trace-line empty">click "Push rudder" below, or any cell button on a tier, to start the trace…</div>'
+    : TRACE.slice().reverse().map(e => {
+        const v = typeof e.value === 'number' ? e.value.toFixed(3) : JSON.stringify(e.value);
+        return '<div class="trace-line"><span class="ts">' + e.ts + '</span><span class="arrow' + (e.dir==='down'?' down':'') + '">' + (e.dir==='down'?'◀':'▶') + '</span><span class="uri">' + e.from + '#' + e.cell + '</span><span class="nv">→ ' + v + '</span></div>';
+      }).join('');
   ctr.textContent = TRACE.length + ' entr' + (TRACE.length===1?'y':'ies');
 }
-
 function renderTier(tier, k) {
   const wrap = document.getElementById('cells-' + k);
   wrap.innerHTML = '';
@@ -958,17 +911,14 @@ function renderTier(tier, k) {
     div.innerHTML = '<span class="id">' + id + '</span><span class="val">' + val + '</span><span class="kind">' + (KL[c.kind]||c.kind) + '</span>' +
       ((c.kind === 'sensor' || c.kind === 'value') ? '<button class="cell-btn" id="' + bid + '">+</button>' : '');
     wrap.appendChild(div);
-    if (c.kind === 'sensor' || c.kind === 'value') {
-      document.getElementById(bid).onclick = () => bumpCell(k, id);
-    }
+    if (c.kind === 'sensor' || c.kind === 'value') document.getElementById(bid).onclick = () => bumpCell(k, id);
   }
 }
 function updateVal(k, id) {
   const el = document.getElementById('cell-' + k + '-' + id.replace(/\./g,'-'));
   if (!el) return;
   const c = TIERS[k].cells[id];
-  const v = typeof c.value === 'number' ? c.value.toFixed(3) : (c.value === undefined ? '—' : String(c.value));
-  el.querySelector('.val').textContent = v;
+  el.querySelector('.val').textContent = typeof c.value === 'number' ? c.value.toFixed(3) : (c.value === undefined ? '—' : String(c.value));
 }
 function flash(k, id, dir) {
   const el = document.getElementById('cell-' + k + '-' + id.replace(/\./g,'-'));
@@ -976,7 +926,6 @@ function flash(k, id, dir) {
   el.classList.remove('lit','lit-blue'); void el.offsetWidth;
   el.classList.add(dir === 'down' ? 'lit-blue' : 'lit');
 }
-
 const FORMULAS = {
   'algo.pid':           (t) => +(TIERS.codespace.cells['tune.pid_kp'].value * (t.cells['sensor.rudder'].value - t.cells['sensor.compass'].value) + 0.1).toFixed(3),
   'actuator.motor_pwm': (t) => t.cells['algo.pid'].value,
@@ -985,10 +934,8 @@ const FORMULAS = {
   'autopilot.intent':   (t) => t.cells['perception.fused'].value,
   'anomaly.detector':   () => Math.abs(TIERS.codespace.cells['anomaly.input'].value) > TIERS.codespace.cells['tune.threshold'].value
 };
-
 function propagateFromCell(tk, cellId, dir) {
   const t = TIERS[tk];
-  // local children
   for (const [id, c] of Object.entries(t.cells)) {
     if (c.parents && c.parents.includes(cellId)) {
       const prev = c.value;
@@ -1001,7 +948,6 @@ function propagateFromCell(tk, cellId, dir) {
       }
     }
   }
-  // cross-tier edges
   for (const e of EDGES) {
     if (e.from === tk + ':' + cellId) {
       const [toTier, toCell] = e.to.split(':');
@@ -1018,7 +964,6 @@ function propagateFromCell(tk, cellId, dir) {
     }
   }
 }
-
 function setCell(tk, id, value, dir) {
   const t = TIERS[tk]; if (!t.cells[id]) return;
   const prev = t.cells[id].value;
@@ -1031,50 +976,42 @@ function setCell(tk, id, value, dir) {
 }
 function bumpCell(tk, id) {
   const c = TIERS[tk].cells[id];
-  const nv = typeof c.value === 'number'
-    ? +(c.value + (Math.random()-0.5) * 0.06).toFixed(3)
-    : 'frame-' + Math.floor(Math.random()*9999);
+  const nv = typeof c.value === 'number' ? +(c.value + (Math.random()-0.5) * 0.06).toFixed(3) : 'frame-' + Math.floor(Math.random()*9999);
   setCell(tk, id, nv);
 }
-function jiggleSensors() {
-  bumpCell('esp32','sensor.rudder'); bumpCell('esp32','sensor.compass'); bumpCell('jetson','vision.scene');
-}
+function jiggleSensors() { bumpCell('esp32','sensor.rudder'); bumpCell('esp32','sensor.compass'); bumpCell('jetson','vision.scene'); }
 function reset() {
   TRACE.length = 0;
-  Object.assign(TIERS.esp32.cells['sensor.rudder'],      { value:0.38 });
-  Object.assign(TIERS.esp32.cells['sensor.compass'],     { value:0.12 });
-  Object.assign(TIERS.esp32.cells['algo.pid.intent'],    { value:0.41 });
-  Object.assign(TIERS.esp32.cells['algo.pid'],           { value:0.00 });
-  Object.assign(TIERS.esp32.cells['actuator.motor_pwm'], { value:0.00 });
-  Object.assign(TIERS.esp32.cells['led.display'],        { value:'idle' });
-  Object.assign(TIERS.esp32.cells['mirror.rudder'],      { value:0.38 });
-  Object.assign(TIERS.jetson.cells['mirror.telem'],      { value:0.38 });
-  Object.assign(TIERS.jetson.cells['vision.scene'],      { value:'frame-0' });
-  Object.assign(TIERS.jetson.cells['perception.fused'],  { value:0.41 });
-  Object.assign(TIERS.jetson.cells['autopilot.intent'],  { value:0.41 });
-  Object.assign(TIERS.codespace.cells['anomaly.input'],  { value:0.38 });
-  Object.assign(TIERS.codespace.cells['tune.pid_kp'],    { value:0.65 });
-  Object.assign(TIERS.codespace.cells['tune.threshold'], { value:0.85 });
-  Object.assign(TIERS.codespace.cells['anomaly.detector'],{ value:false });
+  Object.assign(TIERS.esp32.cells['sensor.rudder'],      {value:0.38});
+  Object.assign(TIERS.esp32.cells['sensor.compass'],     {value:0.12});
+  Object.assign(TIERS.esp32.cells['algo.pid.intent'],    {value:0.41});
+  Object.assign(TIERS.esp32.cells['algo.pid'],           {value:0.00});
+  Object.assign(TIERS.esp32.cells['actuator.motor_pwm'], {value:0.00});
+  Object.assign(TIERS.esp32.cells['led.display'],        {value:'idle'});
+  Object.assign(TIERS.esp32.cells['mirror.rudder'],      {value:0.38});
+  Object.assign(TIERS.jetson.cells['mirror.telem'],      {value:0.38});
+  Object.assign(TIERS.jetson.cells['vision.scene'],      {value:'frame-0'});
+  Object.assign(TIERS.jetson.cells['perception.fused'],  {value:0.41});
+  Object.assign(TIERS.jetson.cells['autopilot.intent'],  {value:0.41});
+  Object.assign(TIERS.codespace.cells['anomaly.input'],  {value:0.38});
+  Object.assign(TIERS.codespace.cells['tune.pid_kp'],    {value:0.65});
+  Object.assign(TIERS.codespace.cells['tune.threshold'], {value:0.85});
+  Object.assign(TIERS.codespace.cells['anomaly.detector'],{value:false});
   for (const k of Object.keys(TIERS)) renderTier(TIERS[k], k);
   drawAllEdges(); renderTrace();
 }
-
-// --- SVG edges + packet animation ------------------------------------------
 function lightEdge(edge, on) {
   const el = document.querySelector('[data-edge="' + edge.from + '->' + edge.to + '"]');
   if (el) { el.classList.toggle('active', on && edge.dir === 'up'); el.classList.toggle('active-down', on && edge.dir === 'down'); }
 }
 function drawAllEdges() {
-  const svg = document.getElementById('edge-svg');
-  const grid = document.getElementById('demo-grid');
+  const svg = document.getElementById('edge-svg'), grid = document.getElementById('demo-grid');
   const g = grid.getBoundingClientRect();
   svg.innerHTML = '';
   svg.setAttribute('viewBox', '0 0 ' + g.width + ' ' + g.height);
   svg.setAttribute('width', g.width); svg.setAttribute('height', g.height);
   for (const e of EDGES) {
-    const [ft, fc] = e.from.split(':');
-    const [tt, tc] = e.to.split(':');
+    const [ft, fc] = e.from.split(':'), [tt, tc] = e.to.split(':');
     const a = document.getElementById('cell-' + ft + '-' + fc.replace(/\./g,'-'));
     const b = document.getElementById('cell-' + tt + '-' + tc.replace(/\./g,'-'));
     if (!a || !b) continue;
@@ -1082,52 +1019,42 @@ function drawAllEdges() {
     const x1 = ra.right - g.left, y1 = ra.top + ra.height/2 - g.top;
     const x2 = rb.left  - g.left, y2 = rb.top + rb.height/2 - g.top;
     const mid = (x1+x2)/2;
-    const d = 'M ' + x1 + ' ' + y1 + ' C ' + mid + ' ' + y1 + ', ' + mid + ' ' + y2 + ', ' + x2 + ' ' + y2;
     const p = document.createElementNS('http://www.w3.org/2000/svg','path');
-    p.setAttribute('d', d); p.setAttribute('data-edge', e.from + '->' + e.to);
+    p.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + mid + ' ' + y1 + ', ' + mid + ' ' + y2 + ', ' + x2 + ' ' + y2);
+    p.setAttribute('data-edge', e.from + '->' + e.to);
     svg.appendChild(p);
   }
 }
 function animatePacket(edge) {
   const grid = document.getElementById('demo-grid');
   const g = grid.getBoundingClientRect();
-  const [ft, fc] = edge.from.split(':');
-  const [tt, tc] = edge.to.split(':');
+  const [ft, fc] = edge.from.split(':'), [tt, tc] = edge.to.split(':');
   const a = document.getElementById('cell-' + ft + '-' + fc.replace(/\./g,'-'));
   const b = document.getElementById('cell-' + tt + '-' + tc.replace(/\./g,'-'));
   if (!a || !b) return;
   const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-  const sx = edge.dir === 'up' ? ra.right : rb.left;
-  const sy = ra.top + ra.height/2;
-  const ex = edge.dir === 'up' ? rb.left  : ra.right;
-  const ey = rb.top + rb.height/2;
+  const sx = edge.dir === 'up' ? ra.right : rb.left, sy = ra.top + ra.height/2;
+  const ex = edge.dir === 'up' ? rb.left  : ra.right, ey = rb.top + rb.height/2;
   const pk = document.createElement('div');
   pk.className = 'packet ' + (edge.dir === 'up' ? 'up' : 'down');
   pk.style.left = (sx - g.left) + 'px'; pk.style.top = (sy - g.top) + 'px';
   grid.appendChild(pk);
   requestAnimationFrame(() => { pk.style.left = (ex - g.left) + 'px'; pk.style.top = (ey - g.top) + 'px'; });
-  setTimeout(() => pk.remove(), 700);
+  setTimeout(() => pk.remove(), 650);
 }
-
-// --- init + button wiring ---------------------------------------------------
 for (const k of Object.keys(TIERS)) renderTier(TIERS[k], k);
 requestAnimationFrame(drawAllEdges);
 window.addEventListener('resize', drawAllEdges);
-
-document.getElementById('d-push-rudder').onclick     = () => setCell('esp32', 'sensor.rudder', 0.42);
-document.getElementById('d-push-rudder-hi').onclick  = () => setCell('esp32', 'sensor.rudder', 0.91);
-document.getElementById('d-tune-pid').onclick        = () => setCell('codespace', 'tune.pid_kp', 0.85, 'down');
-document.getElementById('d-tune-pid-low').onclick    = () => setCell('codespace', 'tune.pid_kp', 0.20, 'down');
-document.getElementById('d-jiggle').onclick          = jiggleSensors;
-document.getElementById('d-reset').onclick           = reset;
-
+document.getElementById('d-push-rudder').onclick    = () => setCell('esp32', 'sensor.rudder', 0.42);
+document.getElementById('d-push-rudder-hi').onclick = () => setCell('esp32', 'sensor.rudder', 0.91);
+document.getElementById('d-tune-pid').onclick       = () => setCell('codespace', 'tune.pid_kp', 0.85, 'down');
+document.getElementById('d-tune-pid-low').onclick   = () => setCell('codespace', 'tune.pid_kp', 0.20, 'down');
+document.getElementById('d-jiggle').onclick         = jiggleSensors;
+document.getElementById('d-reset').onclick          = reset;
 document.querySelectorAll('.anchor-nav a, .hero .btn[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
     const id = a.getAttribute('href');
-    if (id && id.startsWith('#')) {
-      e.preventDefault();
-      document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (id && id.startsWith('#')) { e.preventDefault(); document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
 </script>

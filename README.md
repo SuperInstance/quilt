@@ -817,6 +817,66 @@ idempotency, end-to-end planner-style flows.
 
 ---
 
+## 🌐 Quilt Federation — quilts that link to other quilts
+
+Every cell is a URI. Every URI is addressable. The same reactive
+engine runs in your process, on a Jetson, in a GitHub Codespace, or
+on a Cloudflare Worker — and they federate via subscription.
+
+```ts
+import { resolveCell, subscribeCell, detectTier, CellRouter } from '@quilt/sdk';
+
+// What tier am I in?
+const me = detectTier();
+// → { tier: 'codespace', instanceId: 'codespace-abc', platform: 'GitHub Codespace', ... }
+
+// Subscribe to a cell on a sibling tier
+const unsub = subscribeCell(
+  'quilt://esp32-fleet/boat#sensor.rudder',
+  transport,
+  (angle) => console.log('rudder is now', angle)
+);
+
+// Route across multiple instances
+const router = new CellRouter();
+router.add('local', localTransport);
+router.add('jetson-lab', httpTransport1);
+router.add('codespace-7c3', httpTransport2);
+const handle = await router.resolve('quilt://jetson-lab/perception#vision.scene');
+```
+
+**The deployment tier model** (mirrors cocapn-runtime's 5-room abstraction):
+
+| Tier | Capability profile | Repo |
+|---|---|---|
+| `esp32` | no_std, sensors + motors | [`quilt-esp32`](https://github.com/SuperInstance/quilt-esp32) |
+| `jetson` | sync + alloc, GPU, LLM | (next) |
+| `codespace` | async, ttyd + MCP | [`quilt-codespace`](https://github.com/SuperInstance/quilt-codespace) |
+| `cloudflare` | V8 isolates, D1, KV, R2 | [`quilt-cloudflare`](https://github.com/SuperInstance/quilt-cloudflare) |
+| `server` | Node.js, full stack | this repo |
+
+**URI scheme:**
+
+```
+quilt://[instance-id]/[sheet-id]#[cell-path]
+
+quilt://local/boat-autopilot#rudder.angle
+quilt://jetson-lab/perception#vision.scene
+quilt://codespace-7c3/prod#anomaly.score
+quilt://*[/]/prod#x        ← wildcard for routing tables
+quilt://esp32-fleet/+#rudder.angle  ← fleet-wide
+```
+
+**The killer example:** the [Fed Autopilot](https://github.com/SuperInstance/quilt-codespace/tree/main/examples/fed-autopilot) — a 3-tier Quilt stack (ESP32 → Jetson → Codespace) for an autonomous boat. Same reactive engine, three hardware tiers, federation by subscription.
+
+**61 SDK tests** (28 base + 33 federation), all passing. **See the [Federation landing page](landing/federation.html) for the live 3-tier demo.**
+
+**GitHub Codespaces:** this repo has a `.devcontainer/` for a lightweight Codespace runtime. For the full template (with HTTP API, fed-autopilot example, and CI), use [`quilt-codespace`](https://github.com/SuperInstance/quilt-codespace) as a template.
+schema validation, all precondition types, content addressing,
+idempotency, end-to-end planner-style flows.
+
+---
+
 ## Use it with Claude Code
 
 Add to your MCP config (`~/.config/claude-code/mcp.json` or similar):
@@ -1038,7 +1098,10 @@ The Rust port honors the same five layers. The data model is identical. Only the
 
 ### Core runtime
 - **`@quilt/core`** — the reactive cell engine. TypeScript, ESM, no native deps. ~1,500 lines, heavily commented.
-- **`@quilt/sdk`** — agent substrate primitives. Five functions: `resolveTemplate`, `resolveArtifact`, `validateManifest`, `publishArtifact`, `publishRunTrace`. Turn any Quilt sheet into an executable, auditable, replayable artifact. **28 tests.**
+- **`@quilt/sdk`** — agent substrate + federation primitives. **8 functions**:
+  - Agent substrate: `resolveTemplate`, `resolveArtifact`, `validateManifest`, `publishArtifact`, `publishRunTrace`
+  - Federation: `resolveCell`, `subscribeCell`, `CellRouter`, `detectTier`
+  Turn any Quilt sheet into an executable, auditable, replayable artifact — and link it to other Quilt instances. **61 tests.**
 - **`@quilt/cli`** — `init / run / serve --mcp / get / set / inspect / test / validate / resolve`. The entry point.
 - **`@quilt/mcp`** — exposes every cell as an MCP tool, every sheet as an MCP resource.
 - **`@quilt/tui`** — terminal-native view of a running engine. Live cell grid, dependencies panel, key bindings. Plays well with tmux.
