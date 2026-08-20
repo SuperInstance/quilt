@@ -1519,6 +1519,7 @@ Quilt is an ecosystem of 18 repos, 5 deployment tiers, 3 languages. This repo is
 | **Swarm** | [quilt-swarm](https://github.com/SuperInstance/quilt-swarm) | Quilt as unified control plane over Docker Swarm. Encrypted overlay networking. |
 | **CoreOS** | [quilt-core-os](https://github.com/SuperInstance/quilt-core-os) | Immutable, snap-based Ubuntu Core appliance. Atomic OS updates with instant rollback. Un-brickable. |
 | **K3s** | [quilt-k3s](https://github.com/SuperInstance/quilt-k3s) | K3s-based chaos testing framework. 5 scenarios: node failure, network partition, disk full, API down, etcd down. Self-healing verification in under 30s. |
+| **Nomad** | [quilt-nomad](https://github.com/SuperInstance/quilt-nomad) | Quilt as a control plane for HashiCorp Nomad. Edit a cell, the Nomad cluster reconfigures. value→variable, formula→task, api→http check. |
 
 See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 18 repos.
 
