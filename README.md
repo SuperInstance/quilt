@@ -200,8 +200,21 @@ Visualize any Quilt sheet as a dependency graph. Click any node to inspect.
 | 23 | [quilt-core-os](https://github.com/SuperInstance/quilt-core-os) | Immutable Ubuntu Core appliance. |
 | 24 | [quilt-k3s](https://github.com/SuperInstance/quilt-k3s) | K3s chaos testing framework. |
 | 25 | [quilt-nomad](https://github.com/SuperInstance/quilt-nomad) | HashiCorp Nomad control plane. |
+| 26 | [quilt-tutor](https://github.com/SuperInstance/quilt-tutor) | **Polyformalism:** Quilt in PLATO Tutor (1970). |
+| 27 | [quilt-pydantic-ai](https://github.com/SuperInstance/quilt-pydantic-ai) | **Polyformalism:** Quilt as a Pydantic-AI agent. |
+| 28 | [quilt-mojo](https://github.com/SuperInstance/quilt-mojo) | **Polyformalism:** Quilt in Mojo. |
+| 29 | [quilt-julia](https://github.com/SuperInstance/quilt-julia) | **Polyformalism:** Quilt in Julia. |
+| 30 | [quilt-chapel](https://github.com/SuperInstance/quilt-chapel) | **Polyformalism:** Quilt in Chapel. |
+| 31 | [quilt-cobol](https://github.com/SuperInstance/quilt-cobol) | **Polyformalism:** Quilt in COBOL. |
+| 32 | [quilt-c](https://github.com/SuperInstance/quilt-c) | **Polyformalism:** Quilt in C. |
+| 33 | [quilt-cpp](https://github.com/SuperInstance/quilt-cpp) | **Polyformalism:** Quilt in C++. |
+| 34 | [quilt-csharp](https://github.com/SuperInstance/quilt-csharp) | **Polyformalism:** Quilt in C#. |
+| 35 | [quilt-metal](https://github.com/SuperInstance/quilt-metal) | **Polyformalism:** Quilt in Metal. |
+| 36 | [quilt-swift](https://github.com/SuperInstance/quilt-swift) | **Polyformalism:** Quilt in Swift. |
 
-Plus the [live workspace](https://superinstance.dev/workspace.html) with 30+ work-doing tool pages.
+Plus the [live workspace](https://superinstance.dev/workspace.html) with 30+ work-doing tool pages, and the [polyformalism page](https://superinstance.dev/polyformalism.html) that compares the 12 languages.
+
+The 12 polyformalism repos all express the same model in different language constraints. [See the comparison →](https://superinstance.dev/polyformalism.html)
 
 ## ✦ Getting started
 
