@@ -1515,6 +1515,10 @@ Quilt is an ecosystem of 18 repos, 5 deployment tiers, 3 languages. This repo is
 | **Fleet** | [quilt-fleet](https://github.com/SuperInstance/quilt-fleet) | Multi-instance federation orchestrator — discovery, health, quorum, migration |
 | **Elves** | [quilt-elf](https://github.com/SuperInstance/quilt-elf) | Invisible elves — Cloudflare Workers doing background housekeeping, daily-limit-aware, self-improving |
 | **Pincher** | [quilt-pincher](https://github.com/SuperInstance/quilt-pincher) | A reflex engine built entirely from Quilt cells. Pinch in, match a reflex, execute. <50ms, no LLM. Federates across cloud, workstation, and ESP32. |
+| **Base** | [quilt-base](https://github.com/SuperInstance/quilt-base) | Minimal Alpine/Ubuntu/Distroless base images for all Quilt agents. Zero CVE, auto-rebuilding. |
+| **Swarm** | [quilt-swarm](https://github.com/SuperInstance/quilt-swarm) | Quilt as unified control plane over Docker Swarm. Encrypted overlay networking. |
+| **CoreOS** | [quilt-core-os](https://github.com/SuperInstance/quilt-core-os) | Immutable, snap-based Ubuntu Core appliance. Atomic OS updates with instant rollback. Un-brickable. |
+| **K3s** | [quilt-k3s](https://github.com/SuperInstance/quilt-k3s) | K3s-based chaos testing framework. 5 scenarios: node failure, network partition, disk full, API down, etcd down. Self-healing verification in under 30s. |
 
 See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 18 repos.
 
