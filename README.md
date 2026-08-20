@@ -1513,6 +1513,7 @@ Quilt is an ecosystem of 18 repos, 5 deployment tiers, 3 languages. This repo is
 | **Jetson** | [quilt-jetson](https://github.com/SuperInstance/quilt-jetson) | NVIDIA Jetson runtime — CUDA, ROS2, vision, sensor fusion |
 | **RAG** | [quilt-rag](https://github.com/SuperInstance/quilt-rag) | Production RAG as cells — 5 vector stores, 5 embedders, 4 evaluators |
 | **Fleet** | [quilt-fleet](https://github.com/SuperInstance/quilt-fleet) | Multi-instance federation orchestrator — discovery, health, quorum, migration |
+| **Elves** | [quilt-elf](https://github.com/SuperInstance/quilt-elf) | Invisible elves — Cloudflare Workers doing background housekeeping, daily-limit-aware, self-improving |
 
 See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 18 repos.
 
