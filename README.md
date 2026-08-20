@@ -13,7 +13,7 @@
 [![Rust port](https://img.shields.io/badge/Rust-1.0-blue)](https://github.com/superinstance/quilt-rust)
 [![Status](https://img.shields.io/badge/status-v0.6.0-brightgreen)](https://github.com/superinstance/quilt)
 [![Tests](https://img.shields.io/badge/tests-79%2F79%20sdk%20%7C%2082%2F82%20total-brightgreen)](https://github.com/superinstance/quilt)
-[![Federation](https://img.shields.io/badge/federation-15%20repos-emerald)](https://superinstance.github.io/quilt/landing/federation.html)
+[![Federation](https://img.shields.io/badge/federation-18%20repos-emerald)](https://superinstance.github.io/quilt/landing/federation.html)
 [![Agent Substrate](https://img.shields.io/badge/agent%20substrate-10%20primitives-purple)](https://superinstance.github.io/quilt/landing/agent-substrate.html)
 [![Docs](https://img.shields.io/badge/docs-VitePress-blue)](docs/)
 
@@ -35,7 +35,7 @@ You write a `sheet.yaml` that declares cells and their dependencies. The Quilt e
 
 ## Where does Quilt run?
 
-15 repos, 5 deployment tiers, 3 languages, 8 SDK primitives, 82 tests. Pick the surface that matches your hardware, your latency budget, and your threat model.
+18 repos, 5 deployment tiers, 3 languages, 8 SDK primitives, 82 tests. Pick the surface that matches your hardware, your latency budget, and your threat model.
 
 | Need                                                              | Repo                        | Tier         | Stack                           |
 | ----------------------------------------------------------------- | --------------------------- | ------------ | ------------------------------- |
@@ -1491,7 +1491,7 @@ Open an issue first if you're planning something large.
 
 ## Related Quilt repos
 
-Quilt is an ecosystem of 15 repos, 5 deployment tiers, 3 languages. This repo is part of:
+Quilt is an ecosystem of 18 repos, 5 deployment tiers, 3 languages. This repo is part of:
 
 | Tier | Repo | What it is |
 |---|---|---|
@@ -1510,8 +1510,11 @@ Quilt is an ecosystem of 15 repos, 5 deployment tiers, 3 languages. This repo is
 | **Vision** | [quilt-vision](https://github.com/SuperInstance/quilt-vision) | Computer-vision cells (camera → scene → caption) |
 | **ZK** | [quilt-zk](https://github.com/SuperInstance/quilt-zk) | Zero-knowledge cell verification primitives |
 | **Flow** | [quilt-flow](https://github.com/SuperInstance/quilt-flow) | Workflow cells — DAG execution, retry, rollback |
+| **Jetson** | [quilt-jetson](https://github.com/SuperInstance/quilt-jetson) | NVIDIA Jetson runtime — CUDA, ROS2, vision, sensor fusion |
+| **RAG** | [quilt-rag](https://github.com/SuperInstance/quilt-rag) | Production RAG as cells — 5 vector stores, 5 embedders, 4 evaluators |
+| **Fleet** | [quilt-fleet](https://github.com/SuperInstance/quilt-fleet) | Multi-instance federation orchestrator — discovery, health, quorum, migration |
 
-See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 15 repos.
+See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 18 repos.
 
 ---
 
