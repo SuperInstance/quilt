@@ -1,1534 +1,252 @@
-# ◳ Quilt
+# ⬢ Quilt
+
+> **The reactive, typed, cellular runtime.** A spreadsheet that thinks. A database that reacts. A control plane that's a single file. Twenty-five open-source repos. One ecosystem.
 
 <p align="center">
-  <img src="assets/images/hero-grid.jpg" alt="The grid is the runtime — a sparse cybernetic quilt, every cell a live, addressable capability" width="720">
+  <img src="assets/hero.png" alt="Quilt: the reactive cellular runtime" width="900">
 </p>
 
-> **A spreadsheet where every cell is a live, addressable capability. The grid is the runtime.**
+<p align="center">
+  <a href="#the-point">The point</a> •
+  <a href="#the-philosophy">Philosophy</a> •
+  <a href="#the-architecture">Architecture</a> •
+  <a href="#concrete-proof">Concrete proof</a> •
+  <a href="#the-25-repos">The 25 repos</a> •
+  <a href="#getting-started">Get started</a> •
+  <a href="#why-you-should-care">Why care</a>
+</p>
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
-[![MCP](https://img.shields.io/badge/MCP-native-purple)](https://modelcontextprotocol.io)
-[![Rust port](https://img.shields.io/badge/Rust-1.0-blue)](https://github.com/superinstance/quilt-rust)
-[![Status](https://img.shields.io/badge/status-v0.6.0-brightgreen)](https://github.com/superinstance/quilt)
-[![Tests](https://img.shields.io/badge/tests-79%2F79%20sdk%20%7C%2082%2F82%20total-brightgreen)](https://github.com/superinstance/quilt)
-[![Federation](https://img.shields.io/badge/federation-18%20repos-emerald)](https://superinstance.github.io/quilt/landing/federation.html)
-[![Agent Substrate](https://img.shields.io/badge/agent%20substrate-10%20primitives-purple)](https://superinstance.github.io/quilt/landing/agent-substrate.html)
-[![Docs](https://img.shields.io/badge/docs-VitePress-blue)](docs/)
-
-**[Quilt Live ⚡](https://superinstance.github.io/quilt/landing/quilt-live.html)** · **[Playground ▶](https://superinstance.github.io/quilt/landing/playground.html)** · **[Studio 🎨](https://superinstance.github.io/quilt/landing/studio.html)** · **[IDE 🛠](https://superinstance.github.io/quilt/landing/ide.html)** · **[Synoptic 🎬](https://superinstance.github.io/quilt/landing/synoptic.html)** · **[3D View](https://superinstance.github.io/quilt/landing/synoptic3d.html)** · **[Patterns 📚](https://superinstance.github.io/quilt/landing/patterns.html)** · **[Showcase 🌟](https://superinstance.github.io/quilt/landing/showcase.html)** · **[Docs 📚](https://superinstance.github.io/quilt/landing/docs.html)** · **[Compare ⚖](https://superinstance.github.io/quilt/landing/compare.html)** · **[Tutorial 🎓](https://superinstance.github.io/quilt/landing/tutorial.html)** · **[Federation 🌐](https://superinstance.github.io/quilt/landing/federation.html)** · **[Agent Substrate 🧬](https://superinstance.github.io/quilt/landing/agent-substrate.html)** · **[Manifesto →](docs/manifesto.md)** · **[Examples →](examples/)**
-
----
-
-## What is this?
-
-**Quilt is a reactive, typed, cellular runtime** — a spreadsheet where every cell is a live, addressable capability. The grid is the runtime, the cell is the universal IO primitive, and the sheet is the program. A cell can be a value, a formula, an HTTP call, a sensor reading, a program, a listener, a router, an AI model, or any combination. Cells reference each other by stable address (not by coordinate), and the whole graph re-evaluates reactively when anything changes.
-
-## Why is it useful?
-
-Because the world's most-used programming interface — the spreadsheet — has been lying to us for 40 years. **A cell is not a value. A cell is a live, typed, addressable capability.** Once you see that, the spreadsheet stops being a document and becomes a runtime. You can wire a camera to a formula to a notification. You can wire a knob on a boat to a PID controller to a motor. You can wire a user prompt to a router to a model to a response. You can wire any engine (Isaac, Cosmos, Minecraft, a Jupyter kernel, a paper-trading app) as a cell. And because cells are reactive, the wiring is the program: change one cell, every dependent rewires automatically. **No callbacks, no event loops, no state machines** — just cells.
-
-## How does it work?
-
-You write a `sheet.yaml` that declares cells and their dependencies. The Quilt engine loads it, evaluates every cell, and propagates changes as upstream values shift. There are 9 cell kinds (`value`, `formula`, `api`, `program`, `sensor`, `listener`, `router`, `io`, `ai`), each with its own evaluator. The same engine runs in TypeScript, Rust, a single 70KB HTML file, a Cloudflare Worker, an ESP32 (no_std), and now a GitHub Codespace. **All 15 repos share the same sheet format (YAML) and the same conceptual model.** A sheet that runs on one runs on all of them. Cells can be addressed across instances: `quilt://jetson-lab/perception#vision.scene` is a live, subscribable cell on a Jetson, and you can subscribe to it from a Codespace. The cell model is the substrate; everything else is a deployment target.
-
-## Where does Quilt run?
-
-18 repos, 5 deployment tiers, 3 languages, 8 SDK primitives, 82 tests. Pick the surface that matches your hardware, your latency budget, and your threat model.
-
-| Need                                                              | Repo                        | Tier         | Stack                           |
-| ----------------------------------------------------------------- | --------------------------- | ------------ | ------------------------------- |
-| **Browser** simulator, web UI, or web app embed                   | [`quilt`][quilt]            | browser      | TS, no deps                     |
-| **Node service** / agent backend / CLI / TUI                      | [`quilt`][quilt]            | server       | TS, ESM, ~1.5k lines            |
-| **MCP server** for Claude Code, Cursor, or any agent              | [`quilt`][quilt]            | server       | stdio MCP, 1 file               |
-| **Single static binary**, no Node.js                              | [`quilt-rust`][quilt-rust]  | server       | Rust, axum, crossterm           |
-| **Embedded / IoT** (RPi, ESP32, no_std, sensors + actuators)      | [`quilt-esp32`][quilt-esp32] | esp32        | no_std Rust                     |
-| **Single 70KB HTML file** that runs anywhere (offline, in a tab)   | [`quilt-live`][quilt-live]  | browser      | Zero deps, 146 verified checks  |
-| **Cloudflare Workers** (D1, KV, R2, Vectorize, Workers AI)        | [`quilt-cloudflare`][quilt-cloudflare] | edge | V8 isolates, Workers AI         |
-| **GitHub Codespace** as a live runtime (TUI + HTTP + dashboard)   | [`quilt-codespace`][quilt-codespace] | codespace | ttyd, Node, HTTP+SSE            |
-| **AI cells** — LLM, embed, classify, image, OCR across 4 providers | [`quilt-ai`][quilt-ai]      | server       | 4 providers, cost tracking      |
-| **Self-improvement loops** — RLAIF, evolution, plateau detection   | [`quilt-evolve`][quilt-evolve] | server    | 4 components, 5 scopes          |
-| **CRDT-backed mesh** for cross-tab / cross-device sync            | [`quilt-mesh`][quilt-mesh]  | browser      | BroadcastChannel, Yjs-style CRDT |
-| **LLM agent as a sheet** (memory, tools, reasoning, goals)        | [`quilt-agent`][quilt-agent] | server      | prompt chains, function calling  |
-| **Time-series** cells with rolling windows and aggregations        | [`quilt-time`][quilt-time]  | server       | TS, 17 tests                     |
-| **Secrets** cells with per-cell ACLs and rotation                  | [`quilt-vault`][quilt-vault] | server      | TS, 10 tests                     |
-| **Computer vision** cells (camera → scene → caption)               | [`quilt-vision`][quilt-vision] | browser  | Web APIs, getUserMedia           |
-| **Zero-knowledge** cell verification (planner primitives)         | [`quilt-zk`][quilt-zk]      | server       | TS, 7 tests                      |
-| **Workflow** cells (DAG execution, retry, rollback)               | [`quilt-flow`][quilt-flow]  | server       | TS, 8 tests                      |
-| **Agent substrate** primitives (resolve, validate, publish, trace) | [`@quilt/sdk`][quilt]       | anywhere     | 8 functions, 79 tests            |
-| **Federation** — quilts that link to other quilts                 | [`@quilt/sdk`][quilt]       | anywhere     | `resolveCell`, `subscribeCell`   |
-| **Multi-tier cache** + R2 canonical store                         | [`@quilt/sdk`][quilt]       | anywhere     | `FederatedArtifactStore`         |
-| **IoT-native pub/sub** transport (MQTT 5.0)                       | [`@quilt/sdk`][quilt]       | anywhere     | `MqttCellTransport`              |
-| **High-throughput** cell evaluation (compiled, no GC)             | [`quilt-rust`][quilt-rust]  | server       | Rust, ~50k ops/s in TS, much more in Rust |
-| **Edge ML** (Jetson, CUDA, ROS2, sensor fusion) — _forthcoming_   | `quilt-jetson`              | edge ML      | Rust, axum, tokio                |
-| **Production RAG** (5 vector stores, 5 embedders, 3 rerankers) — _forthcoming_ | `quilt-rag`      | server       | TS, Vectorize + OpenAI + Cohere  |
-| **Multi-instance fleet orchestration** — _forthcoming_           | `quilt-fleet`               | orchestrator | TS, REST + WebSocket + gRPC     |
-
-[quilt]: https://github.com/SuperInstance/quilt
-[quilt-rust]: https://github.com/SuperInstance/quilt-rust
-[quilt-live]: https://github.com/SuperInstance/quilt-live
-[quilt-esp32]: https://github.com/SuperInstance/quilt-esp32
-[quilt-mesh]: https://github.com/SuperInstance/quilt-mesh
-[quilt-agent]: https://github.com/SuperInstance/quilt-agent
-[quilt-time]: https://github.com/SuperInstance/quilt-time
-[quilt-vault]: https://github.com/SuperInstance/quilt-vault
-[quilt-vision]: https://github.com/SuperInstance/quilt-vision
-[quilt-zk]: https://github.com/SuperInstance/quilt-zk
-[quilt-flow]: https://github.com/SuperInstance/quilt-flow
-[quilt-cloudflare]: https://github.com/SuperInstance/quilt-cloudflare
-[quilt-ai]: https://github.com/SuperInstance/quilt-ai
-[quilt-evolve]: https://github.com/SuperInstance/quilt-evolve
-[quilt-codespace]: https://github.com/SuperInstance/quilt-codespace
-
-> **The cell model is the universal interface.** A cell on an ESP32 is a row on a Jetson's Quilt which is a row on a Codespace's Quilt which is a row on a Cloudflare Quilt. Same engine, same semantics, five deployment tiers, one mental model. **[See the Federation landing page →](https://superinstance.github.io/quilt/landing/federation.html)**
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+[![version](https://img.shields.io/badge/version-0.6.0-orange.svg)](./packages/core/package.json)
+[![node](https://img.shields.io/badge/node-%3E%3D18-green.svg)](./packages/core/package.json)
+[![tests](https://img.shields.io/badge/tests-212%2B%20passing-brightgreen.svg)](#)
+[![repos](https://img.shields.io/badge/repos-25-blue.svg)](#)
+[![platform](https://img.shields.io/badge/platform-cloud%20%7C%20workstation%20%7C%20esp32-blue.svg)](#)
+[![discussions](https://img.shields.io/badge/discussions-welcome-brightgreen.svg)](https://github.com/SuperInstance/quilt/discussions)
 
 ---
 
-## What it is, more concretely
+## ✦ The point
 
-The cell is the unit. There are **9 cell kinds**, each with its own evaluator:
+You're building software. Some of it is a web app, some is an embedded sensor, some is a data pipeline, some is an LLM agent, some is a control plane for a fleet of edge devices. Each one has a different framework, a different language, a different deployment story. Each one breaks in different ways. Each one has a different way of testing, observing, and evolving.
 
-| Kind | What it does | Example |
-|---|---|---|
-| `value` | A static value | `kind: value, value: "Hello, world"` |
-| `formula` | A computed expression over other cells | `kind: formula, expr: "=price * quantity"` |
-| `api` | An outbound HTTP call | `kind: api, url: "https://api.example.com/..."` |
-| `program` | A function body (closure or string) | `kind: program, fn: "(x) => x * 2"` |
-| `sensor` | A pull-based data source (polling) | `kind: sensor, source: "coingecko://btc"` |
-| `listener` | A push-based reactive side effect | `kind: listener, on: "alert.critical"` |
-| `router` | Picks a value based on the caller | `kind: router, by: "caller.tier"` |
-| `io` | Bidirectional IO (WebSocket, MQTT, serial) | `kind: io, transport: "ws://..."` |
-| `ai` | A cell backed by an LLM (z.ai, Kimi, DeepSeek, Cloudflare) | `kind: ai, ai_kind: "classify"` |
+Quilt is one model that fits all of them. A **cell** is a value, a formula, a listener, an API call, an AI call, a sensor, a router, a program, or a vector store. A **sheet** is a JSON document of cells with dependencies. An **engine** evaluates the sheet reactively — when a cell changes, every cell that depends on it is recomputed. The same model runs in the browser, on a server, on a Cloudflare Worker, on a Raspberry Pi, on a Jetson, on an ESP32.
 
-A few things that fall out for free:
+If you've ever wished your entire software system could be a single reactive spreadsheet, Quilt is for you.
 
-- **A cell reference is a stable address, not a coordinate.** Move a cell anywhere in the grid; every reference still resolves.
-- **A cell can route based on who called it.** `caller.row > 10` → use Model A; `caller.tier === 'premium'` → use a stronger model. Per-context memoization keeps each caller's result separate.
-- **The whole sheet is an MCP server.** Every named cell is an MCP tool. `quilt serve sheet.yaml --mcp` and any Claude / Cursor / agent can read, write, and react to your cells.
-- **It's reactive by default.** Change one cell, every dependent rewires. No callbacks, no event loops, no state machines.
-- **Cells federate.** `quilt://jetson-lab/perception#vision.scene` is a live, subscribable cell on a Jetson, and a Codespace 4 hops away can subscribe to it.
+## ✦ The philosophy
 
-> **The paradigm shift, in one line:** A cell is not a value. A cell is a live, typed, addressable capability. The spreadsheet is not a document. The spreadsheet is the runtime.
+Most software is built in layers. A presentation layer. A business logic layer. A data layer. An infrastructure layer. Each layer speaks a different language, uses a different framework, and breaks in a different way. The result is complexity that compounds with every line of code.
 
----
+Quilt proposes a different model. **Everything is a cell.** A user input is a cell. A computed value is a cell. An API call is a cell. A database record is a cell. A webhook is a cell. A LLM call is a cell. A sensor reading is a cell. A scheduled task is a cell. They're all just nodes in a reactive graph.
 
-## ⚡ See it in 30 seconds
+The implication: your entire system is a JSON document. The cells describe the data. The formulas describe the computation. The listeners describe the side effects. The engine evaluates the graph reactively. There's nothing else.
 
 ```
-        ┌─────────────────────────────────────────────────────────────────┐
-        │                                                                 │
-        │   ┌──────┐         ┌─────────┐         ┌──────┐                  │
-        │   │ 📦   │ ─wire──▶│ ƒ       │ ─wire──▶│ 🔔   │                  │
-        │   │ $5K  │         │  $2.5K  │         │  ✓   │                  │
-        │   └──────┘         └─────────┘         └──────┘                  │
-        │        ▲               ▲                                        │
-        │        │               │                                        │
-        │   ┌──────┐         ┌──────┐                                     │
-        │   │ 📦   │         │ 📦   │                                     │
-        │   │$1.8K │         │ $600 │                                     │
-        │   └──────┘         └──────┘                                     │
-        │   rent              food                                       │
-        │                                                                 │
-        │   ▲ value cell       ▲ formula cell       ▲ listener cell       │
-        │                                                                 │
-        └─────────────────────────────────────────────────────────────────┘
-
-        Edit a value.  Formulas recompute.  Listeners fire.  All live.
-```
-
-This is a real Quilt engine running. The wires are real. The propagation is real. The whole thing is real.
-
-**→ [Open Quilt Live in your browser](https://superinstance.github.io/quilt/landing/quilt-live.html)** (70 KB, no build, no install, works offline)
-
----
-
-## 🎬 The 9 cell kinds, visualized
-
-```
-   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │   📦    │  │   ƒ     │  │   ▶    │  │   👁    │  │   🌐    │
-   │  value  │─▶│ formula │─▶│program │─▶│ sensor  │─▶│   api   │
-   │ 5,000   │  │  2,520  │  │ async   │  │ polled  │  │ remote  │
-   └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘
-
-   ┌─────────┐  ┌─────────┐  ┌─────────┐
-   │   🔔    │  │   ↪    │  │   🔌   │
-   │listener │  │ router  │  │   io   │
-   │ fires   │  │context  │  │ device │
-   └─────────┘  └─────────┘  └─────────┘
-```
-
-| Kind | What it is | Use when |
-| --- | --- | --- |
-| **value** | a static value | The data is known at sheet-author time, or changes externally |
-| **formula** | a reactive expression | The value is computed from other cells. Sync, pure |
-| **program** | a small async expression | The computation needs async, side effects, or runtime state |
-| **sensor** | a polled input source | You're reading from a timer, GPIO, BLE, or external feed |
-| **api** | an outbound call | You're calling out to an external service |
-| **listener** | fires on changes | You want to alert, log, or write to disk on change |
-| **router** | caller-context-aware dispatch | Multiple callers need different outputs based on context |
-| **io** | an outbound port | You're driving a physical actuator (LED, relay, motor) |
-
----
-
-## 🌊 The reactive propagation, step by step
-
-```
-   Time ──────────────────────────────────────────────────────────▶
-
-   t=0   set budget.total = 5000     ─┐
+                          ┌──────────────────────┐
+                          │   Quilt Sheet (JSON) │
+                          │                      │
+                          │  "a": 1,             │
+                          │  "b": 2,             │
+                          │  "sum": a + b,       │
+                          │  "log": listens sum  │
+                          │                      │
+                          └──────────┬───────────┘
                                      │
-   t=1   set spend.rent = 1800       ─┤
-                                     │   cascade: 3 cells recompute
-   t=2   set spend.food = 600        ─┤   ─▶ spent = 2720
-                                     │   ─▶ remaining = 2280
-   t=3   set spend.transit = 120    ─┘   ─▶ percent = 0.544
-                                          ─▶ status = "ok"
-                                          ─▶ alert listener checks condition
+                          ┌──────────▼───────────┐
+                          │  Quilt Engine        │
+                          │  (TypeScript / Rust) │
+                          │                      │
+                          │  reactive evaluation │
+                          │  memoization         │
+                          │  listener firing     │
+                          │  federation          │
+                          └──────────┬───────────┘
+                                     │
+              ┌──────────────────────┼──────────────────────┐
+              │                      │                      │
+       ┌──────▼──────┐        ┌──────▼──────┐        ┌──────▼──────┐
+       │   Browser   │        │  Cloudflare │        │  ESP32      │
+       │   (TS)      │        │  Worker     │        │  (Rust)     │
+       └─────────────┘        └─────────────┘        └─────────────┘
 ```
 
-You write the cells. The engine handles the propagation. The order of writes doesn't matter — the engine computes in dependency order, topologically.
+The same sheet. The same engine. Different runtimes. That's the entire point.
 
----
+## ✦ The architecture
 
-## 🏗️ Architecture
-
-```
-   ┌──────────────────────────────────────────────────────────────┐
-   │                       Quilt (your code)                      │
-   │                                                              │
-   │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  │
-   │   │  Sheet (.yaml) │  │   Engine       │  │   Harness      │  │
-   │   │                │  │                │  │                │  │
-   │   │  cells:        │  │   reactive DAG │  │   MCP server   │  │
-   │   │  - id: x       │─▶│   per-context  │─▶│   CLI          │  │
-   │   │    kind: value │  │   memoization  │  │   web UI       │  │
-   │   │  - id: y       │  │   topological  │  │   library API  │  │
-   │   │    kind: for..│  │   evaluation   │  │                │  │
-   │   │                │  │                │  │                │  │
-   │   └────────────────┘  └────────────────┘  └────────────────┘  │
-   │            │                   │                  │          │
-   └────────────┼───────────────────┼──────────────────┼──────────┘
-                ▼                   ▼                  ▼
-           ┌────────┐          ┌─────────┐        ┌──────────┐
-           │  9 cell│          │ formulas │        │ external │
-           │  kinds │          │ programs │        │ systems  │
-           │        │          │ listeners│        │          │
-           └────────┘          └─────────┘        └──────────┘
-```
-
-Three layers, cleanly separated:
-- **Sheet** (declarative YAML) — what cells exist, how they relate
-- **Engine** (the runtime) — the reactive DAG, evaluation, propagation
-- **Harness** (the surface) — MCP, CLI, web, library — your entry point
-
-You can use any layer in isolation. The sheet format is the public contract.
-
----
-
-## What is this, really? (a longer story)
-
-You already know spreadsheets — columns of numbers, formulas that snap
-back to life when you change an input. Now keep the spreadsheet, but
-make every cell a *living thing*. A cell isn't just a number in a box.
-It can be a sensor reading, an API call, a program, a model, a light
-switch, a listener, a policy. Give every cell a stable name, let cells
-point at each other, and when one cell changes, everything downstream
-rewires itself — automatically, instantly, visibly.
-
-That's Quilt. A sheet is a YAML file, and that file is the whole
-system: the data, the logic, the I/O, the routing, the alerting. No
-build step, no services to deploy, no glue code to maintain. Run the
-sheet and cells compute. Expose the sheet and every named cell becomes
-a tool an agent can call. Edit the sheet and the running system
-changes. The grid isn't a picture of the system. The grid *is* the
-system.
-
-**The mental leap, in two moves:**
-
-- **A cell is not a value. A cell is a contract.** It's a stable
-  address you can plug anything into. `compass.heading` doesn't hold
-  "a number"; it holds *whatever the compass says right now*. Swap the
-  implementation — real NMEA, a simulator, a test stub — and every cell
-  that reads it keeps working. That's dependency injection, done by
-  editing YAML.
-- **A spreadsheet is not a document. A spreadsheet is a runtime.**
-  When you change `target_heading` from `270` to `090`, you aren't
-  editing a record of the boat; you're commanding it. Formulas
-  recompute, listeners fire, actuators move. The file isn't the log of
-  the system. The file is the nervous system.
-
-### Why this matters
-
-Every real system is a pile of event handlers, webhooks, cron jobs,
-database rows, and config spread across half a dozen repos, stitched
-together with glue code that no single person can hold in their head.
-Quilt collapses that pile into one grid. Each integration point is one
-named cell. Connections are references, not code. Changes propagate by
-themselves. And the whole thing stays *auditable*: the dependency
-graph is the architecture diagram, it's always current, and it's in a
-format your whole team can read and diff. When something goes wrong
-you don't grep five services — you open the sheet, find the red cell,
-and see exactly which inputs changed.
-
-For the agent era it matters differently. Every sheet is an MCP
-server, so Claude Code, Cursor, or any MCP client reads cells as
-resources and calls them as tools. Humans and agents share one grid:
-the agent writes a cell, you see the write; you override a cell, the
-agent sees the override on its next read. Caller-aware routing means
-one sheet serves many tenants and tiers without forking. And the
-jazz → classical flywheel — start with an LLM cell, watch the calls,
-distill the common cases into a formula, watch the cost drop — becomes
-a visible, editable process instead of a refactor buried in a
-codebase. If you're wiring sensors, models, APIs, and agents into one
-system, and you want it reactive, auditable, and agent-readable:
-this is the substrate.
-
----
-
-## Architecture at a glance
+Quilt is a **25-repo ecosystem** organized in 6 layers:
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                       Quilt  (TS)                        │
-│                                                          │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐          │
-│   │  parse   │───►│  engine  │◄──►│  cells   │          │
-│   │ (YAML)   │    │  (graph) │    │  (8 ks)  │          │
-│   └──────────┘    └────┬─────┘    └──────────┘          │
-│                        │                                 │
-│            ┌───────────┼────────────┐                    │
-│            ▼           ▼            ▼                    │
-│       ┌────────┐  ┌────────┐  ┌────────┐                 │
-│       │  CLI   │  │  MCP   │  │  TUI   │                 │
-│       │ (node) │  │  (mcp) │  │ (ansi) │                 │
-│       └────────┘  └────────┘  └────────┘                 │
-│                                                          │
-│       ┌────────┐                                          │
-│       │  Web   │  ← /landing/quilt-live.html + simulator│
-│       │  UI    │  ← browser-native, no build step        │
-│       └────────┘                                          │
-└──────────────────────────────────────────────────────────┘
+                    ╔═══════════════════════════╗
+                    ║  L8  Ecosystem / community ║  25 repos, cross-refs
+                    ╠═══════════════════════════╣
+                    ║  L7  Workflows / demos     ║  30+ work-doing pages
+                    ╠═══════════════════════════╣
+                    ║  L6  Invisible elves       ║  quilt-elf (5 components)
+                    ╠═══════════════════════════╣
+                    ║  L5  Embedded orchestrators ║  quilt-swarm, quilt-nomad
+                    ╠═══════════════════════════╣
+                    ║  L4  Specialized cells     ║  time, vault, vision, zk, flow
+                    ╠═══════════════════════════╣
+                    ║  L3  Cell + AI core         ║  quilt-core, quilt-ai, quilt-evolve
+                    ╠═══════════════════════════╣
+                    ║  L2  Federation             ║  quilt-fleet, quilt-mesh, quilt-agent
+                    ╠═══════════════════════════╣
+                    ║  L1  Hygiene / engineering  ║  LICENSE, CI, Dependabot, ESLint
+                    ╚═══════════════════════════╝
 ```
 
-The Rust port has the same shape — same 9 cell kinds, same engine, same CLI/MCP surfaces. The difference: `node` + JavaScript instead of `tokio` + `rhai`. See [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust).
+The first three layers (L1-L3) are the foundation. The next three (L4-L6) are the value-add. The top two (L7-L8) are the experience.
 
----
+Every repo at every layer cross-references the others. Every repo has the same engineering bar: Apache 2.0 license, GitHub Actions CI, CODEOWNERS, SECURITY.md, Dependabot, ESLint.
 
-## The one-liner
+## ✦ Concrete proof
 
-> A spreadsheet where every cell is a live API endpoint, and changing one cell rewires every dependent sensor, model, and agent.
-
----
-
-## The mental model in 5 minutes
-
-Five ideas, in order. Read them once and you'll think in cells.
-
-### 1. A sheet is a list of cells
-
-A sheet is YAML: an `id`, optional `axes` (what rows and columns
-*mean*), and a `cells` list. Each cell is one entry. No build step, no
-schema to register, no framework — a sheet is data that the engine
-brings to life.
-
-```yaml
-id: hello
-cells:
-  - id: greeting
-    kind: value
-    value: "Hello, Quilt!"
-```
-
-### 2. Address, not coordinate
-
-A cell is named, not numbered. `A1` tells you nothing; `compass.heading`
-tells you everything. Ids are dot-namespaced (`fleet.boat1.rudder`),
-stable across reordering, and the thing other cells reference. A
-formula names its inputs explicitly — rename a cell and its dependents
-break loudly, which is the point: dependencies are visible, not
-implicit.
-
-```yaml
-cells:
-  - id: hello
-    kind: value
-    value: "Hello"
-
-  - id: greeting
-    kind: formula
-    expr: "=hello + ', world!'"
-```
-
-### 3. Reactivity: change one cell, everything downstream rewires
-
-Pure cells — `value` and `formula` — recompute on demand, the same
-lazy way Excel does: a change marks dependents *stale*, and the next
-read of a dependent recomputes it. Effectful cells — `api`, `program`,
-`router` — run when called and cache their result per caller context.
-Listeners are the eager ones: the moment a watched cell changes, they
-fire. Same spreadsheet, extended to async and side effects.
-
-```yaml
-  - id: temp
-    kind: value
-    value: 21
-
-  - id: feels_like
-    kind: formula
-    expr: "=temp * 9 / 5 + 32"
-```
-
-### 4. Caller-awareness: a cell can route on who's asking
-
-Every call carries context — `row`, `column`, `identity`, `trace`. A
-router cell evaluates rules against that context and delegates. The
-same address can return a different value to a premium caller than to
-a free one, to row 5 than to row 50. This is the primitive nobody else
-has: position is policy.
-
-```yaml
-  - id: pick
-    kind: router
-    rules:
-      - when: 'caller.row > 10'
-        route: { cell: fast }
-      - when: 'true'
-        route: { cell: precise }
-```
-
-### 5. Bidirectional IO: the same address reads and writes
-
-A `sensor` streams values in — an adapter pushes readings. An `io`
-cell is a port: a webhook, a GPIO pin, an actuator — it can receive
-*and* send. The address doesn't care which side you're on: read it and
-you get the latest state; write it and the grid reacts.
-
-```yaml
-  - id: rudder
-    kind: io
-    direction: out
-    port: actuator:rudder
-```
-
-### 6. Composition: writing an address IS binding to it
-
-Any cell can reference any other cell. That's the whole composition
-story — you don't import modules, you point at addresses. A formula
-that reads `sensor.temp` is bound to that sensor; a listener that
-watches `is_dark` is bound to that decision; a router that delegates
-to `models.precise` is bound to that model. Change the target cell and
-every binding follows. This is the five-layer abstraction — and it's
-why the grid composes the way a real system should: by name, not by
-nesting.
-
----
-
-## ⚡ Try it now
-
-**No install. No clone. Just open it.**
-
-### Two flavors
-
-| What | Try it | Best for |
-| --- | --- | --- |
-| **Quilt Live** | [→ Open the page](https://superinstance.github.io/quilt/landing/quilt-live.html) | Full reactive data OS in your browser. Click-to-try grid, save state as a cookie or downloadable .html. **One file, the whole app.** |
-| **Live simulator** | [→ Open the page](https://superinstance.github.io/quilt/landing/simulator.html) | Side-by-side code editor + runtime view + dependency graph. Edit a YAML sheet, see the cells update in real time. |
-
-Both run entirely in the browser. No build, no install, no server.
-
-> Want a local copy? You can also **download `quilt-live.html` as a single file** and run it offline. The button is right there in the app's top bar.
-
-### What is Quilt Live?
-
-A portable, reactive data OS in one HTML file. **~70 KB, zero dependencies.** Every cell in the grid is a live, addressable capability. Open the link above, change a value, watch the formulas recompute. Save the state as a cookie, or download the whole app with your state baked in. The downloaded file *IS* the app — open it on any device, even offline, and your work is right there.
-
-[→ Open Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.html) · [Source on GitHub](https://github.com/SuperInstance/quilt-live) · [See the 54 examples](https://github.com/SuperInstance/quilt-live/tree/main/examples)
-
-### Where is this going?
-
-Read the **[5-year roadmap](quilt-roadmap-2026.md)** for the bigger picture — Quilt on ESP32, mesh networking, agents as sheets, the personal data mesh. We have sketches for [`quilt-esp32`](https://github.com/SuperInstance/quilt-esp32) (microcontroller runtime), [`quilt-mesh`](https://github.com/SuperInstance/quilt-mesh) (peer-to-peer sync), and [`quilt-agent`](https://github.com/SuperInstance/quilt-agent) (LLM agents as sheets).
-
----
-
-## Quick start (5 minutes)
-
-```sh
-# 1. Clone
-git clone https://github.com/superinstance/quilt.git
-cd quilt
-
-# 2. Install (npm workspaces)
-npm install
-
-# 3. Run a sheet
-npx @quilt/cli run examples/boat-autopilot/sheet.yaml
-
-# 4. Serve as MCP (then point an MCP client at it)
-npx @quilt/cli serve examples/boat-autopilot/sheet.yaml
-
-# 5. Or use the TypeScript API
-node -e '
-import("@quilt/core").then(async ({ QuiltEngine, parseSheet }) => {
-  const engine = new QuiltEngine({ id: "demo" });
-  engine.loadSheet(parseSheet("id: demo\ncells:\n  - id: hello\n    kind: value\n    value: hello, world"));
-  const v = await engine.get("hello", {});
-  console.log(v.data);
-});
-'
-```
-
----
-
-## The 9 cell kinds
-
-<p align="center">
-  <img src="assets/images/cell-types.jpg" alt="Many different kinds of cells living in one grid — values, formulas, programs, models" width="640"><br>
-  <em>A sheet can hold many different kinds of cells at once — each one a
-  different kind of capability, all addressable from the grid.</em>
-</p>
-
-| Kind        | What it is                                       | Evaluator             | Example                                |
-| ----------- | ------------------------------------------------ | --------------------- | -------------------------------------- |
-| `value`     | Static data. No dependencies.                    | direct                | `kind: value, value: 42`              |
-| `formula`   | Reactive expression. Re-evaluates on change.     | `new Function`        | `kind: formula, expr: =a + b`         |
-| `api`       | HTTP endpoint. Fetched on call.                  | `fetch` (async)       | `kind: api, endpoint: https://...`    |
-| `program`   | Inline JavaScript async function.                | `AsyncFunction`       | `kind: program, code: \| ...`         |
-| `sensor`    | Push-only value. Adapter writes, formula reads.  | external adapter      | `kind: sensor, source: mqtt://...`    |
-| `io`        | Bidirectional port.                              | external adapter      | `kind: io, port: gpio17, direction: out` |
-| `listener`  | Triggers on watched cell change.                 | engine propagation    | `kind: listener, watch: [x]`          |
-| `router`    | Caller-aware policy. Delegates to a target cell. | `eval_when`           | `kind: router, rules: [...]`          |
-
----
-
-## A working example: boat-autopilot
-
-From `examples/boat-autopilot/sheet.yaml`:
-
-```yaml
-id: boat-autopilot
-version: "1"
-cells:
-  - id: heading
-    kind: sensor
-    source: "nmea:/dev/ttyUSB0"
-    description: The boat's current heading in degrees.
-
-  - id: target_heading
-    kind: value
-    value: 270
-    description: Where the autopilot should steer.
-
-  - id: error
-    kind: formula
-    expr: =((target_heading - heading + 540) % 360) - 180
-    description: The signed angular error, in [-180, 180].
-
-  - id: rudder
-    kind: formula
-    expr: =clamp(error * 0.5, -30, 30)
-    description: The commanded rudder angle.
-
-  - id: rudder_cmd
-    kind: io
-    port: rudder_actuator
-    direction: out
-    description: The actual rudder command sent to the actuator.
-```
-
-What this gives you:
-
-```
-┌──────────────────┬─────────┬─────────┐
-│ ID               │ KIND    │ VALUE   │
-├──────────────────┼─────────┼─────────┤
-│ heading          │ sensor  │ 265     │
-│ target_heading   │ value   │ 270     │
-│ error            │ formula │ 5       │
-│ rudder           │ formula │ 2.5     │
-│ rudder_cmd       │ io      │ 2.5     │
-└──────────────────┴─────────┴─────────┘
-```
-
-Change `target_heading` to `090` and watch the chain recompute. The boat's actual rudder is commanded to turn the boat toward 090. *That's it. That's the whole autopilot.*
-
----
-
-## Your first sheet, step by step
-
-Let's build something real from nothing: **a light that turns on when
-a sensor reading crosses a threshold.** A twilight lamp for a room —
-the kind of thing you'd put on a Raspberry Pi, except the whole
-controller is a YAML file.
-
-> The commands below use `quilt`, the repo's CLI binary (available
-after `npm install && npm run build` — see [Quick start](#quick-start-5-minutes)).
-
-### Step 1 — scaffold
-
-```sh
-quilt init room-light
-# ✓ Scaffolded room-light.quilt.yaml
-```
-
-This creates `room-light.quilt.yaml` with a starter sheet: a value,
-a formula, and a pure computation. We're replacing the cells with our
-own.
-
-### Step 2 — write the sheet
-
-Open `room-light.quilt.yaml` and give it these five cells:
-
-```yaml
-id: room-light
-title: "Twilight Light"
-description: "A light that turns on when the room gets dark"
-version: 0.1.0
-
-cells:
-  - id: ambient.light
-    kind: sensor
-    source: simulated
-    rate: 1000
-    default: 400
-    unit: lux
-    description: "Current ambient light level"
-
-  - id: threshold
-    kind: value
-    value: 200
-    unit: lux
-    description: "Below this, the room counts as dark"
-
-  - id: is_dark
-    kind: formula
-    expr: "=ambient.light < threshold"
-    description: "True when it's dark enough to need the light"
-
-  - id: light.state
-    kind: formula
-    expr: "=is_dark ? 'ON' : 'OFF'"
-    description: "The light's command state, derived from darkness"
-
-  - id: light.actuator
-    kind: io
-    direction: out
-    port: gpio:relay1
-    description: "The physical relay the light is wired to"
-```
-
-Walk through it, cell by cell:
-
-- **`ambient.light`** — a `sensor`: input from the outside world.
-  `source: simulated` means no real hardware; `default: 400` gives it
-  a starting reading so the sheet works out of the box. In production
-  the source would be something like `i2c:/dev/i2c-1` or
-  `mqtt://broker/topic`, and an adapter would push readings into the
-  cell.
-- **`threshold`** — a `value`: a configuration knob. Change this one
-  number and the light's behavior changes, with zero logic edits.
-- **`is_dark`** — a `formula`: the decision. `=ambient.light <
-  threshold` references two cells by id. The engine auto-detects the
-  dependency edges by scanning the expression — you never declare
-  them.
-- **`light.state`** — a `formula` that turns the boolean into a
-  command string. Note the ternary: formulas are JavaScript
-  expressions, with `abs`, `min`, `max`, and `clamp` available.
-- **`light.actuator`** — an `io` cell, `direction: out`: the port the
-  relay is wired to. In a real deployment a harness binds this port to
-  a GPIO pin. Here it's the visible output slot of the system.
-
-### Step 3 — inspect the graph
-
-```sh
-quilt inspect room-light.quilt.yaml
-```
-
-```
-──────────────────────────────────────────────────────────────────────
-Sheet: room-light
-Cells: 5
-──────────────────────────────────────────────────────────────────────
-
-[sensor] (1)
-  ambient.light — Current ambient light level
-
-[value] (1)
-  threshold — Below this, the room counts as dark
-
-[formula] (2)
-  is_dark ← ambient.light, threshold — True when it's dark enough to need the light
-  light.state ← is_dark — The light's command state, derived from darkness
-
-[io] (1)
-  light.actuator — The physical relay the light is wired to
-```
-
-The `←` arrows are the dependency edges the engine found. You can see
-the whole system at a glance — this *is* the architecture diagram.
-
-### Step 4 — run it
-
-```sh
-quilt run room-light.quilt.yaml
-```
-
-```
-▶ Running sheet: room-light (Twilight Light)
-  5 cells loaded.
-
-  ◉ ambient.light                  [sensor  ] ✓ 400
-  ○ threshold                      [value   ] ✓ 200
-  ƒ is_dark                        [formula ] ✓ false
-  ƒ light.state                    [formula ] ✓ "OFF"
-  ⇆ light.actuator                 [io      ] … ∅
-```
-
-400 lux of daylight, threshold 200: not dark, light OFF. The glyphs
-are the cell kinds — `◉` sensor, `○` value, `ƒ` formula, `⇆` io.
-
-### Step 5 — make it dark
-
-Two honest ways to see the reactivity, depending on whether you want
-to edit or to watch.
-
-**The edit way** — the sheet is the source of truth. Change
-`default: 400` to `default: 120`, save, and run again:
-
-```
-  ◉ ambient.light                  [sensor  ] ✓ 120
-  ƒ is_dark                        [formula ] ✓ true
-  ƒ light.state                    [formula ] ✓ "ON"
-```
-
-The room got dark, so the light turned on. You changed one number in
-a file and the system recomputed.
-
-**The live way** — a running engine reacts to pushes. Ten lines of
-Node, using the same library the CLI uses:
-
-```js
-import { readFile } from 'node:fs/promises';
-import { QuiltEngine, parseSheet } from '@quilt/core';
-
-const sheet = parseSheet(await readFile('room-light.quilt.yaml', 'utf8'));
-const engine = new QuiltEngine(sheet.id);
-engine.loadSheet(sheet);
-
-console.log('daylight:', (await engine.get('light.state')).data);   // OFF
-await engine.push('ambient.light', 120);                            // the room goes dark
-console.log('is_dark:', (await engine.get('is_dark')).data);        // true
-console.log('light.state:', (await engine.get('light.state')).data);// ON
-await engine.push('ambient.light', 500);                            // morning
-console.log('light.state:', (await engine.get('light.state')).data);// OFF
-```
-
-```
-daylight: OFF
-is_dark: true
-light.state: ON
-light.state: OFF
-```
-
-`engine.push` feeds the sensor — that's exactly what a real adapter
-does (MQTT subscription, GPIO interrupt, webhook). The formula chain
-recomputes on the next read. No events, no callbacks, no wiring — just
-cells.
-
-> **Why not `quilt set`?** `quilt set room-light.quilt.yaml
-> ambient.light 100` works, but each CLI invocation is its own
-> session: it loads the YAML, sets the value in memory, prints `✓ set
-> ambient.light = 100`, and exits. The YAML file is unchanged, and the
-> next command starts from the file again. `set` is for scripting and
-> agents; persistence is the file, liveness is your harness, the TUI,
-> the simulator, or a `serve` session.
-
-### Step 6 — make it *do* something
-
-A formula that flips a string is nice; a system that acts is better.
-Add a listener and a program cell:
-
-```yaml
-  - id: log.switch
-    kind: listener
-    watch: [is_dark]
-    action: log.event
-    description: "Fires whenever darkness changes"
-
-  - id: log.event
-    kind: program
-    code: |
-      const dark = (await runtime.get('is_dark')).data;
-      return { event: dark ? 'lights-on' : 'lights-off', at: Date.now() };
-```
-
-The listener is *eager*: the instant `is_dark` changes, it calls
-`log.event`, which runs arbitrary async JavaScript — log to a file,
-POST a webhook, flash an LED. The program cell gets three handles:
-`input`, `caller` (the context), and `runtime` — with
-`runtime.get` / `runtime.set` / `runtime.call` it can read, write, and
-invoke any other cell. That's the "anything" escape hatch; use it
-sparingly and prefer formulas for pure math.
-
-### Step 7 — hand it to an agent
-
-```sh
-quilt serve room-light.quilt.yaml --mcp
-# [quilt] serving sheet 'room-light' as MCP server on stdio
-```
-
-Point Claude Code or Cursor at it (config in the next section) and the
-agent can read `cell__is_dark`, ask what's in the sheet, and call
-`cell__log_event` to trigger the program. Your light just got an API —
-and the API is the whole grid.
-
----
-
-## CLI command reference
-
-`quilt` is deliberately small — the power lives in the runtime and the
-embedding surfaces. This is the entire command surface:
-
-| Command | What it does |
-| --- | --- |
-| `quilt init [name]` | Scaffold `<name>.quilt.yaml` (default `my-quilt-sheet`) with a starter sheet |
-| `quilt run <sheet>` | Load the sheet, evaluate every cell once, print id / kind / status / value |
-| `quilt serve <sheet>` | One-shot serve: load and print the sheet's current state |
-| `quilt serve <sheet> --mcp` | Serve the sheet as an **MCP server on stdio** — every cell becomes a tool |
-| `quilt get <sheet> <cell>` | Print a cell's `CellValue` as JSON |
-| `quilt set <sheet> <cell> <value>` | Set a cell's value in a fresh session and print confirmation (does not persist) |
-| `quilt test <sheet>` | Evaluate every cell; print `✓`/`✗` per cell; exit `1` if anything failed |
-| `quilt inspect <sheet>` | Show the sheet grouped by kind, with dependency arrows and descriptions |
-| `quilt validate <file>` | Validate a manifest against the JSON Schema; `--check-exists` to verify preconditions; `--run-id <id>` to template `{{run_id}}` |
-| `quilt resolve <uri>` | Resolve a Quilt URI: substitute `{{vars}}` and pin `:latest`; `--run-id <id>` for context |
-| `quilt help` / `-h` / `--help` | Print usage |
-
-Details worth knowing:
-
-- **`set` value parsing** — the value is parsed as JSON first, and
-  falls back to a plain string: `quilt set s.yaml x 42` sets the
-  number `42`, `quilt set s.yaml x '"42"'` sets the string `"42"`,
-  `quilt set s.yaml x '{"a":1}'` sets an object. Bare words become
-  strings.
-- **`run` glyphs** — the kind symbols: `○` value, `ƒ` formula,
-  `↗` api, `⚙` program, `◉` sensor, `⚡` listener, `⇄` router,
-  `⇆` io. Status marks: `✓` ready, `✗` error, `…` idle/pending, `∅`
-  no value.
-- **Stateless by design** — every invocation loads the YAML fresh.
-  `run`, `inspect`, and `test` are read-only; `set` mutates a
-  throwaway session. Long-lived state belongs to a harness, the TUI,
-  the simulator, or an MCP `serve` session.
-- **Exit codes** — usage errors exit `1`; `test` exits `1` if any
-  cell failed; everything else exits `0`.
-
----
-
-## 🧬 Quilt as an Agent Substrate
-
-Quilt is a registry, a resolver, and an execution substrate. The
-**`@quilt/sdk`** package exposes five primitives that let any planner,
-runtime, or UI compose Quilt sheets into agentic workflows:
+**1. A Quilt sheet, top to bottom:**
 
 ```ts
-import {
-  resolveTemplate,         // 1. substitute {{vars}}
-  resolveArtifact,         // 2. pin :latest, get provenance
-  validateManifest,        // 3. JSON Schema + precondition checks
-  publishArtifact,         // 4. upload, get content-addressed URI
-  publishRunTrace,         // 5. persist immutable execution trace
-  InMemoryArtifactStore,
-} from '@quilt/sdk';
+import { QuiltEngine } from '@quilt/core';
 
-const store = new InMemoryArtifactStore();
+const engine = new QuiltEngine('expense-tracker');
 
-// Compile a goal into a plan
-const v = await validateManifest(plan, { store, checkExists: true });
+engine.loadSheet({
+  name: 'expense-tracker',
+  cells: [
+    // Inputs (the knobs you turn)
+    { path: 'income',      kind: 'value', value: 5000 },
+    { path: 'food',        kind: 'value', value: 800  },
+    { path: 'rent',        kind: 'value', value: 1500 },
+    { path: 'transport',   kind: 'value', value: 200  },
 
-// Run it (Quilt's reactive engine evaluates the cells)
-const { uri, contentHash } = await publishArtifact(modelBytes, { manifestId: plan.id, runId }, store);
+    // Derived (recompute when inputs change)
+    { path: 'total_spent', kind: 'formula',
+      fn: (ctx) => ctx.food + ctx.rent + ctx.transport },
+    { path: 'savings',     kind: 'formula',
+      fn: (ctx) => ctx.income - ctx.total_spent },
+    { path: 'savings_rate', kind: 'formula',
+      fn: (ctx) => ctx.savings / ctx.income },
 
-// Audit it
-await publishRunTrace({
-  runId: 'r-01',
-  manifestId: plan.id,
-  startTime: new Date().toISOString(),
-  status: 'success',
-  nodes: [{ nodeId: 'main', status: 'success', artifactUris: [uri] }],
-}, store);
+    // Reactive (fires when a value changes)
+    { path: 'on_spend_change', kind: 'listener', listens: 'total_spent',
+      fn: (ctx) => console.log('Total spent:', ctx.total_spent) },
+  ],
+});
+
+console.log(engine.get('savings_rate'));  // 0.5
+
+engine.set('food', 1000);  // changed a value
+console.log(engine.get('savings_rate'));  // 0.46 (auto-recomputed)
 ```
 
-**Why these five?** They are the minimum surface that lets planners
-compile goals into manifest DAGs, runtimes execute them transactionally,
-agents learn from the past, and UIs show users what is happening with
-full provenance. **See the [Agent Substrate landing page](landing/agent-substrate.html)
-for the full mapping and live playground.**
+[Try it live →](https://superinstance.dev/playground.html)
+
+**2. AI-powered sheets:**
+
+Type "Track my expenses with food, transport, and income". z.ai generates the sheet.
+
+[Try AI sheet →](https://superinstance.dev/ai-sheet.html)
+
+**3. A reflex engine in your browser:**
+
+A reflex engine that learns to respond to "list containers" in <50ms without an LLM. After enough uses, it never needs the LLM.
+
+[Try Pincher →](https://superinstance.dev/pincher.html)
+
+**4. A multi-instance fleet with federation:**
+
+Watch cells propagate across 4 simulated instances with simulated network latency.
+
+[Try Federation →](https://superinstance.dev/federation.html)
+
+**5. Chaos engineering on K3s:**
+
+Run 5 failure scenarios (node down, network partition, disk full, API down, etcd down) with Kimi-designed recovery thresholds.
+
+[Try Chaos test →](https://superinstance.dev/chaos-test.html)
+
+**6. A live inspector for any sheet:**
+
+Visualize any Quilt sheet as a dependency graph. Click any node to inspect.
+
+[Try Inspector →](https://superinstance.dev/inspector.html)
+
+## ✦ The 25 repos
+
+| # | Repo | What it does |
+|---|---|---|
+| 1 | [quilt](https://github.com/SuperInstance/quilt) | The core engine. 9 cell kinds, reactive evaluation. |
+| 2 | [quilt-rust](https://github.com/SuperInstance/quilt-rust) | Rust port. Sync core, async cells. |
+| 3 | [quilt-live](https://github.com/SuperInstance/quilt-live) | The whole engine in one HTML file. 70KB. |
+| 4 | [quilt-esp32](https://github.com/SuperInstance/quilt-esp32) | no_std Rust for ESP32. |
+| 5 | [quilt-mesh](https://github.com/SuperInstance/quilt-mesh) | Distributed cell graph. |
+| 6 | [quilt-agent](https://github.com/SuperInstance/quilt-agent) | Agent substrate. 5 SDK primitives. |
+| 7 | [quilt-time](https://github.com/SuperInstance/quilt-time) | Time cells: cron, intervals, debouncing. |
+| 8 | [quilt-vault](https://github.com/SuperInstance/quilt-vault) | Encrypted secret cells. |
+| 9 | [quilt-vision](https://github.com/SuperInstance/quilt-vision) | Vision cells: object detection, OCR. |
+| 10 | [quilt-zk](https://github.com/SuperInstance/quilt-zk) | Zero-knowledge cells. |
+| 11 | [quilt-flow](https://github.com/SuperInstance/quilt-flow) | Flow control cells. |
+| 12 | [quilt-cloudflare](https://github.com/SuperInstance/quilt-cloudflare) | Cloudflare Workers runtime. |
+| 13 | [quilt-ai](https://github.com/SuperInstance/quilt-ai) | AI cell kinds. 4 providers. |
+| 14 | [quilt-evolve](https://github.com/SuperInstance/quilt-evolve) | Self-evolving cells. RLAIF. |
+| 15 | [quilt-codespace](https://github.com/SuperInstance/quilt-codespace) | GitHub Codespaces runtime. |
+| 16 | [quilt-jetson](https://github.com/SuperInstance/quilt-jetson) | NVIDIA Jetson runtime. CUDA. |
+| 17 | [quilt-rag](https://github.com/SuperInstance/quilt-rag) | Production RAG as cells. |
+| 18 | [quilt-fleet](https://github.com/SuperInstance/quilt-fleet) | Multi-instance federation. |
+| 19 | [quilt-elf](https://github.com/SuperInstance/quilt-elf) | Invisible elves. LLM-powered background workers. |
+| 20 | [quilt-pincher](https://github.com/SuperInstance/quilt-pincher) | Reflex engine as Quilt cells. |
+| 21 | [quilt-base](https://github.com/SuperInstance/quilt-base) | Minimal container base images. |
+| 22 | [quilt-swarm](https://github.com/SuperInstance/quilt-swarm) | Docker Swarm control plane. |
+| 23 | [quilt-core-os](https://github.com/SuperInstance/quilt-core-os) | Immutable Ubuntu Core appliance. |
+| 24 | [quilt-k3s](https://github.com/SuperInstance/quilt-k3s) | K3s chaos testing framework. |
+| 25 | [quilt-nomad](https://github.com/SuperInstance/quilt-nomad) | HashiCorp Nomad control plane. |
+
+Plus the [live workspace](https://superinstance.dev/workspace.html) with 30+ work-doing tool pages.
+
+## ✦ Getting started
+
+**In a browser (no install):**
+
+```html
+<script type="module">
+  import { QuiltEngine } from 'https://cdn.jsdelivr.net/npm/@quilt/core@0.6.0/dist/index.js';
+  // ...
+</script>
+```
+
+[Or try the live playground →](https://superinstance.dev/playground.html)
+
+**In Node:**
 
 ```bash
-# Try it
-quilt validate examples/train-classifier.manifest.yaml
-quilt resolve 'quilt://ml/models:{{run_id}}' --run-id r-20260819-01
-```
-
-28 tests cover: templating edge cases, URI validation, version pinning,
-schema validation, all precondition types, content addressing,
-idempotency, end-to-end planner-style flows.
-
----
-
-## 🌐 Quilt Federation — quilts that link to other quilts
-
-Every cell is a URI. Every URI is addressable. The same reactive
-engine runs in your process, on a Jetson, in a GitHub Codespace, or
-on a Cloudflare Worker — and they federate via subscription.
-
-```ts
-import { resolveCell, subscribeCell, detectTier, CellRouter } from '@quilt/sdk';
-
-// What tier am I in?
-const me = detectTier();
-// → { tier: 'codespace', instanceId: 'codespace-abc', platform: 'GitHub Codespace', ... }
-
-// Subscribe to a cell on a sibling tier
-const unsub = subscribeCell(
-  'quilt://esp32-fleet/boat#sensor.rudder',
-  transport,
-  (angle) => console.log('rudder is now', angle)
-);
-
-// Route across multiple instances
-const router = new CellRouter();
-router.add('local', localTransport);
-router.add('jetson-lab', httpTransport1);
-router.add('codespace-7c3', httpTransport2);
-const handle = await router.resolve('quilt://jetson-lab/perception#vision.scene');
-```
-
-**The deployment tier model** (mirrors cocapn-runtime's 5-room abstraction):
-
-| Tier | Capability profile | Repo |
-|---|---|---|
-| `esp32` | no_std, sensors + motors | [`quilt-esp32`](https://github.com/SuperInstance/quilt-esp32) |
-| `jetson` | sync + alloc, GPU, LLM | (next) |
-| `codespace` | async, ttyd + MCP | [`quilt-codespace`](https://github.com/SuperInstance/quilt-codespace) |
-| `cloudflare` | V8 isolates, D1, KV, R2 | [`quilt-cloudflare`](https://github.com/SuperInstance/quilt-cloudflare) |
-| `server` | Node.js, full stack | this repo |
-
-**URI scheme:**
-
-```
-quilt://[instance-id]/[sheet-id]#[cell-path]
-
-quilt://local/boat-autopilot#rudder.angle
-quilt://jetson-lab/perception#vision.scene
-quilt://codespace-7c3/prod#anomaly.score
-quilt://*[/]/prod#x        ← wildcard for routing tables
-quilt://esp32-fleet/+#rudder.angle  ← fleet-wide
-```
-
-**The killer example:** the [Fed Autopilot](https://github.com/SuperInstance/quilt-codespace/tree/main/examples/fed-autopilot) — a 3-tier Quilt stack (ESP32 → Jetson → Codespace) for an autonomous boat. Same reactive engine, three hardware tiers, federation by subscription.
-
-**61 SDK tests** (28 base + 33 federation), all passing. **See the [Federation landing page](landing/federation.html) for the live 3-tier demo.**
-
-**GitHub Codespaces:** this repo has a `.devcontainer/` for a lightweight Codespace runtime. For the full template (with HTTP API, fed-autopilot example, and CI), use [`quilt-codespace`](https://github.com/SuperInstance/quilt-codespace) as a template.
-schema validation, all precondition types, content addressing,
-idempotency, end-to-end planner-style flows.
-
----
-
-## Use it with Claude Code
-
-Add to your MCP config (`~/.config/claude-code/mcp.json` or similar):
-
-```json
-{
-  "mcpServers": {
-    "quilt": {
-      "command": "npx",
-      "args": ["@quilt/cli", "serve", "/path/to/your/sheet.yaml", "--mcp"]
-    }
-  }
-}
-```
-
-The `--mcp` flag is what puts the sheet on stdio. Without it, `serve`
-prints a one-shot view and exits — an MCP client would see nothing.
-
-Then in your conversation:
-
-> *"What cells are in this sheet?"*
->
-> *"Read the `rudder` cell."*
->
-> *"Set `target_heading` to 045."*
->
-> *"What cells depend on `heading`?"*
-
-Claude calls the MCP tools directly. You see the cell values; you don't write code.
-
----
-
-## How to use it, deep dives
-
-### MCP: the sheet as an agent's workspace
-
-The mapping is direct — there is no translation layer:
-
-- **Every named cell → one MCP tool**, named `cell__<id>` with dots
-  sanitized to underscores (`compass.heading` → `cell__compass_heading`).
-  The tool accepts `input` (passed to the cell), plus `row` and
-  `column` (caller context for routing).
-- **The whole sheet → an MCP resource** at `quilt://<sheet>/sheet`,
-  plus one resource per cell at `quilt://<sheet>/cell/<id>`.
-
-> In a repo clone, substitute `npx @quilt/cli` with the built `quilt`
-> binary (the npm packages aren't published yet) — e.g.
-> `"command": "/path/to/quilt/node_modules/.bin/quilt"`.
-
-**Claude Code** — either add it with the CLI:
-
-```sh
-claude mcp add quilt -- npx @quilt/cli serve /path/to/your/sheet.yaml --mcp
-```
-
-or by editing `~/.config/claude-code/mcp.json` (the config in the
-section above — don't forget `--mcp`).
-
-**Cursor** — project-level config in `.cursor/mcp.json` (or
-`~/.cursor/mcp.json` for all projects):
-
-```json
-{
-  "mcpServers": {
-    "quilt": {
-      "command": "npx",
-      "args": ["@quilt/cli", "serve", "/path/to/your/sheet.yaml", "--mcp"]
-    }
-  }
-}
-```
-
-**A worked flow** — with the boat sheet served, an agent can:
-
-> "What cells are in this sheet?" — reads the
-> `quilt://boat-autopilot/sheet` resource.
->
-> "Call `cell__heading_error` for boat-2." — invokes the formula with
-> `row: "boat-2"`.
->
-> "What's the current rudder command?" — calls `cell__rudder_command`.
-
-One honest caveat: the current toolset is **call-based**. Calling a
-`value` or `formula` cell returns its current value; calling an
-effectful cell invokes it with your `input`. There's no set/push tool
-yet, so agents can read and invoke, but writes flow through your
-harness — or through a `program` cell that calls `runtime.set`.
-
-### As a library: embed the engine
-
-`@quilt/core` is a plain ESM library — no native deps, TypeScript,
-~1,500 commented lines. It's the same engine the CLI, MCP, and TUI
-all sit on. Embed it in a Node service, a web server, an agent
-runtime, or a test suite.
-
-```sh
 npm install @quilt/core
 ```
 
-The engine API, in one breath:
-
-| Method | Signature | Notes |
-| --- | --- | --- |
-| `loadSheet` | `(sheet: SheetDef) => void` | Loads a parsed sheet; resets engine state and rebuilds the graph |
-| `defineCell` | `(def: CellDef) => Cell` | Add one cell; throws on duplicate id |
-| `register` | `(def: CellDef) => Cell` | Dynamic registration (agents defining cells at runtime); adds declared deps |
-| `get` | `(id, ctx?) => Promise<CellValue>` | Pull a value, computing if needed; never throws — errors come back as `status: 'error'` |
-| `set` | `(id, value, ctx?) => Promise<void>` | Write a value and propagate; throws on unknown cell |
-| `call` | `(id, input?, ctx?) => Promise<CellValue>` | Invoke a cell as a capability; behaves as `get` for pure cells |
-| `push` | `(id, data, ctx?) => Promise<void>` | Feed a sensor/io cell from an adapter; throws for other kinds |
-| `subscribe` | `(id, cb(value, prev), filter?) => string` | Watch one cell; returns a subscription id |
-| `unsubscribe` | `(subId) => void` | Stop watching |
-| `getCell` | `(id) => Cell \| undefined` | Raw cell — read `.dependencies` and `.dependents` |
-| `listCells` | `(kind?) => Cell[]` | All cells, optionally filtered by kind |
-| `getTraces` | `(limit = 100) => EvaluationTrace[]` | Recent evaluations (debugging, cost accounting) |
-| `exportDefs` | `() => CellDef[]` | Serialize runtime state back to definitions |
-
-Plus the parser and context helpers: `parseSheet(yaml)`,
-`validateSheet(raw)`, `serializeSheet(sheet)`, `emptyContext()`,
-`extendContext(parent, childId, extra?)`, `contextKey(ctx)`, and
-`evalWhen(when, ctx)`.
-
-The boat demo (`examples/boat-autopilot/demo.ts`) is built from exactly
-this pattern — load, push, read, per-boat context:
-
-```js
-import { readFile } from 'node:fs/promises';
-import { QuiltEngine, parseSheet } from '@quilt/core';
-
-const sheet = parseSheet(await readFile('examples/boat-autopilot/sheet.yaml', 'utf8'));
-const engine = new QuiltEngine(sheet.id);
-engine.loadSheet(sheet);
-
-// Two boats, one sheet, caller-aware rows:
-for (const boat of [{ id: 'boat-1', heading: 180 }, { id: 'boat-2', heading: 175 }]) {
-  await engine.push('compass.heading', boat.heading);
-  const err = await engine.get('heading.error', { row: boat.id });
-  console.log(boat.id, err.data);  // the signed error for that boat
-}
-
-// Watch a cell forever:
-const sub = engine.subscribe('compass.heading', (v, prev) => {
-  console.log('heading:', prev.data, '→', v.data);
-});
+```ts
+import { QuiltEngine } from '@quilt/core';
+const engine = new QuiltEngine('my-app');
 ```
 
-**Caller context** is just an object — pass `row`, `column`,
-`identity`, or `metadata` to any call, and every cell downstream sees
-it:
+**On a Cloudflare Worker:**
 
-```js
-const ctx = {
-  row: 'boat-1',
-  identity: { id: 'user-1', type: 'human', tags: ['premium'] },
-};
-const v = await engine.call('model.router', input, ctx);
+```bash
+npm install @quilt/cloudflare
 ```
 
-### The TUI: the power-tool view
+**On a Raspberry Pi / Jetson / ESP32:**
 
-`@quilt/tui` is a keyboard-driven terminal view of a running engine —
-live cell grid, dependencies and dependents panels for the selected
-cell, no full-screen takeover, plays well with tmux.
+See [quilt-codespace](https://github.com/SuperInstance/quilt-codespace), [quilt-jetson](https://github.com/SuperInstance/quilt-jetson), [quilt-esp32](https://github.com/SuperInstance/quilt-esp32).
 
-```sh
-npx quilt-tui room-light.quilt.yaml
-```
+## ✦ Why you should care
 
-| Key | Action |
-| --- | --- |
-| `j` / `k` / arrows | Move selection |
-| `g` / `G` | Jump to top / bottom |
-| `s` | Set the selected cell to a new value (JSON or bare string) |
-| `e` | Edit (read-only in MVP — use `s`) |
-| `:` | Command mode — `reload`, `help`, `quit` |
-| `r` | Reload cell values from the engine |
-| `q` / `Ctrl-C` | Quit |
+If you've ever wished your system was simpler. If you've ever had a service that depended on five other services and you couldn't keep track of the dependencies. If you've ever wanted a config file that was also a program. If you've ever wanted one model that runs in the browser, the server, and the embedded device. If you've ever wished your software was more like a spreadsheet — reactive, visual, easy to change.
 
-A worked flow: open the boat sheet, `k` down to `desired.heading`,
-press `s`, type `090`, Enter — the engine `set`s the cell and
-propagates; press `r` to refresh the grid and watch `heading.error`
-flip sign. In `s` mode, `42` is a number, `"42"` is a string, and
-`{"a":1}` is an object.
+This is for you.
 
-### The browser simulator: no install, no build
+## ✦ License
 
-[`landing/simulator.html`](landing/simulator.html) is a self-contained
-simulator — open it in any browser, even offline. Left pane: the sheet
-source. Right pane: the live runtime. Below: the dependency graph.
-Pick a preset (Boat Autopilot, Model Router, Anomaly Detector, Agent
-Dashboard), edit the YAML, hit **Apply**, and watch cells recompute in
-real time. For the full single-file experience, try
-[Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.html)
-(`landing/quilt-live.html` in this repo) — the same reactive grid as a
-portable, save-your-state app. [`landing/index.html`](landing/index.html)
-is the landing page with the animated grid demo;
-[`landing/tutorial.html`](landing/tutorial.html) is the interactive
-tutorial. None of them need a build step.
+Apache 2.0. See [LICENSE](./LICENSE).
 
 ---
 
-## The 5-layer abstraction
-
-Quilt is built on 5 layers of "addressing as composition." Understanding them is the difference between using Quilt and *thinking* in Quilt.
-
-```
-Layer 0  ADDRESS           A stable id, not a coordinate. Not a URI. A name.
-Layer 1  SPATIAL           row / column carry context. Position is policy.
-Layer 2  REACTIVE          when an address changes, dependents re-evaluate.
-Layer 3  BIDIRECTIONAL     same address is readable AND writable.
-Layer 4  COMPOSING         writing an address IS binding to it.
-```
-
-The Rust port honors the same five layers. The data model is identical. Only the runtime differs.
-
----
-
-## What's in the box
-
-### Core runtime
-- **`@quilt/core`** — the reactive cell engine. TypeScript, ESM, no native deps. ~1,500 lines, heavily commented.
-- **`@quilt/sdk`** — agent substrate + federation primitives. **8 functions**:
-  - Agent substrate: `resolveTemplate`, `resolveArtifact`, `validateManifest`, `publishArtifact`, `publishRunTrace`
-  - Federation: `resolveCell`, `subscribeCell`, `CellRouter`, `detectTier`
-  Turn any Quilt sheet into an executable, auditable, replayable artifact — and link it to other Quilt instances. **61 tests.**
-- **`@quilt/cli`** — `init / run / serve --mcp / get / set / inspect / test / validate / resolve`. The entry point.
-- **`@quilt/mcp`** — exposes every cell as an MCP tool, every sheet as an MCP resource.
-- **`@quilt/tui`** — terminal-native view of a running engine. Live cell grid, dependencies panel, key bindings. Plays well with tmux.
-
-### Examples (10, all working end-to-end)
-
-The original four:
-
-- **[boat-autopilot](examples/boat-autopilot/)** — sensors, PID, voice intent, model router. The killer demo.
-- **[agent-dashboard](examples/agent-dashboard/)** — tasks, status, shared human+agent workspace.
-- **[model-router](examples/model-router/)** — caller-aware model selection.
-- **[sensor-anomaly](examples/sensor-anomaly/)** — self-tuning anomaly detector.
-
-Six new production-grade examples:
-
-- **[weather-monitor](examples/weather-monitor/)** — three sensors → heat-index formula → listener alerts → caller-aware router.
-- **[chat-router](examples/chat-router/)** — LLM routing by tier (premium/standard/free) and message length.
-- **[ab-test-router](examples/ab-test-router/)** — deterministic A/B test using FNV-1a hash + bucket router.
-- **[iot-dashboard](examples/iot-dashboard/)** — three thermometers → room status → building status, with alerts.
-- **[rate-limiter](examples/rate-limiter/)** — token-bucket rate limiter with per-caller state.
-- **[task-scheduler](examples/task-scheduler/)** — reactive task scheduler with overdue listener.
-
-### Templates (3, copy-and-customize)
-- **[predictive-maintenance](templates/predictive-maintenance.yaml)** — per-machine rows, sensor → model → alert
-- **[npc-behavior](templates/npc-behavior.yaml)** — game NPC behavior
-- **[edge-anomaly-detection](templates/edge-anomaly-detection.yaml)** — Raspberry Pi / industrial gateway
-
-### Browser visuals (no build step)
-- **[landing/index.html](landing/index.html)** — landing page with animated grid demo
-- **[landing/quilt-live.html](landing/quilt-live.html)** — the Quilt Live single-file reactive data OS ([live page](https://superinstance.github.io/quilt/landing/quilt-live.html))
-- **[landing/simulator.html](landing/simulator.html)** — live side-by-side simulator (code + runtime + dependency graph) ([live page](https://superinstance.github.io/quilt/landing/simulator.html))
-- All work offline. Just open them in a browser.
-
-### Documentation
-- **[Manifesto](docs/manifesto.md)** — the 10-point declaration
-- **[Architecture](docs/architecture.md)** — engine internals
-- **[Tutorial](tutorials/README.md)** — 5 chapters, about an hour
-- **[Recipes](docs/recipes.md)** — 10 common patterns, copy-paste
-- **[Comparison](docs/comparison.md)** — how Quilt differs from n8n, LangGraph, etc.
-- **[Security](docs/security.md)** — the trust model, what to do in production
-- **[Engineering Bar](docs/engineering-bar.md)** — what "done right" means for a Quilt repo (8 layers)
-- **[Repo Audit](docs/repo-audit.md)** — current state of all 15 repos, scored 0-10
-
----
-
-## The cell kinds, visually
-
-```
-                  ┌────────────┐
-                  │  CellDef   │  ← a YAML object
-                  │ id, kind,  │
-                  │ kind-      │
-                  │ specific   │
-                  │ fields     │
-                  └─────┬──────┘
-                        │  load_sheet
-                        ▼
-                  ┌────────────┐
-                  │   Cell     │  ← a runtime object
-                  │ def, value,│
-                  │ deps,      │
-                  │ dependents │
-                  └─────┬──────┘
-                        │  set / push / call
-                        ▼
-              ┌────────────────────┐
-              │   propagation      │
-              │   - mark stale     │
-              │   - fire listeners │
-              │   - recompute      │
-              │   - notify subs    │
-              └─────────┬──────────┘
-                        │
-                        ▼
-              ┌────────────────────┐
-              │   CellValue {      │
-              │     data, status,  │
-              │     error,         │
-              │     effects,       │
-              │     computed_at    │
-              │   }                │
-              └────────────────────┘
-```
-
-Every `get` reads. Every `set` writes. Every `call` invokes. Every `push` is an inbound event. Every `subscribe` is a notification stream. The cell kind determines the *how*; the engine handles the *when*.
-
----
-
-## Engineering notes (for the curious)
-
-### Why a `Map` for cells, not a tree?
-
-Quilt is intentionally **not** a tree of nodes. It's a flat `Map<CellId, Cell>` with explicit `dependencies` and `dependents` sets. Why?
-
-- Cycles are allowed (a listener can watch the cell that triggers it; the engine just fires it again on the next change).
-- Order doesn't matter — you can add a cell at any time.
-- Debugging is trivial: every dependency is named, every dependent is named, you can `console.log` the cell.
-
-Trees are great for hierarchies (DOM, AST, file system). Quilt is not a hierarchy.
-
-### Why are formulas lazy, but listeners eager?
-
-A formula is **lazy**: it recomputes the next time someone calls `get` on it. This is the right thing for a spreadsheet — millions of cells can exist, but only the ones the user looks at need to be evaluated.
-
-A listener is **eager**: it fires the moment the watched cell changes. This is the right thing for an event handler — by definition, it needs to react.
-
-### Why is the cell value an object, not a primitive?
-
-A `CellValue` is `{ data, status, error, effects, computed_at }`. Why the wrapper?
-
-- `status` lets the UI render stale/error/loading states without inspecting the data.
-- `error` carries the error message separately from the data, so a UI can show both.
-- `effects` records *what the cell did* (network call, storage read, etc.) for tracing, cost accounting, and decomposition.
-- `computed_at` lets you show freshness: "this value is 3 seconds old."
-
-This is what makes Quilt a **runtime**, not a data structure.
-
-### Why does the TypeScript version use `new Function`?
-
-Historical reasons: the engine was prototyped in JavaScript before Rust was a serious option. `new Function` gives you the full JavaScript language, including async/await, which is what `program` cells use.
-
-The trade-off: `new Function` is not sandboxed by default. A malicious `program` cell can read the filesystem, make network calls, etc. The mitigation is documented in [docs/security.md](docs/security.md). The Rust port uses `rhai` which IS sandboxed by default — see [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust).
-
-The TypeScript version is gaining a WASM-cell-sandbox as a v0.2 feature to close the gap.
-
----
-
-## Troubleshooting & FAQ
-
-### "My formula isn't recomputing."
-
-Formulas are *lazy*. When an input changes, the engine marks the
-dependent `stale` but doesn't compute it until someone reads it —
-exactly like Excel. If you see `"status": "stale"`, that's the engine
-telling you "this needs a recompute," and the very next `get` performs
-it. If the dependent is an `api`/`program`/`router` cell, it's
-different: effectful cells are **never** auto-recomputed by upstream
-changes — they run when called. Call it (with a fresh context) and it
-will evaluate.
-
-### "My program/api cell keeps returning the same value."
-
-That's per-context memoization, working as designed. Effectful cells
-cache their result keyed by the caller context (`row`, `column`,
-`identity.id`, `identity.tags`). Same context → same cached value,
-even if upstream cells changed. Force a fresh evaluation by changing
-the context (a different `row`, or an `identity` tag) or by `set`ting
-the cell itself. This is also why the same cell can serve many callers
-at once — each gets its own cached answer.
-
-### "My subscription callback saw the old value."
-
-`push`/`set` notify subscribers *before* propagation marks dependents
-stale, so inside a callback the downstream cells may still hold their
-previous values. After `await engine.push(...)` returns, propagation
-is complete and everything is fresh. If you must read dependents
-inside a callback, wait a tick
-(`await new Promise(r => setImmediate(r))`).
-
-### "Can I have cycles?"
-
-Yes — the graph is a flat `Map<CellId, Cell>` with explicit dependency
-sets, not a tree, and feedback loops are allowed: a listener can watch
-the very cell it triggers and will simply fire again on the next
-change. Keep *pure* chains (formulas) acyclic — a formula cycle has
-no convergent answer. Effectful feedback (sensor → formula → listener
-→ actuator → sensor) is the intended pattern.
-
-### "Is it sandboxed?"
-
-Not by default — and this is the one to read carefully.
-[`docs/security.md`](docs/security.md) is the full trust model. The
-short version: formulas compile via `new Function`, program cells via
-`new AsyncFunction`; they run in the host process with the full
-JavaScript language and are **not** a security boundary. Trust the
-author of the sheet — the author defines what cells call, what they
-connect to, what code they run. Treat anything *calling into* the
-sheet as untrusted input. For production: run the engine in a
-container or worker, use `worker_threads` or `isolated-vm`, whitelist
-endpoints, keep secrets in env vars. The Rust port uses `rhai`, which
-is sandboxed by default; a WASM sandbox for the TS port is planned
-for v0.2.
-
-### "Cells are async — what happens when two calls race?"
-
-`api` and `program` cells are asynchronous. The engine de-dupes
-concurrent calls to the same effectful cell: while one evaluation is
-in flight, a second call awaits the same promise (the `inflight` map
-in `engine.ts`). A cell mid-evaluation reports `status: 'computing'`.
-Results are cached per context after completion.
-
-### "How do I see what depends on X?"
-
-Three answers, all real:
-
-- `quilt inspect sheet.yaml` — shows every cell's dependencies as
-  `id ← a, b, c`.
-- The engine API: `engine.getCell('heading').dependents` — the
-  reverse index, exactly the cells that would rewire if `heading`
-  changed.
-- The TUI: select a cell and read its dependencies/dependents panels.
-
-### "Why is my sensor cell empty — and why didn't `quilt set` stick?"
-
-Two separate things, both common:
-
-- **Sensors are push-only.** `get` on a sensor returns the last
-  *pushed* value (or `default`, if set) — nothing polls, ever. If no
-  adapter has pushed and there's no `default`, you get `∅`. Feed it
-  with `engine.push` (`quilt set` works as a manual stand-in in a
-  pinch).
-- **The CLI is stateless.** Each `quilt` command loads the YAML fresh;
-  `set` mutates a throwaway session and exits. The file is the source
-  of truth. Long-lived reactivity lives in a harness, the TUI, the
-  simulator, or `quilt serve --mcp`.
-
----
-
-## Glossary
-
-### The 9 cell kinds
-
-| Kind | What it is | When to use it |
-| --- | --- | --- |
-| `value` | Static data. No dependencies. | Constants, config, state you change rarely. The leaves of the graph. |
-| `formula` | Pure reactive expression, lazily recomputed on change. | Anything derivable from other cells. Prefer this for all math. |
-| `api` | HTTP endpoint (or `model:` / `mcp://` pseudo-endpoint), fetched on call. | External data or model calls that should run when invoked, not on a schedule. |
-| `program` | Inline async JavaScript. | Logic beyond expressions: orchestration, branching, `runtime.get` / `set` / `call` chains. Use sparingly. |
-| `sensor` | Push-only inbound stream; adapter writes, formulas read. | Anything that arrives on its own timing — MQTT, GPIO, serial, webhooks. |
-| `io` | Bidirectional port: receives and sends. | Webhooks, actuators, hardware pins — the address that faces the world. |
-| `listener` | Eager trigger that fires when a watched cell changes. | "If X happens, do Y" — alerts, escalations, actions. |
-| `router` | Caller-aware policy; delegates to a target based on context. | Serving many tenants / tiers / models behind one address. |
-
-### Core terms
-
-- **Address** — a cell's stable, dot-namespaced id
-  (`fleet.boat1.rudder`). Not a coordinate. Survives reordering and
-  refactors.
-- **Caller** — whoever triggered an evaluation: a human, an agent, a
-  sensor, another cell. The caller's context travels with the call.
-- **Propagation** — the engine's walk from a changed cell to its
-  dependents: mark stale, fire listeners, notify subscribers.
-- **CellValue** — what a cell holds: `{ data, status, error,
-  computedAt, effects }`. The value knows its own freshness.
-- **Adapter** — external code that drives a sensor or io cell:
-  `engine.push(id, reading)` on its own event loop.
-- **Dependency / dependent** — the two sides of an edge: `is_dark`
-  *depends on* `ambient.light`; `ambient.light`'s *dependents*
-  include `is_dark`. Both sets are explicit and inspectable.
-- **Sheet** — a YAML file: id, axes, cells. The executable artifact.
-- **Context** — row, column, identity, trace, metadata, timestamp —
-  everything a call knows about where it came from.
-- **Effect** — a declared side effect a cell performed (network,
-  storage, io, model, compute) — the audit trail on every CellValue.
-- **Status** — `idle` / `computing` / `ready` / `error` / `stale`:
-  what the cell knows about its own value.
-
----
-
-## Cross-references
-
-| Want to…                                                | Go to                                                                |
-| ------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Use Quilt right now** (stable, TypeScript)            | This repo.                                                           |
-| Try the **browser simulator** (live, no install)        | [superinstance.github.io/quilt/landing/simulator.html](https://superinstance.github.io/quilt/landing/simulator.html) |
-| Try **Quilt Live** (full reactive OS, single file)     | [superinstance.github.io/quilt/landing/quilt-live.html](https://superinstance.github.io/quilt/landing/quilt-live.html) |
-| Read the **manifesto** (the 10-point declaration)       | [docs/manifesto.md](docs/manifesto.md)                               |
-| Read the **architecture** deep-dive                      | [docs/architecture.md](docs/architecture.md)                         |
-| Read about **security** and the trust model              | [docs/security.md](docs/security.md)                                 |
-| Walk through the **5-chapter tutorial**                 | [tutorials/README.md](tutorials/README.md)                           |
-| See **10 recipes** for common patterns                  | [docs/recipes.md](docs/recipes.md)                                   |
-| Compare to **n8n, LangGraph, Observable, Excel**         | [docs/comparison.md](docs/comparison.md)                             |
-| **Embed Quilt in Rust** (single binary, embedded)       | [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust) |
-| **Get the same engine as a static binary** (alpha)      | [superinstance/quilt-rust](https://github.com/superinstance/quilt-rust) |
-| Use the **TUI** (terminal view, tmux-friendly)          | [packages/tui/](packages/tui/)                                       |
-| **Try Quilt in a single HTML file** (no install, portable) | **[superinstance/quilt-live](https://github.com/superinstance/quilt-live)** — open one file, save state as cookie or downloadable .html |
-| **Report a bug**                                        | [issues](https://github.com/superinstance/quilt/issues)              |
-
----
-
-## Project status
-
-| Component        | Status          | Notes                                       |
-| ---------------- | --------------- | ------------------------------------------- |
-| `core` engine    | ✅ Stable        | 9/9 unit tests passing. ~1,500 lines.        |
-| `mcp` server     | ✅ Stable        | 5 tools + 1 resource per sheet.              |
-| `cli`            | ✅ Stable        | `init / run / serve / get / set / inspect / test`. |
-| `tui`            | ✅ Stable        | Live cell grid, dependency overlay, key bindings. |
-| Simulator        | ✅ Stable        | Browser, no build step.                      |
-| Examples         | ✅ 4 working    | All four run end-to-end.                    |
-| Templates        | ✅ 3 working    | Copy-and-customize.                          |
-| Web UI           | 🚧 Planned       | v0.2 — WASM-compiled `quilt-core`.           |
-| WASM sandbox     | 🚧 Planned       | v0.2 — close the JavaScript sandbox gap.     |
-| **Rust port**    | ⚠️ Alpha        | 49 tests passing; same engine, same model.   |
-
----
-
-## Why "Quilt"?
-
-A quilt is a stitched composition of small fabric pieces into a working whole. Each piece is itself complete, but the quilt is more than the sum.
-
-> The pieces are cells. The stitches are addresses. The whole is the runtime.
-
-The name was chosen for an AI agent encountering it cold:
-- **One syllable.** Easy to say, easy to type, easy to remember.
-- **Universal metaphor.** Every culture has quilts.
-- **CLI-friendly.** `quilt` is a 5-letter command. No flags, no conflicts.
-- **No major tech collision.** No `quilt.com` baggage, no `loom.com` baggage, no `tessera` pretension.
-
-Other names we considered and rejected: `loom` (loom.com video tool), `tessera` (3 syllables, Latin), `mosaic` (1990s browser), `cellar` (negative connotation), `atlas` (overused).
-
----
-
-## Contributing
-
-We welcome PRs that:
-- Add a new cell evaluator
-- Add an adapter (MQTT, Modbus, OpenAI, Anthropic, etc.)
-- Improve the MCP tool list
-- Add a Web UI
-- Fix a security gap
-- Port the Rust examples to TypeScript
-- Improve the documentation
-
-Open an issue first if you're planning something large.
-
----
-
-## Related Quilt repos
-
-Quilt is an ecosystem of 18 repos, 5 deployment tiers, 3 languages. This repo is part of:
-
-| Tier | Repo | What it is |
-|---|---|---|
-| **Canonical** | [quilt](https://github.com/SuperInstance/quilt) | TypeScript core (this ecosystem's home base) |
-| **Compiled** | [quilt-rust](https://github.com/SuperInstance/quilt-rust) | Rust port — single static binary, axum, crossterm |
-| **Browser** | [quilt-live](https://github.com/SuperInstance/quilt-live) | Single 70KB HTML file that runs anywhere |
-| **IoT** | [quilt-esp32](https://github.com/SuperInstance/quilt-esp32) | no_std Rust for ESP32, sensors + actuators |
-| **Edge** | [quilt-cloudflare](https://github.com/SuperInstance/quilt-cloudflare) | Cloudflare Workers + D1 + Vectorize + R2 |
-| **Codespace** | [quilt-codespace](https://github.com/SuperInstance/quilt-codespace) | GitHub Codespace as a live Quilt runtime |
-| **AI** | [quilt-ai](https://github.com/SuperInstance/quilt-ai) | LLM cells across 4 providers (z.ai, Kimi, DeepSeek, Cloudflare) |
-| **Evolution** | [quilt-evolve](https://github.com/SuperInstance/quilt-evolve) | Self-improvement loops, 4 components, 5 scopes |
-| **Mesh** | [quilt-mesh](https://github.com/SuperInstance/quilt-mesh) | CRDT-backed cross-tab / cross-device sync |
-| **Agent** | [quilt-agent](https://github.com/SuperInstance/quilt-agent) | LLM agent as a sheet — memory, tools, reasoning |
-| **Time** | [quilt-time](https://github.com/SuperInstance/quilt-time) | Time-series cells with rolling windows |
-| **Vault** | [quilt-vault](https://github.com/SuperInstance/quilt-vault) | Secrets cells with per-cell ACLs |
-| **Vision** | [quilt-vision](https://github.com/SuperInstance/quilt-vision) | Computer-vision cells (camera → scene → caption) |
-| **ZK** | [quilt-zk](https://github.com/SuperInstance/quilt-zk) | Zero-knowledge cell verification primitives |
-| **Flow** | [quilt-flow](https://github.com/SuperInstance/quilt-flow) | Workflow cells — DAG execution, retry, rollback |
-| **Jetson** | [quilt-jetson](https://github.com/SuperInstance/quilt-jetson) | NVIDIA Jetson runtime — CUDA, ROS2, vision, sensor fusion |
-| **RAG** | [quilt-rag](https://github.com/SuperInstance/quilt-rag) | Production RAG as cells — 5 vector stores, 5 embedders, 4 evaluators |
-| **Fleet** | [quilt-fleet](https://github.com/SuperInstance/quilt-fleet) | Multi-instance federation orchestrator — discovery, health, quorum, migration |
-| **Elves** | [quilt-elf](https://github.com/SuperInstance/quilt-elf) | Invisible elves — Cloudflare Workers doing background housekeeping, daily-limit-aware, self-improving |
-| **Pincher** | [quilt-pincher](https://github.com/SuperInstance/quilt-pincher) | A reflex engine built entirely from Quilt cells. Pinch in, match a reflex, execute. <50ms, no LLM. Federates across cloud, workstation, and ESP32. |
-| **Base** | [quilt-base](https://github.com/SuperInstance/quilt-base) | Minimal Alpine/Ubuntu/Distroless base images for all Quilt agents. Zero CVE, auto-rebuilding. |
-| **Swarm** | [quilt-swarm](https://github.com/SuperInstance/quilt-swarm) | Quilt as unified control plane over Docker Swarm. Encrypted overlay networking. |
-| **CoreOS** | [quilt-core-os](https://github.com/SuperInstance/quilt-core-os) | Immutable, snap-based Ubuntu Core appliance. Atomic OS updates with instant rollback. Un-brickable. |
-| **K3s** | [quilt-k3s](https://github.com/SuperInstance/quilt-k3s) | K3s-based chaos testing framework. 5 scenarios: node failure, network partition, disk full, API down, etcd down. Self-healing verification in under 30s. |
-| **Nomad** | [quilt-nomad](https://github.com/SuperInstance/quilt-nomad) | Quilt as a control plane for HashiCorp Nomad. Edit a cell, the Nomad cluster reconfigures. value→variable, formula→task, api→http check. |
-
-See the [Federation landing page](https://superinstance.github.io/quilt/landing/federation.html) for the architecture and the [Engineering Bar](https://github.com/SuperInstance/quilt/blob/main/docs/engineering-bar.md) for what "done right" means across all 18 repos.
-
----
-
-## License
-
-Apache 2.0.
-
----
-
-> Use TypeScript when you want the *full experience* — browser, TUI, MCP, simulator, all the examples, all the docs. Use [Rust](https://github.com/superinstance/quilt-rust) when you need a *single binary* that ships anywhere. Both speak the same sheet format.
+**The point is not the 25 repos. The point is the one model.**
