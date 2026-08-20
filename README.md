@@ -211,6 +211,7 @@ Visualize any Quilt sheet as a dependency graph. Click any node to inspect.
 | 34 | [quilt-csharp](https://github.com/SuperInstance/quilt-csharp) | **Polyformalism:** Quilt in C#. |
 | 35 | [quilt-metal](https://github.com/SuperInstance/quilt-metal) | **Polyformalism:** Quilt in Metal. |
 | 36 | [quilt-swift](https://github.com/SuperInstance/quilt-swift) | **Polyformalism:** Quilt in Swift. |
+| 37 | [quilt-radio-orchestrator](https://github.com/SuperInstance/quilt-radio-orchestrator) | Fetalized-egg pattern. Bootstrap Quilt radio-theater sheets from a seed. |
 
 Plus the [live workspace](https://superinstance.dev/workspace.html) with 30+ work-doing tool pages, and the [polyformalism page](https://superinstance.dev/polyformalism.html) that compares the 12 languages.
 
