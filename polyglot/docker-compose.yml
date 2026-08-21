@@ -1,0 +1,237 @@
+---
+# ==============================================================================
+# QUILT POLYGLOT STACK - 8 PRIMITIVES
+# ==============================================================================
+# This docker-compose.yml runs the complete Quilt polyglot stack locally,
+# including all 8 core primitives:
+#   1. kernel     - Cloudflare Worker kernel (Node.js wrapper)
+#   2. lighthouse   - static HTML server (lighthouse.html)
+#   3. bridge-compiler - REST API for bridge compilation
+#   4. cell-ledger  - PostgreSQL 15 for cell state
+#   5. watch        - Redis 7 for pub/sub watch channel
+#   6. murmur       - MQTT broker (eclipse-mosquitto:2) for real-time messaging
+#   7. faucet       - (not included) - could be added via external service
+#   8. mesh         - (not included) - could be added as a mesh service
+#
+# All services use health checks, volume mounts, environment variables,
+# and proper dependencies. The kernel service is built from a Dockerfile
+# in the same directory, running cf-kernel-worker.js via Node.js.
+#
+# This setup is designed for local development and testing with real images.
+# =============================================================================
+version: '3.8'
+
+services:
+  kernel:
+    build:
+      context: .
+      dockerfile: Dockerfile.kernel
+    image: quilt/kernel:latest
+    container_name: quilt-kernel
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - KERNAL_PORT=8080
+      - LOG_LEVEL=debug
+      - CELL_LEDGER_URL=http://cell-ledger:5432
+      - WATCH_URL=redis://watch:6379
+      - MURMUR_URL=mqtt://murmur:1883
+      - BRIDGE_COMPILER_URL=http://bridge-compiler:8081
+    depends_on:
+      cell-ledger:
+        condition: service_healthy
+      watch:
+        condition: service_healthy
+      murmur:
+        condition: service_healthy
+      bridge-compiler:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  lighthouse:
+    image: nginx:alpine
+    container_name: quilt-lighthouse
+    ports:
+      - "8085:80"
+    volumes:
+      - ./lighthouse.html:/usr/share/nginx/html/index.html
+      - ./static:/usr/share/nginx/html/static
+    depends_on:
+      kernel:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  bridge-compiler:
+    image: node:20-alpine
+    container_name: quilt-bridge-compiler
+    working_dir: /app
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./bridge-compiler.js:/app/bridge-compiler.js
+      - ./lib:/app/lib
+    command: >
+      sh -c "
+      npm install --only=prod && 
+      node bridge-compiler.js
+      "
+    environment:
+      - PORT=8081
+      - LOG_LEVEL=info
+      - CELL_LEDGER_URL=http://cell-ledger:5432
+    depends_on:
+      cell-ledger:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  cell-ledger:
+    image: postgres:15
+    container_name: quilt-cell-ledger
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      - POSTGRES_DB=quilt
+      - POSTGRES_USER=quilt
+      - POSTGRES_PASSWORD=quiltpass
+      - PGDATA=/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quilt -d quilt -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  watch:
+    image: redis:7-alpine
+    container_name: quilt-watch
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes --save 60 1
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  murmur:
+    image: eclipse-mosquitto:2
+    container_name: quilt-murmur
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./data/mosquitto:/mosquitto/data
+    environment:
+      - MOSQUITTO_OPTS=--allow-anonymous
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mosquitto_sub -h localhost -t 'test/health' -C 1 -q 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# ==============================================================================
+# TESTS: Run via `docker-compose run --rm test`
+# ==============================================================================
+# To run tests:
+#   docker-compose up -d
+#   docker-compose run --rm test sh -c "npm install && node test.js"
+#
+# This will test all services are reachable and health checks pass.
+# ==============================================================================
+
+  test:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      - kernel
+      - lighthouse
+      - bridge-compiler
+      - cell-ledger
+      - watch
+      - murmur
+    command: >
+      sh -c "
+      npm install --only=prod &&
+      node test.js
+      "
+    environment:
+      - NODE_ENV=testing
+      - KERNAL_URL=http://kernel:8080
+      - LIGHTHOUSE_URL=http://lighthouse:8085
+      - BRIDGE_COMPILER_URL=http://bridge-compiler:8081
+      - CELL_LEDGER_URL=http://cell-ledger:5432
+      - WATCH_URL=redis://watch:6379
+      - MURMUR_URL=mqtt://murmur:1883
+
+# ==============================================================================
+# DOCKERFILE FOR KERNEL SERVICE
+# ==============================================================================
+
+# Dockerfile.kernel
+# Builds the Cloudflare Worker kernel as a Node.js wrapper
+# Entry point: cf-kernel-worker.js
+# ==============================================================================
+
+# Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package.json ./
+RUN npm ci --only=prod
+
+# Copy source files
+COPY cf-kernel-worker.js ./
+COPY lib/ ./lib/
+
+# Final stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only the necessary files from builder stage
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/cf-kernel-worker.js ./
+COPY --from=builder /app/lib ./lib/
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV LOG_LEVEL=info
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:$PORT/health || exit 1
+
+# Expose port
+EXPOSE 8080
+
+# Start service
+CMD ["node", "cf-kernel-worker.js"]

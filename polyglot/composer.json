@@ -1,0 +1,26 @@
+{
+    "name": "superinstance/quilt-cell",
+    "description": "The Quilt cell model in PHP. 8 primitives, 7 layers, 9 dials. A cell is a system, not data.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["quilt", "cell", "reactive", "polyformalism", "superinstance"],
+    "authors": [
+        {
+            "name": "SuperInstance",
+            "email": "casey@superinstance.dev"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quilt\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Quilt\\Tests\\": "tests/"
+        }
+    }
+}
