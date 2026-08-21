@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Publish — Quilt is live on PyPI, crates.io</title>
+<style>
+  :root { --bg: #0a0e1a; --panel: #131829; --text: #d8e2ff; --dim: #6e7a99; --accent: #66ffd9; --py: #ffd866; --rust: #ff6b3d; --ruby: #ff3d3d; }
+  * { box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at top, #1a0e2a, #0a0e1a 70%); color: var(--text); font-family: 'SF Mono', monospace; margin: 0; padding: 0; min-height: 100vh; }
+  .wrap { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 1.8rem; color: var(--accent); margin: 0 0 0.5rem; }
+  .subtitle { color: var(--dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .registry { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+  .reg-card { background: var(--panel); border: 1px solid #1f2640; border-radius: 8px; padding: 1.25rem; }
+  .reg-card .icon { font-size: 2.5rem; }
+  .reg-card h3 { margin: 0.5rem 0; color: var(--accent); }
+  .reg-card p { font-size: 0.8rem; color: var(--text); line-height: 1.5; }
+  .reg-card .cmd { background: #0a0e1a; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; margin: 0.5rem 0; overflow-x: auto; }
+  .reg-card .badge { display: inline-block; padding: 0.2rem 0.6rem; background: #1a4a3a; color: var(--accent); border-radius: 4px; font-size: 0.7rem; margin-top: 0.5rem; }
+  .reg-card .badge.pending { background: #4a3a1a; color: var(--py); }
+  .crates { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+  .crate { background: var(--panel); border: 1px solid #1f2640; border-radius: 4px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+  .crate .name { color: var(--rust); font-weight: 600; }
+  .crate .ver { color: var(--dim); font-size: 0.7rem; }
+  .crate .status { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; margin-top: 0.3rem; background: #1a4a3a; color: var(--accent); }
+  .stats { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+  .stat-pill { background: var(--panel); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #1f2640; }
+  .stat-pill .num { color: var(--accent); font-weight: 700; font-size: 1.2rem; }
+  .stat-pill .label { color: var(--dim); font-size: 0.7rem; }
+  pre { background: var(--panel); border: 1px solid #1f2640; border-radius: 4px; padding: 1rem; overflow-x: auto; font-size: 0.8rem; }
+  .panel { background: var(--panel); border: 1px solid #1f2640; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+  .panel h2 { color: var(--accent); margin: 0 0 0.5rem; font-size: 1.1rem; }
+  .panel p { font-size: 0.85rem; line-height: 1.6; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>📦 Quilt is Published</h1>
+<div class="subtitle">Live on PyPI and crates.io. 12 Rust crates for the 8 primitives + 4 meta. RubyGems pending attestation.</div>
+
+<div class="stats">
+  <div class="stat-pill"><div class="num">12</div><div class="label">Rust crates live</div></div>
+  <div class="stat-pill"><div class="num">2</div><div class="label">PyPI releases</div></div>
+  <div class="stat-pill"><div class="num">8</div><div class="label">primitives</div></div>
+  <div class="stat-pill"><div class="num">4</div><div class="label">meta crates</div></div>
+  <div class="stat-pill"><div class="num">51</div><div class="label">bridges</div></div>
+  <div class="stat-pill"><div class="num">1</div><div class="label">gamified IDE</div></div>
+</div>
+
+<div class="registry">
+  <div class="reg-card">
+    <div class="icon">🐍</div>
+    <h3>PyPI</h3>
+    <p><a href="https://pypi.org/project/quilt-cell/" target="_blank">quilt-cell</a> v0.6.0 + v0.6.1</p>
+    <p>v0.6.1 bundles 51 bridges as data.</p>
+    <div class="cmd">pip install quilt-cell</div>
+    <div class="badge">✓ published</div>
+  </div>
+  <div class="reg-card">
+    <div class="icon">🦀</div>
+    <h3>crates.io</h3>
+    <p>12 modular crates</p>
+    <p>Each Quilt primitive is its own crate. Mix and match.</p>
+    <div class="cmd">cargo add quilt-cell</div>
+    <div class="badge">✓ 12 published</div>
+  </div>
+  <div class="reg-card">
+    <div class="icon">💎</div>
+    <h3>RubyGems</h3>
+    <p>quilt_cell v0.6.0</p>
+    <p>Built and ready. Blocked by sigstore attestation requirement (post-2024 RubyGems policy).</p>
+    <div class="cmd">gem install quilt_cell</div>
+    <div class="badge pending">⏳ attestation required</div>
+  </div>
+</div>
+
+<div class="panel">
+<h2>🦀 The 12 Crates — Modular Polyformalism</h2>
+<p>Each Quilt primitive is a separate crate. Compose them to make a cell. The 8 primitives + 4 meta.</p>
+<div class="crates">
+  <div class="crate"><div class="name">quilt-cell</div><div class="ver">0.6.0</div><br><span class="status">composes all 8</span></div>
+  <div class="crate"><div class="name">quilt-zin</div><div class="ver">0.6.0</div><br><span class="status">input space</span></div>
+  <div class="crate"><div class="name">quilt-zout</div><div class="ver">0.6.0</div><br><span class="status">output space</span></div>
+  <div class="crate"><div class="name">quilt-jepa</div><div class="ver">0.6.0</div><br><span class="status">predict-observe</span></div>
+  <div class="crate"><div class="name">quilt-doubleentry</div><div class="ver">0.6.0</div><br><span class="status">γ + η = budget</span></div>
+  <div class="crate"><div class="name">quilt-vibe</div><div class="ver">0.6.0</div><br><span class="status">physics</span></div>
+  <div class="crate"><div class="name">quilt-gc</div><div class="ver">0.6.0</div><br><span class="status">3-phase GC</span></div>
+  <div class="crate"><div class="name">quilt-murmur</div><div class="ver">0.6.0</div><br><span class="status">gossip</span></div>
+  <div class="crate"><div class="name">quilt-topology</div><div class="ver">0.6.0</div><br><span class="status">graph + β₁</span></div>
+  <div class="crate"><div class="name">quilt-zoo</div><div class="ver">0.6.0</div><br><span class="status">13 cell kinds</span></div>
+  <div class="crate"><div class="name">quilt-bridges</div><div class="ver">0.6.0</div><br><span class="status">22 bridges</span></div>
+  <div class="crate"><div class="name">quilt-watch</div><div class="ver">0.6.0</div><br><span class="status">oscillation</span></div>
+</div>
+</div>
+
+<div class="panel">
+<h2>📦 The 8-Primitive Polyformalism</h2>
+<p>The same cell, 8 modular crates. Each crate IS one primitive. Compose them to make a cell.</p>
+<pre>// Just the Vibe primitive
+use quilt_vibe::Vibe;
+let mut v = Vibe::new();
+v.nudge(1.0);
+v.tick(1.0);
+
+// All 8 primitives composed
+use quilt_cell::Cell;
+let mut cell = Cell::new("my-cell");
+cell.tick();
+
+// Or just one primitive + DoubleEntry conservation
+use quilt_zin::Zin;
+use quilt_doubleentry::DoubleEntry;
+let z = Zin::new().insert("x", 1.0);
+let de = DoubleEntry::new(0.4, 0.6);
+assert!((de.budget() - 1.0).abs() &lt; 1e-9);</pre>
+</div>
+
+<div class="panel">
+<h2>🎮 The Playground (Gamified IDE)</h2>
+<p>The new <a href="quilt-ide-playground.html">Quilt Playground</a> gamifies the cell model.</p>
+<ul style="font-size: 0.85rem; line-height: 1.8;">
+<li>13 cell kinds as drag-and-drop creatures with 8 stats each</li>
+<li>Watch character (⊙) follows the cells, gaze lines visible</li>
+<li>7 biome rings (the 7 substrate layers)</li>
+<li>9 elephant dials as ambient conditions (mood, volume, presence, etc.)</li>
+<li>8 quests (place a cell, connect 3, balance γ=η=0.5, etc.)</li>
+<li>7 achievements (First Cell, Networker, Sculptor, Oracle, Archmage, Cellsmith, Watchkeeper)</li>
+<li>5 keyboard shortcuts: Space=tick, T=auto, G=GC, S=save, L=load</li>
+<li>Real Quilt physics: Vibe, Murmur, GC, DoubleEntry budget</li>
+<li>Save/load .qzt files, HP bars, animated gossip traffic on edges</li>
+</ul>
+</div>
+
+<div class="panel">
+<h2>🛠 The Architecture (clever mechanisms)</h2>
+<p>The Quilt runtime is a small stack of orthogonal layers. Each layer is independent. Each layer is universal.</p>
+<ul style="font-size: 0.85rem; line-height: 1.8;">
+<li><b>Low-level</b> (8 primitives): pure data structures. The cell is a composition of 8 parts.</li>
+<li><b>Mid-level</b> (cell kinds, 7 substrate layers, 9 dials): the system's design space.</li>
+<li><b>High-level</b> (orchestrators, classrooms, IDEs, ecosystems): the user-facing surface.</li>
+<li><b>Synergy</b>: the watch oscillates between levels. The low level becomes the high level. The high level becomes the low level.</li>
+<li><b>Independence</b>: each layer is implementable in 12+ languages, runs on 14+ substrate implementations, scales from a single Raspberry Pi to a global fleet.</li>
+</ul>
+</div>
+
+<div class="panel">
+<h2>The Watch</h2>
+<p style="font-style: italic;">"The cell is the system. The cell is published. The cell is a game. The work is the work. The work is the watch. The watch is the work."</p>
+</div>
+
+</div>
+</body>
+</html>
