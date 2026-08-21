@@ -499,7 +499,7 @@ export class QuiltEngine implements ProgramRuntime {
           const c = this.cells.get(id);
           if (!c) return null;
           if (c.value.status === 'ready') return c.value.data;
-          if (c.value.status === 'pending' || c.value.status === 'evaluating') {
+          if (c.value.status === 'computing') {
             // Upstream not yet evaluated — for value cells, evaluate sync
             if (c.def.kind === 'value') {
               c.value = evaluateValue(c, ctx);

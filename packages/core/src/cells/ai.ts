@@ -131,9 +131,10 @@ export async function evaluateAI(
   };
 
   // Build the AI config from the cell
-  const config: Record<string, unknown> = {
+  const config: AICellConfig = {
     id: cell.id,
-    kind: cell.ai_kind,
+    kind: 'ai',
+    ai_kind: cell.ai_kind,
     provider: cell.provider,
     model: cell.model,
   };

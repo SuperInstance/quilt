@@ -1,0 +1,29 @@
+{
+  "id": "hermes_demo",
+  "title": "Hermes Demo Sheet",
+  "cells": [
+    {"id": "static_val", "kind": "value", "value": 42},
+    {"id": "double", "kind": "formula", "expr": "static_val * 2"},
+    {"id": "api_call", "kind": "api", "endpoint": "https://httpbin.org/get", "method": "GET"},
+    {"id": "prog", "kind": "program", "code": "return await runtime.get('double');", "language": "javascript"},
+    {"id": "router", "kind": "router", "rules": [{"when": "true", "route": "prog"}]},
+    {
+      "id": "ai_cell",
+      "kind": "ai",
+      "ai_kind": "ai.llm",
+      "provider": "zai",
+      "model": "glm-4.5",
+      "prompt": "Answer yes/no: is {{static_val}} > 40?",
+      "temperature": 0.2,
+      "max_tokens": 50
+    },
+    {"id": "sensor_input", "kind": "sensor"},
+    {
+      "id": "listener_alert",
+      "kind": "listener",
+      "watch": ["static_val"],
+      "condition": "{{static_val}} > 50",
+      "action": "console.log('Alert: static_val exceeded 50')"
+    }
+  ]
+}
