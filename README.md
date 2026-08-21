@@ -276,6 +276,11 @@ The grid, rendered the way the fleet sees it — every cell a lit address on the
   <em>The deck, TypeScript edition — the same nine cell kinds, dealt out and wired together.</em>
 </p>
 
+<p align="center">
+  <img src="assets/reference-quilt-cells.jpg" alt="The reference sheet — a glowing spreadsheet like the bar itself, every cell a small lit address, one cell mid-keystroke answering back, ledger lines like planking" width="720"><br>
+  <em>The reference sheet the grid grew from — every cell a lit address, one mid-keystroke, answering back.</em>
+</p>
+
 ## ✦ License
 
 Apache 2.0. See [LICENSE](./LICENSE).
