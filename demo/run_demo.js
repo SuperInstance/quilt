@@ -9,7 +9,9 @@ const __dirname = path.dirname(__filename);
 const sheetPath = path.resolve(__dirname, 'demo_sheet.json');
 const sheet = JSON.parse(fs.readFileSync(sheetPath, 'utf8'));
 
-const engine = new QuiltEngine({ tracing: true });
+import { SimpleAIEngine } from './simple_ai_engine.js';
+const aiEngine = new SimpleAIEngine({ maxCalls: 5 });
+const engine = new QuiltEngine({ tracing: true, ai: aiEngine });
 engine.loadSheet(sheet);
 
 (async () => {
