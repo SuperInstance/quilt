@@ -257,6 +257,25 @@ If you've ever wished your system was simpler. If you've ever had a service that
 
 This is for you.
 
+## ✦ Gallery
+
+The grid, rendered the way the fleet sees it — every cell a lit address on the dark, brass traces stitching them into one sheet.
+
+<p align="center">
+  <img src="assets/gallery-quilt.jpg" alt="A glowing spreadsheet spread across a dark ship chart table — every cell a small warm window with a different tiny machinery inside, thin brass traces connecting the lit cells, midnight navy and honey amber" width="720"><br>
+  <em>The sheet as the chart table sees it — a grid of live, addressable capabilities, each cell its own lit window on the dark.</em>
+</p>
+
+<p align="center">
+  <img src="assets/slot-quilt.jpg" alt="A living spreadsheet on a dark chart table — one cell a waveform, one a map, one a paragraph, one a wireframe — thin brass traces running between the lit cells" width="720"><br>
+  <em>One grid, many kinds of cells — a waveform, a map, a paragraph, and a wireframe all answering from the same sheet.</em>
+</p>
+
+<p align="center">
+  <img src="assets/quilt-ts-flux-deck.jpg" alt="The quilt deck, TypeScript edition — cell cards spread across midnight navy, each card a small lit machine, brass traces stitching between them" width="720"><br>
+  <em>The deck, TypeScript edition — the same nine cell kinds, dealt out and wired together.</em>
+</p>
+
 ## ✦ License
 
 Apache 2.0. See [LICENSE](./LICENSE).
