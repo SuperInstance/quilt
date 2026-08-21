@@ -5,7 +5,7 @@
 
 ## Why a bar?
 
-We have 15 repos, 50+ landing pages, ~80 tests, 3 npm packages, 2 Rust crates, and a single-file browser runtime. None of it is production-grade engineering unless we agree on what that means. The bar is a checklist that, when applied uniformly, makes the ecosystem feel like one project — not 15 separate ones.
+We have 18 repos (15 stable + 3 in flight), 50+ landing pages, 6 click-and-go templates, 79 SDK tests, 3 npm packages, 3 Rust crates, and a single-file browser runtime. None of it is production-grade engineering unless we agree on what that means. The bar is a checklist that, when applied uniformly, makes the ecosystem feel like one project — not 18 separate ones.
 
 ## The 8 layers
 

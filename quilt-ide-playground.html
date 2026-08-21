@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quilt IDE Playground — Gamified Cell Sandbox</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #131829;
+    --text: #d8e2ff;
+    --dim: #6e7a99;
+    --accent: #66ffd9;
+    --warn: #ffd866;
+    --hp: #ff6b3d;
+    --xp: #b46aff;
+    --gold: #ffe066;
+    --mana: #88ffd9;
+    --biome-1: #ff9999;
+    --biome-2: #ffcc66;
+    --biome-3: #99ff99;
+    --biome-4: #66ccff;
+    --biome-5: #cc99ff;
+    --biome-6: #ff99cc;
+    --biome-7: #99ffcc;
+  }
+  * { box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at top, #1a0e2a, #0a0e1a 70%); color: var(--text); font-family: 'SF Mono', monospace; margin: 0; padding: 0; min-height: 100vh; overflow: hidden; }
+  
+  /* Top bar */
+  .topbar { 
+    position: fixed; top: 0; left: 0; right: 0; height: 56px; 
+    background: var(--panel); border-bottom: 1px solid #1f2640;
+    display: flex; align-items: center; padding: 0 1rem; gap: 1rem; z-index: 100;
+  }
+  .topbar h1 { font-size: 1rem; margin: 0; color: var(--accent); flex-shrink: 0; }
+  .topbar .stats { display: flex; gap: 1rem; font-size: 0.75rem; }
+  .stat-item { display: flex; align-items: center; gap: 0.3rem; }
+  .stat-bar { width: 60px; height: 6px; background: #0a0e1a; border-radius: 3px; overflow: hidden; }
+  .stat-bar > div { height: 100%; transition: width 0.3s; }
+  .stat-bar.hp > div { background: var(--hp); }
+  .stat-bar.xp > div { background: var(--xp); }
+  .stat-bar.mana > div { background: var(--mana); }
+  .stat-bar.b1 > div { background: var(--warn); }
+  .topbar .modes { display: flex; gap: 0.3rem; margin-left: auto; }
+  .mode-btn { background: var(--panel); border: 1px solid #1f2640; color: var(--text); padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.7rem; }
+  .mode-btn.active { background: var(--accent); color: #0a0e1a; border-color: var(--accent); }
+  
+  /* Left palette */
+  .palette {
+    position: fixed; top: 56px; left: 0; bottom: 0; width: 200px;
+    background: var(--panel); border-right: 1px solid #1f2640; padding: 0.75rem;
+    overflow-y: auto;
+  }
+  .palette h3 { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; margin: 0.5rem 0; }
+  .palette .cell-kind {
+    background: #0a0e1a; border: 1px solid #1f2640; border-radius: 4px;
+    padding: 0.5rem; margin: 0.3rem 0; cursor: grab; font-size: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    transition: all 0.15s;
+  }
+  .palette .cell-kind:hover { border-color: var(--accent); transform: translateX(4px); }
+  .palette .cell-kind .icon { font-size: 1.2rem; }
+  .palette .biome-section { margin-top: 0.5rem; }
+  .palette .biome-section h4 { font-size: 0.7rem; color: var(--dim); margin: 0.3rem 0; padding: 0.2rem 0.4rem; border-left: 3px solid; }
+  
+  /* Main world */
+  .world {
+    position: fixed; top: 56px; left: 200px; right: 280px; bottom: 0;
+    background: #050813; overflow: hidden;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(102,255,217,0.04), transparent 30%),
+      radial-gradient(circle at 70% 60%, rgba(180,106,255,0.04), transparent 30%),
+      radial-gradient(circle at 50% 80%, rgba(255,216,102,0.04), transparent 30%);
+  }
+  .world canvas { display: block; }
+  .world .grid { 
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+    background-image: 
+      linear-gradient(rgba(102,255,217,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(102,255,217,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+  .world .floating { position: absolute; pointer-events: none; z-index: 5; }
+  .world .achievement {
+    background: var(--panel); border: 1px solid var(--gold); color: var(--gold);
+    padding: 0.5rem 0.8rem; border-radius: 4px; font-size: 0.75rem;
+    box-shadow: 0 0 20px rgba(255,224,102,0.3);
+    animation: slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  /* Right inspector */
+  .inspector {
+    position: fixed; top: 56px; right: 0; bottom: 0; width: 280px;
+    background: var(--panel); border-left: 1px solid #1f2640; padding: 0.75rem;
+    overflow-y: auto;
+  }
+  .inspector h3 { font-size: 0.75rem; color: var(--dim); text-transform: uppercase; margin: 0.5rem 0; }
+  .inspector .dial {
+    display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0;
+    font-size: 0.75rem;
+  }
+  .inspector .dial .label { width: 90px; color: var(--dim); }
+  .inspector .dial .value { width: 30px; text-align: right; }
+  .inspector .dial .slider { flex: 1; height: 4px; background: #0a0e1a; border-radius: 2px; }
+  .inspector .dial .slider > div { height: 100%; background: var(--accent); border-radius: 2px; }
+  .inspector .dial .name { font-size: 0.7rem; color: var(--text); }
+  .inspector .dial .name.negative { color: var(--warn); }
+  .inspector .dial .name.meta { color: var(--xp); }
+  .inspector .dial .name.output { color: var(--hp); }
+  
+  .inspector .achievement-list { 
+    max-height: 200px; overflow-y: auto; 
+    background: #0a0e1a; border-radius: 4px; padding: 0.5rem;
+  }
+  .inspector .achievement-item { 
+    display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; padding: 0.2rem 0;
+  }
+  .inspector .achievement-item.unlocked { color: var(--gold); }
+  .inspector .achievement-item.locked { color: var(--dim); }
+  
+  .inspector .quest-list { background: #0a0e1a; border-radius: 4px; padding: 0.5rem; }
+  .inspector .quest-item { font-size: 0.7rem; padding: 0.2rem 0; }
+  .inspector .quest-item.complete { color: var(--accent); text-decoration: line-through; }
+  .inspector .quest-item.incomplete { color: var(--text); }
+  
+  /* Modal */
+  .modal { 
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+    background: rgba(0,0,0,0.7); z-index: 200; display: none;
+    align-items: center; justify-content: center;
+  }
+  .modal.active { display: flex; }
+  .modal .content { 
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 2rem; max-width: 500px; text-align: center;
+  }
+  .modal h2 { color: var(--gold); margin: 0 0 0.5rem; }
+  .modal p { font-size: 0.85rem; line-height: 1.6; }
+  .modal button { 
+    background: var(--accent); color: #0a0e1a; border: none; padding: 0.5rem 1rem;
+    border-radius: 4px; cursor: pointer; font-family: inherit; margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🎮 Quilt Playground</h1>
+  <div class="stats">
+    <div class="stat-item">
+      <span style="color: var(--hp);">HP</span>
+      <div class="stat-bar hp"><div id="hpBar" style="width: 100%;"></div></div>
+      <span id="hpVal">1.00</span>
+    </div>
+    <div class="stat-item">
+      <span style="color: var(--xp);">XP</span>
+      <div class="stat-bar xp"><div id="xpBar" style="width: 0%;"></div></div>
+      <span id="xpVal">0</span>
+    </div>
+    <div class="stat-item">
+      <span style="color: var(--mana);">η</span>
+      <div class="stat-bar mana"><div id="manaBar" style="width: 50%;"></div></div>
+      <span id="manaVal">0.50</span>
+    </div>
+    <div class="stat-item">
+      <span style="color: var(--warn);">β₁</span>
+      <div class="stat-bar b1"><div id="b1Bar" style="width: 0%;"></div></div>
+      <span id="b1Val">0</span>
+    </div>
+    <div class="stat-item">
+      <span style="color: var(--text);">Tick</span>
+      <span id="tickVal">0</span>
+    </div>
+  </div>
+  <div class="modes">
+    <button class="mode-btn active" data-mode="sandbox">Sandbox</button>
+    <button class="mode-btn" data-mode="quest">Quest</button>
+    <button class="mode-btn" data-mode="chaos">Chaos</button>
+    <button class="mode-btn" data-mode="watch">Watch</button>
+  </div>
+</div>
+
+<div class="palette">
+  <h3>Cell Kinds</h3>
+  <div class="cell-kind" draggable="true" data-kind="number"><span class="icon">#</span> Number</div>
+  <div class="cell-kind" draggable="true" data-kind="string"><span class="icon">"</span> String</div>
+  <div class="cell-kind" draggable="true" data-kind="boolean"><span class="icon">∅</span> Boolean</div>
+  <div class="cell-kind" draggable="true" data-kind="array"><span class="icon">[]</span> Array</div>
+  <div class="cell-kind" draggable="true" data-kind="object"><span class="icon">{}</span> Object</div>
+  <div class="cell-kind" draggable="true" data-kind="formula"><span class="icon">ƒ</span> Formula</div>
+  <div class="cell-kind" draggable="true" data-kind="cell"><span class="icon">⊕</span> Cell</div>
+  <div class="cell-kind" draggable="true" data-kind="sheet"><span class="icon">▦</span> Sheet</div>
+  <div class="cell-kind" draggable="true" data-kind="elephant"><span class="icon">🐘</span> Elephant</div>
+  <div class="cell-kind" draggable="true" data-kind="steward"><span class="icon">✋</span> Steward</div>
+  <div class="cell-kind" draggable="true" data-kind="migratory"><span class="icon">↗</span> Migratory</div>
+  <div class="cell-kind" draggable="true" data-kind="reading"><span class="icon">📖</span> Reading</div>
+  <div class="cell-kind" draggable="true" data-kind="echo"><span class="icon">🔁</span> Echo</div>
+  
+  <div class="biome-section">
+    <h4 style="border-color: var(--biome-1);">🗺 7 Biomes</h4>
+    <div style="font-size: 0.7rem; color: var(--dim); line-height: 1.5;">
+      <div>1. Address (desert)</div>
+      <div>2. Scale (tundra)</div>
+      <div>3. Room (forest)</div>
+      <div>4. 🐘 Elephant (cave)</div>
+      <div>5. Protocol (city)</div>
+      <div>6. Form (ocean)</div>
+      <div>7. State (sky)</div>
+    </div>
+  </div>
+</div>
+
+<div class="world" id="world">
+  <div class="grid"></div>
+  <canvas id="canvas"></canvas>
+</div>
+
+<div class="inspector">
+  <h3>🐘 9 Dials</h3>
+  <div class="dial">
+    <span class="label">mood</span>
+    <div class="slider"><div id="dial-mood" style="width: 50%;"></div></div>
+    <span class="value" id="val-mood">0.50</span>
+  </div>
+  <div class="dial">
+    <span class="label">volume</span>
+    <div class="slider"><div id="dial-volume" style="width: 30%;"></div></div>
+    <span class="value" id="val-volume">0.30</span>
+  </div>
+  <div class="dial">
+    <span class="label">earnestness</span>
+    <div class="slider"><div id="dial-earnestness" style="width: 70%;"></div></div>
+    <span class="value" id="val-earnestness">0.70</span>
+  </div>
+  <div class="dial">
+    <span class="label">cynicism</span>
+    <div class="slider"><div id="dial-cynicism" style="width: 20%;"></div></div>
+    <span class="value" id="val-cynicism">0.20</span>
+  </div>
+  <div class="dial">
+    <span class="label">joke_landing</span>
+    <div class="slider"><div id="dial-joke" style="width: 40%;"></div></div>
+    <span class="value" id="val-joke">0.40</span>
+  </div>
+  <div class="dial">
+    <span class="label">panic</span>
+    <div class="slider"><div id="dial-panic" style="width: 10%;"></div></div>
+    <span class="value" id="val-panic">0.10</span>
+  </div>
+  <div class="dial">
+    <span class="label">presence</span>
+    <div class="slider"><div id="dial-presence" style="width: 80%;"></div></div>
+    <span class="value" id="val-presence">0.80</span>
+  </div>
+  <div class="dial">
+    <span class="label">model_vs_code</span>
+    <div class="slider"><div id="dial-mvc" style="width: 50%;"></div></div>
+    <span class="value" id="val-mvc">0.50</span>
+  </div>
+  <div class="dial">
+    <span class="label">vision</span>
+    <div class="slider"><div id="dial-vision" style="width: 60%;"></div></div>
+    <span class="value" id="val-vision">0.60</span>
+  </div>
+  
+  <h3 style="margin-top: 1rem;">🎯 Quests</h3>
+  <div class="quest-list" id="quests">
+    <div class="quest-item incomplete" data-q="place-cell">□ Place your first cell</div>
+    <div class="quest-item incomplete" data-q="connect-3">□ Connect 3 cells</div>
+    <div class="quest-item incomplete" data-q="balance-de">□ Balance γ = η = 0.50</div>
+    <div class="quest-item incomplete" data-q="low-b1">□ Reduce β₁ to 0</div>
+    <div class="quest-item incomplete" data-q="high-b1">□ Push β₁ above 10</div>
+    <div class="quest-item incomplete" data-q="save-qzt">□ Save your first .qzt</div>
+    <div class="quest-item incomplete" data-q="tick-100">□ Run 100 ticks</div>
+    <div class="quest-item incomplete" data-q="all-dials">□ Move all 9 dials</div>
+  </div>
+  
+  <h3 style="margin-top: 1rem;">🏆 Achievements</h3>
+  <div class="achievement-list" id="achievements">
+    <div class="achievement-item locked" data-a="first-cell">⚪ First Cell</div>
+    <div class="achievement-item locked" data-a="networker">⚪ Networker (10 cells)</div>
+    <div class="achievement-item locked" data-a="sculptor">⚪ Sculptor (β₁=0)</div>
+    <div class="achievement-item locked" data-a="oracle">⚪ Oracle (100 ticks, no surprise)</div>
+    <div class="achievement-item locked" data-a="archmage">⚪ Archmage (γ=η=0.5 exactly)</div>
+    <div class="achievement-item locked" data-a="cellsmith">⚪ Cellsmith (save .qzt)</div>
+    <div class="achievement-item locked" data-a="watchkeeper">⚪ Watchkeeper (1 hour)</div>
+  </div>
+  
+  <h3 style="margin-top: 1rem;">⌨ Controls</h3>
+  <div style="font-size: 0.7rem; color: var(--dim); line-height: 1.6;">
+    <div><b>Drag</b> from palette to world</div>
+    <div><b>Click</b> a cell to select</div>
+    <div><b>Shift+Click</b> two cells to connect</div>
+    <div><b>Space</b> tick once</div>
+    <div><b>T</b> auto-tick (5/sec)</div>
+    <div><b>G</b> run GC cycle</div>
+    <div><b>S</b> save .qzt</div>
+    <div><b>L</b> load .qzt</div>
+    <div><b>Esc</b> clear selection</div>
+  </div>
+</div>
+
+<div class="modal" id="achievementModal">
+  <div class="content">
+    <h2 id="achTitle">🏆 Achievement Unlocked</h2>
+    <p id="achDesc">First Cell — you placed your first cell!</p>
+    <button onclick="closeModal()">Continue</button>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  cells: [],           // {id, kind, x, y, w, h, color, primitives, vibe, ...}
+  edges: [],           // {from, to, kind, weight}
+  selected: null,
+  watch: { x: 400, y: 300, vx: 0, vy: 0, target_x: 400, target_y: 300 },
+  tick: 0,
+  mode: 'sandbox',
+  autoTick: false,
+  dials: { mood: 0.5, volume: 0.3, earnestness: 0.7, cynicism: 0.2, joke: 0.4, panic: 0.1, presence: 0.8, mvc: 0.5, vision: 0.6 },
+  budget: { gamma: 0.5, eta: 0.5 },
+  xp: 0,
+  achievements: new Set(),
+  quests: new Set(),
+  cellKinds: {
+    number:    { color: '#66ccff', icon: '#',   hp: 1.0,  size: 30 },
+    string:    { color: '#99ff99', icon: '"',   hp: 0.8,  size: 30 },
+    boolean:   { color: '#ff9999', icon: '∅',   hp: 0.5,  size: 28 },
+    array:     { color: '#ffcc66', icon: '[]',  hp: 1.5,  size: 36 },
+    object:    { color: '#cc99ff', icon: '{}',  hp: 2.0,  size: 40 },
+    formula:   { color: '#ff6b3d', icon: 'ƒ',   hp: 1.2,  size: 34 },
+    cell:      { color: '#66ffd9', icon: '⊕',   hp: 1.0,  size: 32 },
+    sheet:     { color: '#ffe066', icon: '▦',   hp: 3.0,  size: 48 },
+    elephant:  { color: '#ff99cc', icon: '🐘',  hp: 5.0,  size: 60 },
+    steward:   { color: '#99ffcc', icon: '✋',   hp: 1.5,  size: 38 },
+    migratory: { color: '#ff99cc', icon: '↗',   hp: 1.0,  size: 32 },
+    reading:   { color: '#cc99ff', icon: '📖',  hp: 1.5,  size: 36 },
+    echo:      { color: '#88ffd9', icon: '🔁',  hp: 1.0,  size: 32 },
+  },
+  nextId: 1,
+  startTime: Date.now(),
+};
+
+// Achievements defs
+const ACHS = {
+  'first-cell': { title: 'First Cell', desc: 'You placed your first cell!', xp: 10 },
+  'networker':  { title: 'Networker', desc: 'You placed 10 cells!', xp: 50 },
+  'sculptor':   { title: 'Sculptor', desc: 'You reduced β₁ to 0!', xp: 100 },
+  'oracle':     { title: 'Oracle', desc: 'You ran 100 ticks without surprise!', xp: 200 },
+  'archmage':   { title: 'Archmage', desc: 'You balanced γ = η = 0.5 exactly!', xp: 75 },
+  'cellsmith':  { title: 'Cellsmith', desc: 'You saved your first .qzt!', xp: 25 },
+  'watchkeeper':{ title: 'Watchkeeper', desc: 'You played for 1 hour!', xp: 500 },
+};
+
+const QUESTS = {
+  'place-cell': { desc: 'Place your first cell', xp: 5 },
+  'connect-3': { desc: 'Connect 3 cells', xp: 10 },
+  'balance-de': { desc: 'Balance γ = η = 0.50', xp: 20 },
+  'low-b1': { desc: 'Reduce β₁ to 0', xp: 30 },
+  'high-b1': { desc: 'Push β₁ above 10', xp: 30 },
+  'save-qzt': { desc: 'Save your first .qzt', xp: 15 },
+  'tick-100': { desc: 'Run 100 ticks', xp: 25 },
+  'all-dials': { desc: 'Move all 9 dials', xp: 50 },
+};
+
+// ==================== CANVAS ====================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const world = document.getElementById('world');
+
+function resizeCanvas() {
+  const rect = world.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ==================== CELL ====================
+function createCell(kind, x, y) {
+  const k = state.cellKinds[kind];
+  return {
+    id: state.nextId++,
+    kind: kind,
+    x: x, y: y,
+    vx: 0, vy: 0,
+    size: k.size,
+    color: k.color,
+    icon: k.icon,
+    hp: k.hp,
+    maxHp: k.hp,
+    gamma: 0.5, eta: 0.5,
+    vibe: { position: 0, velocity: 0, acceleration: 0 },
+    jepa_surprise: 0,
+    murmur: [],
+    gc_phase: 'ready',
+    age: 0,
+    biome: Math.floor(Math.random() * 7),
+  };
+}
+
+function addCell(kind, x, y) {
+  const cell = createCell(kind, x, y);
+  state.cells.push(cell);
+  unlockQuest('place-cell');
+  if (state.cells.length === 1) unlockAchievement('first-cell');
+  if (state.cells.length === 10) unlockAchievement('networker');
+  return cell;
+}
+
+function connectCells(from, to) {
+  if (from === to) return;
+  if (state.edges.find(e => (e.from === from && e.to === to) || (e.from === to && e.to === from))) return;
+  state.edges.push({from, to, kind: 'murmur', weight: 1.0});
+  state.cells.find(c => c.id === from).murmur.push({to, msg: 'hello'});
+  state.cells.find(c => c.id === to).murmur.push({to: from, msg: 'hello'});
+  if (state.cells.length >= 3) unlockQuest('connect-3');
+}
+
+// ==================== PHYSICS ====================
+function tick() {
+  state.tick++;
+  
+  // Vibe physics
+  for (const c of state.cells) {
+    c.age++;
+    c.vibe.velocity += c.vibe.acceleration * 0.1;
+    c.x += c.vibe.velocity;
+    c.y += c.vibe.position * 0.5;
+    c.vibe.velocity *= 0.95;
+    c.vibe.position *= 0.99;
+  }
+  
+  // Mode-specific behavior
+  if (state.mode === 'chaos') {
+    for (const c of state.cells) {
+      c.vibe.acceleration = (Math.random() - 0.5) * 0.5;
+    }
+  }
+  
+  // Watch follows cells
+  if (state.cells.length > 0) {
+    const avgX = state.cells.reduce((s, c) => s + c.x, 0) / state.cells.length;
+    const avgY = state.cells.reduce((s, c) => s + c.y, 0) / state.cells.length;
+    state.watch.target_x = avgX;
+    state.watch.target_y = avgY;
+    state.watch.vx += (state.watch.target_x - state.watch.x) * 0.02;
+    state.watch.vy += (state.watch.target_y - state.watch.y) * 0.02;
+    state.watch.x += state.watch.vx;
+    state.watch.y += state.watch.vy;
+    state.watch.vx *= 0.9;
+    state.watch.vy *= 0.9;
+  }
+  
+  // Update HP from γ budget
+  let totalGamma = state.budget.gamma;
+  if (totalGamma < 0.1) totalGamma = 0.1;
+  for (const c of state.cells) {
+    c.hp = c.maxHp * (0.5 + state.budget.gamma);
+    c.hp = Math.max(0.1, Math.min(c.maxHp * 1.5, c.hp));
+  }
+  
+  // Check quests
+  if (Math.abs(state.budget.gamma - 0.5) < 0.01 && Math.abs(state.budget.eta - 0.5) < 0.01) {
+    unlockQuest('balance-de');
+    unlockAchievement('archmage');
+  }
+  if (computeBeta1() === 0 && state.cells.length > 0) {
+    unlockQuest('low-b1');
+    unlockAchievement('sculptor');
+  }
+  if (computeBeta1() > 10) unlockQuest('high-b1');
+  if (state.tick === 100) unlockQuest('tick-100');
+  
+  // XP for ticks
+  if (state.tick % 10 === 0) {
+    state.xp += 1;
+  }
+  
+  // Watchkeeper (1 hour)
+  if (Date.now() - state.startTime > 3600000) {
+    unlockAchievement('watchkeeper');
+  }
+  
+  // Oracle
+  if (state.tick === 100) {
+    let totalSurprise = 0;
+    for (const c of state.cells) totalSurprise += c.jepa_surprise;
+    if (totalSurprise < 0.001) unlockAchievement('oracle');
+  }
+  
+  updateUI();
+  render();
+}
+
+function computeBeta1() {
+  const V = state.cells.length;
+  const E = state.edges.length;
+  // C = number of connected components (simplified)
+  let C = V;
+  if (V > 0) {
+    const parent = {};
+    for (const c of state.cells) parent[c.id] = c.id;
+    const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    for (const e of state.edges) {
+      const a = find(e.from), b = find(e.to);
+      if (a !== b) { parent[a] = b; }
+    }
+    const comps = new Set();
+    for (const c of state.cells) comps.add(find(c.id));
+    C = comps.size;
+  }
+  return E - V + C;
+}
+
+// ==================== RENDER ====================
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw biome rings (7 layers)
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const biomeColors = ['#ff9999', '#ffcc66', '#99ff99', '#66ccff', '#cc99ff', '#ff99cc', '#99ffcc'];
+  for (let i = 0; i < 7; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, 60 + i * 35, 0, Math.PI * 2);
+    ctx.strokeStyle = biomeColors[i] + '20';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  
+  // Draw edges
+  for (const e of state.edges) {
+    const a = state.cells.find(c => c.id === e.from);
+    const b = state.cells.find(c => c.id === e.to);
+    if (!a || !b) continue;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = '#66ffd960';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Animated dashes
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 0) {
+      const t = ((Date.now() / 50) % dist) / dist;
+      const px = a.x + dx * t;
+      const py = a.y + dy * t;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#66ffd9';
+      ctx.fill();
+    }
+  }
+  
+  // Draw cells
+  for (const c of state.cells) {
+    // HP bar
+    const hpWidth = (c.hp / c.maxHp) * c.size * 2;
+    ctx.fillStyle = '#0a0e1a';
+    ctx.fillRect(c.x - c.size, c.y - c.size - 8, c.size * 2, 4);
+    ctx.fillStyle = c.hp > c.maxHp * 0.5 ? '#66ffd9' : c.hp > c.maxHp * 0.25 ? '#ffd866' : '#ff6b3d';
+    ctx.fillRect(c.x - c.size, c.y - c.size - 8, hpWidth, 4);
+    
+    // Cell body
+    const isSelected = state.selected === c.id;
+    const pulse = Math.sin(Date.now() / 200 + c.id) * 0.1 + 0.9;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.size * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = c.color + '40';
+    ctx.fill();
+    if (isSelected) {
+      ctx.strokeStyle = '#ffe066';
+      ctx.lineWidth = 3;
+    } else {
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = 1.5;
+    }
+    ctx.stroke();
+    
+    // Cell icon
+    ctx.fillStyle = c.color;
+    ctx.font = `${c.size * 0.7}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.icon, c.x, c.y);
+    
+    // Cell kind label
+    ctx.fillStyle = '#d8e2ff';
+    ctx.font = '9px monospace';
+    ctx.fillText(c.kind, c.x, c.y + c.size + 8);
+  }
+  
+  // Draw watch
+  ctx.beginPath();
+  ctx.arc(state.watch.x, state.watch.y, 12, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffe066';
+  ctx.fill();
+  ctx.strokeStyle = '#0a0e1a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#0a0e1a';
+  ctx.font = 'bold 14px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⊙', state.watch.x, state.watch.y);
+  
+  // Watch gaze
+  if (state.cells.length > 0) {
+    const nearest = state.cells.reduce((a, b) => 
+      Math.hypot(a.x - state.watch.x, a.y - state.watch.y) < Math.hypot(b.x - state.watch.x, b.y - state.watch.y) ? a : b
+    );
+    ctx.beginPath();
+    ctx.moveTo(state.watch.x, state.watch.y);
+    ctx.lineTo(nearest.x, nearest.y);
+    ctx.strokeStyle = '#ffe06640';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ==================== UI ====================
+function updateUI() {
+  // Stats
+  const totalHp = state.cells.reduce((s, c) => s + c.hp, 0);
+  const maxHp = state.cells.reduce((s, c) => s + c.maxHp, 0);
+  const hpRatio = maxHp > 0 ? totalHp / maxHp : 1;
+  document.getElementById('hpBar').style.width = `${hpRatio * 100}%`;
+  document.getElementById('hpVal').textContent = state.budget.gamma.toFixed(2);
+  document.getElementById('xpBar').style.width = `${Math.min(100, state.xp)}%`;
+  document.getElementById('xpVal').textContent = state.xp;
+  document.getElementById('manaBar').style.width = `${state.budget.eta * 100}%`;
+  document.getElementById('manaVal').textContent = state.budget.eta.toFixed(2);
+  const b1 = computeBeta1();
+  document.getElementById('b1Bar').style.width = `${Math.min(100, Math.abs(b1) * 5)}%`;
+  document.getElementById('b1Val').textContent = b1;
+  document.getElementById('tickVal').textContent = state.tick;
+}
+
+function updateDial(name, value) {
+  state.dials[name] = value;
+  document.getElementById('dial-' + (name === 'mvc' ? 'mvc' : name === 'joke' ? 'joke' : name)).style.width = `${value * 100}%`;
+  document.getElementById('val-' + (name === 'mvc' ? 'mvc' : name === 'joke' ? 'joke' : name)).textContent = value.toFixed(2);
+}
+
+function unlockQuest(q) {
+  if (state.quests.has(q)) return;
+  state.quests.add(q);
+  state.xp += QUESTS[q]?.xp || 0;
+  const el = document.querySelector(`.quest-item[data-q="${q}"]`);
+  if (el) {
+    el.classList.remove('incomplete');
+    el.classList.add('complete');
+    el.textContent = '✓ ' + QUESTS[q]?.desc || q;
+  }
+}
+
+function unlockAchievement(a) {
+  if (state.achievements.has(a)) return;
+  state.achievements.add(a);
+  state.xp += ACHS[a]?.xp || 0;
+  const el = document.querySelector(`.achievement-item[data-a="${a}"]`);
+  if (el) {
+    el.classList.remove('locked');
+    el.classList.add('unlocked');
+    el.textContent = '★ ' + ACHS[a]?.title;
+  }
+  // Show modal
+  document.getElementById('achTitle').textContent = '🏆 ' + ACHS[a]?.title;
+  document.getElementById('achDesc').textContent = ACHS[a]?.desc;
+  document.getElementById('achievementModal').classList.add('active');
+  setTimeout(() => closeModal(), 3000);
+}
+
+function closeModal() {
+  document.getElementById('achievementModal').classList.remove('active');
+}
+
+// ==================== INTERACTION ====================
+// Drag from palette
+document.querySelectorAll('.cell-kind').forEach(el => {
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('kind', el.dataset.kind);
+  });
+});
+
+world.addEventListener('dragover', e => e.preventDefault());
+world.addEventListener('drop', e => {
+  e.preventDefault();
+  const kind = e.dataTransfer.getData('kind');
+  if (!kind) return;
+  const rect = world.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  addCell(kind, x, y);
+});
+
+// Click to select
+let clickStart = null;
+world.addEventListener('mousedown', e => {
+  clickStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+});
+world.addEventListener('mouseup', e => {
+  if (!clickStart) return;
+  const rect = world.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  // Find clicked cell
+  const clicked = state.cells.find(c => Math.hypot(c.x - x, c.y - y) < c.size);
+  if (clicked) {
+    if (e.shiftKey && state.selected !== null) {
+      connectCells(state.selected, clicked.id);
+    } else {
+      state.selected = clicked.id;
+    }
+  } else {
+    state.selected = null;
+  }
+  clickStart = null;
+});
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+  });
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); tick(); }
+  if (e.key === 't' || e.key === 'T') { state.autoTick = !state.autoTick; }
+  if (e.key === 'g' || e.key === 'G') { runGC(); }
+  if (e.key === 's' || e.key === 'S') { saveQzt(); }
+  if (e.key === 'l' || e.key === 'L') { loadQzt(); }
+  if (e.key === 'Escape') { state.selected = null; }
+  // Budget shortcuts
+  if (e.key === 'ArrowUp') { state.budget.gamma = Math.min(1, state.budget.gamma + 0.05); state.budget.eta = 1 - state.budget.gamma; tick(); }
+  if (e.key === 'ArrowDown') { state.budget.gamma = Math.max(0, state.budget.gamma - 0.05); state.budget.eta = 1 - state.budget.gamma; tick(); }
+});
+
+function runGC() {
+  // 3-phase GC: merge similar → decay old → prune weak
+  // Merge: cells with same kind
+  for (let i = 0; i < state.cells.length; i++) {
+    for (let j = i + 1; j < state.cells.length; j++) {
+      const a = state.cells[i], b = state.cells[j];
+      if (a.kind === b.kind && Math.hypot(a.x - b.x, a.y - b.y) < 60) {
+        a.hp = Math.min(a.maxHp * 2, a.hp + b.hp);
+        state.cells.splice(j, 1);
+        j--;
+      }
+    }
+  }
+  // Decay: old cells lose HP
+  for (const c of state.cells) {
+    c.hp *= 0.95;
+  }
+  // Prune: weak cells
+  state.cells = state.cells.filter(c => c.hp > 0.1);
+  state.edges = state.edges.filter(e => state.cells.find(c => c.id === e.from) && state.cells.find(c => c.id === e.to));
+  tick();
+}
+
+function saveQzt() {
+  const qzt = {
+    version: "1.0", kind: "quilt-zip-target",
+    name: "playground-save", tick: state.tick,
+    cells: state.cells, edges: state.edges,
+    dials: state.dials, budget: state.budget, xp: state.xp,
+  };
+  const blob = new Blob([JSON.stringify(qzt, null, 2)], {type: 'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'playground-save.qzt';
+  a.click();
+  unlockQuest('save-qzt');
+  unlockAchievement('cellsmith');
+}
+
+function loadQzt() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.qzt,.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const qzt = JSON.parse(ev.target.result);
+      state.cells = qzt.cells || [];
+      state.edges = qzt.edges || [];
+      state.dials = qzt.dials || state.dials;
+      state.budget = qzt.budget || state.budget;
+      state.xp = qzt.xp || 0;
+      state.tick = qzt.tick || 0;
+      render();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ==================== DIAL INTERACTION ====================
+// Make dials interactive on dblclick
+document.querySelectorAll('.dial .slider').forEach(slider => {
+  slider.addEventListener('dblclick', e => {
+    const dialId = slider.querySelector('div').id;
+    const name = dialId.replace('dial-', '');
+    let mapKey = name === 'mvc' ? 'mvc' : name === 'joke' ? 'joke' : name;
+    const newVal = Math.random();
+    updateDial(mapKey, newVal);
+    const allMoved = Object.values(state.dials).every(v => Math.abs(v - 0.5) > 0.01);
+    if (allMoved) unlockQuest('all-dials');
+  });
+});
+
+// ==================== ANIMATE ====================
+function animate() {
+  render();
+  if (state.autoTick) tick();
+  requestAnimationFrame(animate);
+}
+
+setInterval(() => {
+  // Random ambient dial drift
+  if (Math.random() < 0.3) {
+    const dials = ['mood', 'volume', 'earnestness', 'cynicism', 'joke', 'panic', 'presence', 'mvc', 'vision'];
+    const d = dials[Math.floor(Math.random() * 9)];
+    const drift = (Math.random() - 0.5) * 0.1;
+    state.dials[d] = Math.max(0, Math.min(1, state.dials[d] + drift));
+    const mapKey = d === 'mvc' ? 'mvc' : d === 'joke' ? 'joke' : d;
+    document.getElementById('dial-' + mapKey).style.width = `${state.dials[d] * 100}%`;
+    document.getElementById('val-' + mapKey).textContent = state.dials[d].toFixed(2);
+  }
+}, 2000);
+
+// Initialize
+updateUI();
+animate();
+
+// Welcome message
+setTimeout(() => {
+  const msg = document.createElement('div');
+  msg.className = 'floating achievement';
+  msg.style.cssText = 'top: 80px; left: 50%; transform: translateX(-50%);';
+  msg.textContent = '🎮 Welcome to the Quilt Playground. Drag cells from the left. Press T to auto-tick.';
+  document.getElementById('world').appendChild(msg);
+  setTimeout(() => msg.remove(), 5000);
+}, 1000);
+</script>
+
+</body>
+</html>

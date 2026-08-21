@@ -1,9 +1,10 @@
 # @quilt/sdk
 
-> Agent substrate primitives for Quilt. Five functions that turn Quilt sheets into executable, auditable, replayable artifacts.
+> Agent substrate primitives for Quilt. Eight functions that turn Quilt sheets into executable, auditable, replayable artifacts — and that federate them across tiers.
 
-[![tests](https://img.shields.io/badge/tests-28%2F28%20passing-brightgreen)](.)
+[![tests](https://img.shields.io/badge/tests-79%2F79%20passing-brightgreen)](.)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](.)
+[![version](https://img.shields.io/badge/version-0.6.0-blue)](.)
 
 ```
 npm install @quilt/sdk
@@ -11,7 +12,7 @@ npm install @quilt/sdk
 
 ## What it is
 
-`@quilt/sdk` is the **smallest possible surface** for treating Quilt as an agent substrate. It exposes five primitives that any planner, runtime, or UI can compose:
+`@quilt/sdk` is the **smallest possible surface** for treating Quilt as an agent substrate and federated runtime. It exposes eight primitives that any planner, runtime, or UI can compose:
 
 | # | Primitive | Purpose |
 |---|---|---|
@@ -20,8 +21,25 @@ npm install @quilt/sdk
 | 3 | `validateManifest(manifest, opts)` | JSON Schema validation + optional precondition checks. |
 | 4 | `publishArtifact(src, meta, store)` | Upload an artifact; get a content-addressed URI back. |
 | 5 | `publishRunTrace(trace, store)` | Persist an immutable execution trace. |
+| 6 | `resolveCell(uri, transport)` | Resolve a cell URI to a live handle on a remote instance. |
+| 7 | `subscribeCell(uri, cb)` | Subscribe to a cell; receive updates when it changes. |
+| 8 | `CellRouter` | Route calls across transports; load-balance, fail-over. |
 
-These five functions unlock every higher-level pattern: planners that compile goals into manifest DAGs, runtimes that execute them transactionally, agents that learn from the past, and UIs that show users what is happening with full provenance.
+Plus three storage classes:
+
+| Class | Purpose |
+|---|---|
+| `InMemoryArtifactStore` | In-memory store; for tests and ephemeral workloads. |
+| `FederatedArtifactStore` | Multi-tier cache + R2 canonical store. |
+| `MemoryCacheBackend` / `FileSystemCacheBackend` | Pluggable local cache tiers. |
+
+Plus one transport:
+
+| Class | Purpose |
+|---|---|
+| `MqttCellTransport` | IoT-native cell transport using MQTT 5.0. |
+
+These primitives unlock every higher-level pattern: planners that compile goals into manifest DAGs, runtimes that execute them transactionally, agents that learn from the past, UIs that show users what is happening with full provenance, and federated fleets that span tiers from ESP32 to server.
 
 ## Why these five?
 
