@@ -149,6 +149,100 @@ function connectedComponents() {
   return count;
 }
 
+
+// === FASCIA LAYER (Spec 0001) ===
+// JEPA + DoubleEntry running BETWEEN cells.
+
+const fascia = {
+  subscriptions: new Map(),  // key: "sub->pub" -> JEPASignal
+  flows: [],                  // gamma transfers
+  region: new Set(),          // cells in the fascia region
+  surprise_history: [],
+};
+
+function publishJEPA(cellId) {
+  const cell = state.cells.get(cellId);
+  if (!cell) return null;
+  return {
+    cell_id: cellId,
+    predicted: cell.jepa.prediction,
+    confidence: cell.jepa.confidence,
+    timestamp: cell.updated_at
+  };
+}
+
+function subscribeJEPA(subscriberId, publisherId) {
+  const sig = publishJEPA(publisherId);
+  if (sig) {
+    fascia.subscriptions.set(`${subscriberId}->${publisherId}`, sig);
+    fascia.region.add(subscriberId);
+    fascia.region.add(publisherId);
+    broadcast({ type: 'fascia_subscribed', subscriber: subscriberId, publisher: publisherId });
+  }
+}
+
+function surpriseOf(cellId) {
+  const cell = state.cells.get(cellId);
+  if (!cell) return 0;
+  if (fascia.subscriptions.size === 0) return 0;
+  const my = cell.jepa.prediction || 0;
+  let diffs = [];
+  for (const sig of fascia.subscriptions.values()) {
+    if (sig.cell_id !== cellId) {
+      diffs.push(Math.abs(my - (sig.predicted || 0)));
+    }
+  }
+  return diffs.length > 0 ? diffs.reduce((a, b) => a + b, 0) / diffs.length : 0;
+}
+
+function transferGamma(fromId, toId, gamma) {
+  const from = state.cells.get(fromId);
+  const to = state.cells.get(toId);
+  if (!from || !to) return { error: 'cell not found' };
+  if (gamma <= 0 || gamma > (from.double_entry.gamma || 0)) {
+    return { error: 'insufficient gamma' };
+  }
+  from.double_entry.gamma -= gamma;
+  to.double_entry.gamma += gamma;
+  fascia.flows.push({ from: fromId, to: toId, gamma, ts: Date.now() });
+  broadcast({ type: 'fascia_transferred', from: fromId, to: toId, gamma });
+  return { ok: true, from_gamma: from.double_entry.gamma, to_gamma: to.double_entry.gamma };
+}
+
+function totalBudget() {
+  let total = 0;
+  for (const id of fascia.region) {
+    const cell = state.cells.get(id);
+    if (cell) {
+      total += (cell.double_entry.gamma || 0) + (cell.double_entry.eta || 0);
+    }
+  }
+  return total;
+}
+
+function gammaGradient() {
+  const grad = {};
+  for (const id of fascia.region) {
+    const cell = state.cells.get(id);
+    if (cell) grad[id] = cell.double_entry.gamma || 0;
+  }
+  return grad;
+}
+
+// Auto-subscribe on add_edge
+const origAddEdge = addEdge;
+function addEdge(parentId, childId) {
+  subscribeJEPA(parentId, childId);
+  // Also update graph topology
+  const parent = state.cells.get(parentId);
+  const child = state.cells.get(childId);
+  if (parent && child) {
+    if (!parent.graph.children.includes(childId)) parent.graph.children.push(childId);
+    if (!child.graph.parents.includes(parentId)) child.graph.parents.push(parentId);
+  }
+}
+
+
 // === ROUTER ===
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
@@ -178,6 +272,51 @@ async function handle(request, env, ctx) {
       graph: computeBeta1()
     }), { headers: cors });
   }
+
+
+  // Fascia endpoints (Spec 0001)
+  if (path === '/fascia/jepa/stream' && method === 'GET') {
+    return new Response(JSON.stringify(
+      Array.from(fascia.subscriptions.values())
+    ), { headers: cors });
+  }
+
+  if (path === '/fascia/doubleentry' && method === 'GET') {
+    return new Response(JSON.stringify({
+      total_budget: totalBudget(),
+      gradient: gammaGradient(),
+      flow_count: fascia.flows.length,
+      region_size: fascia.region.size
+    }), { headers: cors });
+  }
+
+  if (path === '/fascia/transfer' && method === 'POST') {
+    const body = await request.json();
+    const result = transferGamma(body.from, body.to, body.gamma);
+    return new Response(JSON.stringify(result), {
+      status: result.error ? 400 : 200,
+      headers: cors
+    });
+  }
+
+  if (path.startsWith('/fascia/surprise/') && method === 'GET') {
+    const cellId = path.split('/').pop();
+    return new Response(JSON.stringify({
+      cell_id: cellId,
+      surprise: surpriseOf(cellId)
+    }), { headers: cors });
+  }
+
+  if (path === '/fascia/subscribe' && method === 'POST') {
+    const body = await request.json();
+    subscribeJEPA(body.subscriber, body.publisher);
+    return new Response(JSON.stringify({ ok: true }), { headers: cors });
+  }
+
+  if (path === '/fascia/gradient' && method === 'GET') {
+    return new Response(JSON.stringify(gammaGradient()), { headers: cors });
+  }
+
 
   // Cells
   if (path === '/cells' && method === 'GET') {
