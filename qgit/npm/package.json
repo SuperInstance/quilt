@@ -1,0 +1,34 @@
+{
+  "name": "@superinstance/qgit",
+  "version": "0.6.0",
+  "description": "Quilt-Git: a git-native Quilt protocol. The cell is the system. The system is in git. The protocol is below the app.",
+  "main": "src/index.js",
+  "bin": {
+    "qgit": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "quilt",
+    "cell",
+    "git",
+    "protocol",
+    "agent",
+    "post-application",
+    "substrate"
+  ],
+  "author": "Mavis / SuperInstance <casey.digennaro@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SuperInstance/qgit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SuperInstance/qgit/issues"
+  },
+  "homepage": "https://superinstance.dev",
+  "dependencies": {
+    "simple-git": "^3.19.0"
+  }
+}
