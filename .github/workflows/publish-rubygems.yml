@@ -1,0 +1,117 @@
+name: Publish quilt_cell to RubyGems
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Gem version (e.g., 0.6.0)'
+        required: true
+
+permissions:
+  id-token: write   # Required for OIDC
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      
+      - name: Install sigstore cosign
+        uses: sigstore/cosign-installer@v3
+      
+      - name: Build the gem
+        run: |
+          mkdir -p pkg
+          python3 -c "
+          import tarfile, os, gzip, hashlib, shutil
+          gem_dir = 'quilt_cell-${{ inputs.version || github.ref_name }}'
+          if os.path.exists(gem_dir): shutil.rmtree(gem_dir)
+          if os.path.exists('pkg'): shutil.rmtree('pkg')
+          os.makedirs(gem_dir, exist_ok=True)
+          os.makedirs(f'{gem_dir}/lib/quilt_cell', exist_ok=True)
+          shutil.copytree('lib', f'{gem_dir}/lib')
+          with open(f'{gem_dir}/metadata.gz', 'wb') as f:
+              f.write(gzip.compress(b'name: quilt_cell\nversion: ${{ inputs.version || github.ref_name }}\n'))
+          with tarfile.open(f'{gem_dir}/data.tar.gz', 'w:gz') as tar:
+              tar.add(f'{gem_dir}/lib', arcname='lib')
+          with open(f'{gem_dir}/specifications.gemspec', 'w') as f:
+              f.write('''--- !ruby/object:Gem::Specification
+name: quilt_cell
+version: !ruby/object:Gem::Version
+  version: ${{ inputs.version || github.ref_name }}
+''')
+          checksums = {}
+          for root, dirs, files in os.walk(gem_dir):
+              for file in files:
+                  if file in ['metadata.gz', 'data.tar.gz', 'checksums.yaml']: continue
+                  path = os.path.join(root, file)
+                  rel = os.path.relpath(path, gem_dir)
+                  with open(path, 'rb') as fp:
+                      h = hashlib.sha256(fp.read()).hexdigest()
+                  checksums[rel] = h
+          with open(f'{gem_dir}/checksums.yaml', 'w') as f:
+              f.write('--- \n')
+              for path in sorted(checksums.keys()):
+                  f.write(f'  {path}: {checksums[path]}\n')
+              for fname in ['data.tar.gz', 'metadata.gz']:
+                  with open(f'{gem_dir}/{fname}', 'rb') as fp:
+                      h = hashlib.sha256(fp.read()).hexdigest()
+                  f.write(f'  {fname}: {h}\n')
+          with tarfile.open('pkg/quilt_cell-${{ inputs.version || github.ref_name }}.gem', 'w:gz') as gem:
+              for fname in ['data.tar.gz', 'metadata.gz', 'checksums.yaml', 'specifications.gemspec']:
+                  gem.add(f'{gem_dir}/{fname}', arcname=fname)
+          print('Built: pkg/quilt_cell-${{ inputs.version || github.ref_name }}.gem')
+          "
+      
+      - name: Sign the gem with cosign (OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          cosign sign-blob \
+            --oidc-provider github-actions \
+            --bundle quilt_cell.sigstore \
+            "pkg/quilt_cell-${{ inputs.version || github.ref_name }}.gem"
+      
+      - name: Add attestation to gem
+        run: |
+          python3 -c "
+          import tarfile, os, json, hashlib, shutil
+          gem_path = 'pkg/quilt_cell-${{ inputs.version || github.ref_name }}.gem'
+          bundle = json.load(open('quilt_cell.sigstore'))
+          with open(gem_path, 'rb') as f:
+              gem_hash = hashlib.sha256(f.read()).hexdigest()
+          if os.path.exists('extracted'): shutil.rmtree('extracted')
+          os.makedirs('extracted', exist_ok=True)
+          with tarfile.open(gem_path, 'r:gz') as gem:
+              gem.extractall('extracted')
+          os.makedirs('extracted/attestations/gem_attestations', exist_ok=True)
+          with open(f'extracted/attestations/gem_attestations/{gem_hash}.sigstore', 'w') as f:
+              json.dump(bundle, f, indent=2)
+          with tarfile.open(gem_path, 'w:gz') as gem:
+              for root, dirs, files in os.walk('extracted'):
+                  for file in files:
+                      path = os.path.join(root, file)
+                      rel = os.path.relpath(path, 'extracted')
+                      gem.add(path, arcname=rel)
+          shutil.rmtree('extracted')
+          print(f'Attestation added to {gem_path}')
+          "
+      
+      - name: Push to RubyGems
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
+        run: |
+          mkdir -p ~/.gem
+          echo ":rubygems_api_key: $RUBYGEMS_API_KEY" > ~/.gem/credentials
+          chmod 0600 ~/.gem/credentials
+          gem push "pkg/quilt_cell-${{ inputs.version || github.ref_name }}.gem" --host https://rubygems.org
