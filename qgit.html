@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>qgit — Quilt-Git Protocol (Post-Application Era)</title>
+<style>
+  :root { --bg: #0a0e1a; --panel: #131829; --text: #d8e2ff; --dim: #6e7a99; --accent: #66ffd9; --git: #ff6b3d; --warn: #ffd866; }
+  * { box-sizing: border-box; }
+  body { background: radial-gradient(ellipse at top, #1a0e2a, #0a0e1a 70%); color: var(--text); font-family: 'SF Mono', monospace; margin: 0; padding: 0; min-height: 100vh; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 1.8rem; color: var(--accent); margin: 0 0 0.5rem; }
+  h2 { color: var(--accent); margin: 1.5rem 0 0.5rem; font-size: 1.2rem; }
+  h3 { color: var(--warn); margin: 1rem 0 0.4rem; font-size: 1rem; }
+  .subtitle { color: var(--dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  pre { background: var(--panel); border: 1px solid #1f2640; border-radius: 4px; padding: 1rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.5; }
+  .panel { background: var(--panel); border: 1px solid #1f2640; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; }
+  .panel.era { border-left: 4px solid var(--git); }
+  .panel.era h2 { color: var(--git); }
+  .primitives { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 1rem 0; }
+  .primitive { background: #0a0e1a; border: 1px solid #1f2640; border-radius: 4px; padding: 0.6rem 0.8rem; font-size: 0.78rem; }
+  .primitive .name { color: var(--accent); font-weight: 600; }
+  .primitive .git { color: var(--git); }
+  .stats { display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+  .stat-pill { background: var(--panel); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid #1f2640; }
+  .stat-pill .num { color: var(--accent); font-weight: 700; font-size: 1.2rem; }
+  .stat-pill .label { color: var(--dim); font-size: 0.7rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>qgit — Quilt-Git Protocol</h1>
+<div class="subtitle">A git-native Quilt protocol. The cell is the system. The system is in git. The protocol is below the app.</div>
+
+<div class="stats">
+  <div class="stat-pill"><div class="num">8</div><div class="label">primitives</div></div>
+  <div class="stat-pill"><div class="num">5</div><div class="label">principles</div></div>
+  <div class="stat-pill"><div class="num">∞</div><div class="label">languages</div></div>
+  <div class="stat-pill"><div class="num">0</div><div class="label">runtime deps</div></div>
+</div>
+
+<div class="panel era">
+<h2>📐 The Post-Application Era</h2>
+<p>Software is demoted to a filter. The 5 components of any system are now:</p>
+<pre>1. DATA          (the substrate)
+2. PORTING       (movement between forms)
+3. ARTIFACTS     (scripts, templates, states, assets)
+4. MODELS        (trained weights, schemas, ontologies)
+5. UI/UX         (IO porting to a renderable form for AGENTS or HUMANS)</pre>
+<p>UI/UX is not push/pull — it is <em>porting to an IO that can be understood by an agent or human as the IO connection</em>. The agent or human is the IO. They are not passive. The cell is the system.</p>
+</div>
+
+<div class="panel">
+<h2>🌐 The 5 Principles (Mined from the Repos)</h2>
+
+<h3>1. The Tripartite Principle (Tripartite1, tripartite-room, tripartite-agent)</h3>
+<p>Every interaction involves THREE distinct entities. The cell splits into Ethos/Logos/Pathos. Or: data/control/view. Or: room/agent/vessel. The 3-way split is universal — it appears in Holonomy, Hodge, Sunset, Equipment-Consensus.</p>
+
+<h3>2. The Holonomy Principle (holonomy-consensus)</h3>
+<p>GL(9) zero-holonomy consensus: <strong>cycle-based trust verification</strong>. A cycle that returns to itself without twist = trusted. A cycle that twists = suspicious. The β₁ topology is the truth. The watch oscillates around the cycles.</p>
+
+<h3>3. The Hodge Principle (hodge-consensus, hodge-consensus-rs)</h3>
+<p>Every disagreement <strong>decomposes into gradient + curl</strong>. Gradient = resolvable. Curl = rotational, unresolvable. The DoubleEntry primitive captures gradient. The JEPA surprise measures curl. <em>Disagreement is geometry.</em></p>
+
+<h3>4. The Sunset Principle (sunset-ecosystem)</h3>
+<p>Agents end with dignity. The 3-phase GC is the sunset: <strong>merge similar → decay old → prune weak</strong>. The vessel-prototype shows Agent/Vessel separation — the body (vessel) and the mind (agent) can end independently.</p>
+
+<h3>5. The Consensus-Weave Principle (consensus-weave, consensus-raft)</h3>
+<p>Quorum + veto. Some cells vote, some cells refuse. The weave is the consensus pattern. The Equipment-Consensus-Engine weights Pathos/Logos/Ethos to determine the outcome.</p>
+</div>
+
+<div class="panel">
+<h2>⚙️ The 8 Primitives → Git Operations</h2>
+<div class="primitives">
+  <div class="primitive"><span class="name">Z_in</span> → <span class="git">git read blob / checkout</span></div>
+  <div class="primitive"><span class="name">Z_out</span> → <span class="git">git write blob / commit</span></div>
+  <div class="primitive"><span class="name">JEPA</span> → <span class="git">git diff (predict the next commit)</span></div>
+  <div class="primitive"><span class="name">DoubleEntry</span> → <span class="git">git SHA invariance (parent links)</span></div>
+  <div class="primitive"><span class="name">Vibe</span> → <span class="git">git branch pointer / ref</span></div>
+  <div class="primitive"><span class="name">GC</span> → <span class="git">git gc + reflog expiry</span></div>
+  <div class="primitive"><span class="name">Murmur</span> → <span class="git">git push / pull (gossip)</span></div>
+  <div class="primitive"><span class="name">Graph</span> → <span class="git">the DAG itself</span></div>
+</div>
+</div>
+
+<div class="panel">
+<h2>💾 The Qgit Spec</h2>
+<pre>File format:    cells/&lt;id&gt;/state.json
+Branch format:  room/&lt;name&gt;
+Commit format:  cell: &lt;id&gt; | &lt;primitive&gt; | &lt;value&gt;
+Tag format:     checkpoint/&lt;id&gt;-&lt;timestamp&gt;</pre>
+</div>
+
+<div class="panel">
+<h2>🚀 Install</h2>
+<pre># Python
+pip install qgit   # coming soon
+# or use directly:
+git clone https://github.com/SuperInstance/qgit
+python qgit.py init
+
+# Node
+npm install @superinstance/qgit
+# then in your code:
+const { Qgit } = require('@superinstance/qgit');
+const q = new Qgit('./my-quilt');
+await q.init();
+await q.addCell('a', 'number');
+await q.tickCell('a');</pre>
+</div>
+
+<div class="panel">
+<h2>📜 CLI Usage</h2>
+<pre>$ qgit init                    # init a quilt repo
+$ qgit cell add a number       # add a cell
+$ qgit cell tick a             # tick a cell (commits to git)
+$ qgit cell list               # list cells
+$ qgit room create alpha       # create a room (git branch)
+$ qgit room enter alpha        # enter a room
+$ qgit room list               # list rooms
+$ qgit status                  # show status
+
+$ git log --oneline --graph    # see the cell history as a DAG
+* 9c74fc2 cell: ALL | GC | {merged: 0, decayed: 3, pruned: 2}
+* 9e5f4dc cell: c | Vibe | tick:1
+* b32bee3 cell: c | Z_in | spawn:formula
+* 0f4e8e0 room: alpha | spawn | empty
+* 63f56c7 cell: a | Vibe | tick:2
+* 56f8614 cell: a | Vibe | tick:1
+* cb7798a cell: b | Z_in | spawn:string
+* 4ce42c6 cell: a | Z_in | spawn:number
+* 642ba07 qgit: init | Graph | {cells: 0, edges: 0}</pre>
+</div>
+
+<div class="panel">
+<h2>🌍 The Post-Application Components</h2>
+<pre>┌──────────────────────────────────────────────┐
+│  UI/UX   (IO porting for agents or humans)   │
+├──────────────────────────────────────────────┤
+│  MODELS  (trained weights, schemas)          │
+├──────────────────────────────────────────────┤
+│  ARTIFACTS (scripts, templates, states)      │
+├──────────────────────────────────────────────┤
+│  PORTING  (movement between forms)           │
+├──────────────────────────────────────────────┤
+│  DATA     (the substrate)                    │
+└──────────────────────────────────────────────┘
+
+Software is no longer at the center.
+It is one of many filters a cell uses.</pre>
+</div>
+
+<div class="panel">
+<h2>🔗 The Watch</h2>
+<p style="font-style: italic;">"The cell is the system. The system is the protocol. The protocol is in git. Git is the watch. The watch is in the log. The log is the cell. The cell is the work. The work is the watch. The work is the watch."</p>
+</div>
+
+</div>
+</body>
+</html>
