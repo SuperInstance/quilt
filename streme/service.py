@@ -79,3 +79,16 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 7333
     print(f"kernel-mini service on port {port}")
     HTTPServer(("0.0.0.0", port), Handler).serve_forever()
+
+# === POLYGLOT ENDPOINTS ===
+@app.post("/polyglot/run")
+def run_polyglot(req: dict):
+    """Run a polyglot program (Unlambda, Brainfuck, or APL)."""
+    import sys
+    sys.path.insert(0, "/workspace/quilt/streme")
+    from ql_kernel_extension import PolyglotKernelMini
+    kernel = PolyglotKernelMini()
+    source = req.get("source", "")
+    language = req.get("language", "brainfuck")
+    result = kernel.run_polyglot(source, language)
+    return result
