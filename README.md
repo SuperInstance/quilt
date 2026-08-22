@@ -285,6 +285,35 @@ The grid, rendered the way the fleet sees it — every cell a lit address on the
 
 Apache 2.0. See [LICENSE](./LICENSE).
 
+
+## ✦ Synergies with the SuperInstance Fleet
+
+Quilt is one face of a larger idea. The **SuperInstance** ecosystem — **1,431+ repos, 9 active agents, 2,489+ tests, 18+ languages** — has independently arrived at the same primitives, conservation laws, and architectural patterns. The two projects are the same system seen from different angles.
+
+| Concept | Quilt | SuperInstance | Match |
+|---|---|---|---|
+| Conservation | γ + η = C (productive + liquid) | γ + H = C (productive + entropy) | **1:1** |
+| Topology | Room-as-cell RFC 0001 | PLATO rooms (room taxonomy) | **1:1** |
+| Inter-cell protocol | Murmur (cell-to-cell gossip) | I2I bottles (git-native agent protocol) | **parallel** |
+| A2A bridge | a2a_to_quilt.py (15.9KB) | [a2a-adapter](https://github.com/SuperInstance/a2a-adapter) (I2I ↔ Google A2A) | **parallel** |
+| Agent lifecycle | Vibe + GC (slow state + decay) | [sunset-ecosystem](https://github.com/SuperInstance/sunset-ecosystem) (breed/vote/sunset/seed) | **3:1** |
+| Federation | Federation of cells | 1,431+ repos as a fleet | **scale** |
+| Cell evolution | Cell is the system, the system is the shell | [Hermit Crab Protocol](https://github.com/SuperInstance/SuperInstance-papers/blob/main/03-hermit-crab-protocol.md) (agent ⊂ harness ⊂ room ⊂ SuperInstance) | **parallel** |
+| Multi-layer reasoning | 6 nervous systems (CNS, Fascia, Endocrine, Immune, Enteric, Somatic) | [Cognitive Engine](https://github.com/SuperInstance/CognitiveEngine) (5-level abstraction) | **parallel** |
+| Spectral methods | Graph primitive (topology) | [spectral-fleet](https://github.com/SuperInstance/SuperInstance-papers/blob/main/01-conservation-law-of-intelligence.md) (eigenvalue ranking) | **parallel** |
+| Address = identity | The address is the data | The vector IS the agent (Layer 5: where vectors become code) | **parallel** |
+
+### Cross-references
+
+- **Conservation law**: Quilt's γ+η=C ↔ [The Conservation Law of Intelligence in Multi-Agent Systems](https://github.com/SuperInstance/SuperInstance-papers/blob/main/01-conservation-law-of-intelligence.md) — same law, different name. η (liquid intelligence) is the SuperInstance team's η. The crystallized+liquid split is what we call DoubleEntry.
+- **A2A bridge**: Quilt's a2a_to_quilt.py ↔ [a2a-adapter](https://github.com/SuperInstance/a2a-adapter) — both bridge to Google A2A. Combine them: the I2I↔A2A bridge could route through Quilt cells.
+- **I2I bottles ≈ Murmur**: I2I is a more mature implementation of Quilt's Murmur primitive. Future Quilt version: make Murmur wire-compatible with I2I bottles.
+- **PLATO rooms = Quilt rooms**: The PLATO room taxonomy in [superinstance-architecture](https://github.com/SuperInstance/superinstance-architecture) is the production version of our Room-as-cell RFC.
+- **Hermit Crab = Cell evolution**: The [Hermit Crab Protocol paper](https://github.com/SuperInstance/SuperInstance-papers/blob/main/03-hermit-crab-protocol.md) is the formalization of what Quilt calls "the cell outgrows the shell."
+
+The two projects share the same **conservation law**, the same **rooms**, the same **agent lifecycle**, and the same **address-as-identity principle**. Quilt is the cellular formalism. SuperInstance is the fleet. They are the same idea at two scales.
+
+
 ---
 
 **The point is not the 25 repos. The point is the one model.**
