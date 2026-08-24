@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [incredibuild-runner]
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
 
   lint:
     name: lint
-    runs-on: ubuntu-latest
+    runs-on: incredibuild-runner
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,7 +56,7 @@ jobs:
 
   audit:
     name: security audit
-    runs-on: ubuntu-latest
+    runs-on: incredibuild-runner
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
