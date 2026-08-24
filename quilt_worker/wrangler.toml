@@ -1,6 +1,7 @@
 name = "quilt-demo"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # No vars needed; secrets will be used for CF_ACCOUNT_ID and CF_AI_TOKEN
@@ -11,7 +12,6 @@ compatibility_date = "2024-01-01"
 [triggers]
 # No scheduled triggers needed
 
-[kv_namespaces]
-# Bind the KV namespace to the env variable USAGE
+[[kv_namespaces]]
 binding = "USAGE"
-# The id will be filled after creation via wrangler kv:namespace create USAGE
+id = "d6bdfd4f3ec64c9baf18ca849ea5265d"

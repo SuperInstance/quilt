@@ -1,4 +1,4 @@
-import { URLSearchParams } from 'url';
+import { URLSearchParams } from 'node:url';
 
 /** Simple Cloudflare AI Engine wrapper for Workers.
  *  - Uses fetch (available in Workers).
