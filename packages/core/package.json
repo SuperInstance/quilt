@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "yaml": "^2.3.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "peerDependencies": {
     "@quilt/ai": "*"
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "typescript": "^7.0.2",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.1",
     "vitest": "^4.1.10"
   }
 }
