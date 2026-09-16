@@ -7,9 +7,12 @@
 import { describe, it, expect } from 'vitest';
 import { QuiltEngine, parseSheet } from '@quilt/core';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const REPO = '/workspace/quilt';
+// Repo root derived from this file's location (packages/core/test/), so the
+// suite works regardless of where the repo is checked out.
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 interface ExampleSpec {
   name: string;

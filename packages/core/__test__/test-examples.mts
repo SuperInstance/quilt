@@ -3,7 +3,7 @@
 // Loads each example, drives a few inputs, and reports any
 // errors. Run with: `npx tsx packages/core/__test__/test-examples.mts`
 
-import { QuiltEngine, parseSheet, type CellDef } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@quilt/core';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 

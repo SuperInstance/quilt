@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // qgit CLI
 const { Qgit } = require('./index.js');
-const path = require('path');
 
 async function main() {
   const args = process.argv.slice(2);

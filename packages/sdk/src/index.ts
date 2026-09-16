@@ -1321,7 +1321,7 @@ function generateInstanceId(tier: QuiltTier): string {
 export interface FederatedStoreOptions {
   /** R2 binding (Workers) — pass `env.MY_BUCKET`. */
   r2?: {
-    put: (key: string, value: ReadableStream | ArrayBuffer | string) => Promise<unknown>;
+    put: (key: string, value: ReadableStream | ArrayBuffer | ArrayBufferView | string) => Promise<unknown>;
     get: (key: string) => Promise<{ body: ReadableStream; bodyUsed?: boolean } | null>;
     delete?: (key: string) => Promise<void>;
     list?: (opts?: { prefix?: string; limit?: number; cursor?: string }) => Promise<{
@@ -1625,7 +1625,12 @@ export interface MqttLikeClient {
   end(force?: boolean): void;
 }
 
-export class MqttCellTransport implements CellTransport {
+// Note: MqttCellTransport is a URI-addressed transport (resolve/getValue/
+// publish/subscribe(uri, onValue)) rather than the (instance, sheet, cellPath)
+// shape of the CellTransport interface, so it does not declare `implements
+// CellTransport`. It is consumed directly via its own API (see
+// federation-store tests), not through the CellTransport contract.
+export class MqttCellTransport {
   private readonly client: MqttLikeClient;
   private readonly opts: MqttTransportOptions;
   private readonly listeners = new Map<string, Set<(v: unknown) => void>>();
@@ -1654,7 +1659,7 @@ export class MqttCellTransport implements CellTransport {
     });
   }
 
-  async resolve(uri: string): Promise<CellHandle> {
+  async resolve(uri: string): Promise<{ uri: string; ref: FederatedCellRef; transport: 'mqtt'; topic: string }> {
     const ref = parseCellRef(uri);
     // Topic format: quilt/{instance}/{sheet}/{cellPath}
     // Subscribers can use wildcards: quilt/+/+/#, quilt/+/foo/+/bar, etc.

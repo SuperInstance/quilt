@@ -1,4 +1,4 @@
-const { Qgit, PROTOCOL, makeEmptyCell } = require('./src/index.js');
+const { Qgit } = require('./src/index.js');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
