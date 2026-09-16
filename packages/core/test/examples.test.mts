@@ -49,6 +49,14 @@ const EXAMPLES: ExampleSpec[] = [
       ['clock.now', 1000],
     ],
   },
+  {
+    name: 'scrapyard-robot',
+    file: 'examples/scrapyard-robot/sheet.yaml',
+    seeds: [
+      ['sensor.distance_ahead', 0.29],
+      ['sensor.line_under', 0],
+    ],
+  },
 ];
 
 describe('production examples', () => {

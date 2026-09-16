@@ -1,0 +1,137 @@
+id: scrapyard-robot
+title: "Scrapyard Robot — a tile-brain as a sheet"
+description: >
+  A child's wall-avoiding robot brain, expressed entirely as Quilt cells.
+  Sensors feed a reactive decision graph; a program cell is the controller;
+  and two cells demonstrate the positions offered back to the schema in
+  COORDINATION_WITH_SCRAPCRAFT.md: `explain.why` is a *ledger of cause* (the cell
+  narrates, in plain words, why it did what it did), and `predict.next` is a
+  JEPA-style one-step lookahead (predict the next state, so a child sees plan vs.
+  path). This is the Scrapcraft robot brain, re-expressed in Quilt's own model.
+version: 0.1.0
+
+axes:
+  rows: { name: robot }
+  cols: { name: capability }
+
+cells:
+  # ---- Senses (simulated; a real bot would source ultrasonic + IR pins) ----
+
+  - id: sensor.distance_ahead
+    kind: sensor
+    source: simulated
+    rate: 60
+    unit: normalized   # 1.0 = clear to sonar range, 0.0 = touching a wall
+    description: "Ultrasonic: normalized clear distance ahead"
+
+  - id: sensor.line_under
+    kind: sensor
+    source: simulated
+    rate: 60
+    unit: boolean      # 1 = a track line is under the bot, 0 = bare floor
+    description: "IR floor sensor: is a line under me?"
+
+  # ---- The child's tuning knobs (value cells) ----
+
+  - id: cfg.wall_threshold
+    kind: value
+    value: 0.30
+    description: "How close (normalized) counts as 'wall close'"
+
+  - id: cfg.drive_speed
+    kind: value
+    value: 0.6
+    description: "Cruise speed fraction when the path is clear"
+
+  # ---- The decision graph (pure, reactive formulas) ----
+
+  - id: decision.wall_close
+    kind: formula
+    expr: "=sensor.distance_ahead < cfg.wall_threshold"
+    description: "True when the wall is within the threshold"
+
+  - id: decision.mode
+    kind: formula
+    expr: '=decision.wall_close ? "AVOID" : (sensor.line_under ? "FOLLOW" : "CRUISE")'
+    description: "The single word that names what the robot is doing"
+
+  # ---- The controller (a program cell — the tile-brain) ----
+
+  - id: brain.command
+    kind: program
+    description: "The tile-brain: senses -> {drive, turn}. Deterministic."
+    code: |
+      const d = (await runtime.get('sensor.distance_ahead')).data ?? 1;
+      const line = (await runtime.get('sensor.line_under')).data ? 1 : 0;
+      const thr = (await runtime.get('cfg.wall_threshold')).data ?? 0.3;
+      const spd = (await runtime.get('cfg.drive_speed')).data ?? 0.6;
+      if (d < thr) return { drive: 0, turn: -0.6, action: 'turn_left' };
+      if (line)   return { drive: clamp(spd * 0.7, 0, 1), turn: 0.2, action: 'follow_line' };
+      return { drive: clamp(spd, 0, 1), turn: 0, action: 'drive_forward' };
+
+  # ---- The actuators (io out) ----
+
+  - id: actuator.motors
+    kind: io
+    direction: out
+    port: actuator:motors
+    description: "Physical motor driver (consumes brain.command)"
+
+  # ---- THE LEDGER OF CAUSE: the robot explains WHY (schema proposal #1) ----
+
+  - id: explain.why
+    kind: program
+    description: "Plain-English reason for the last decision — the ledger of cause"
+    code: |
+      const d = (await runtime.get('sensor.distance_ahead')).data ?? 1;
+      const thr = (await runtime.get('cfg.wall_threshold')).data ?? 0.3;
+      const line = (await runtime.get('sensor.line_under')).data ? 1 : 0;
+      const cmd = (await runtime.get('brain.command')).data || {};
+      const dd = Math.round(d * 100) / 100, tt = Math.round(thr * 100) / 100;
+      if (cmd.action === 'turn_left')
+        return `Turning left: distance ahead ${dd} < ${tt}, so the wall is close.`;
+      if (cmd.action === 'follow_line')
+        return `Following the line: path is clear (${dd} ≥ ${tt}) and a line is under me.`;
+      return `Driving forward: path is clear (${dd} ≥ ${tt}) and no line under me.`;
+
+  # ---- JEPA-STYLE LOOKAHEAD: predict the next state (schema proposal #2) ----
+
+  - id: predict.next
+    kind: program
+    description: "One-step lookahead: will the next tick still be blocked? (a visible JEPA)"
+    code: |
+      const d = (await runtime.get('sensor.distance_ahead')).data ?? 1;
+      const thr = (await runtime.get('cfg.wall_threshold')).data ?? 0.3;
+      const cmd = (await runtime.get('brain.command')).data || {};
+      // Crude forward model: turning opens the path; driving toward a wall closes it.
+      const dNext = cmd.action === 'turn_left'
+        ? Math.min(1, d + 0.15)
+        : Math.max(0, d - (cmd.drive || 0) * 0.05);
+      return {
+        distance_next: Math.round(dNext * 100) / 100,
+        will_clear: dNext >= thr,
+        note: dNext >= thr ? 'expects a clear path next tick' : 'expects to still be blocked next tick',
+      };
+
+  # ---- A safety listener (fires when a crash is imminent) ----
+
+  - id: alert.crash_risk
+    kind: listener
+    watch: [sensor.distance_ahead]
+    condition: "caller.metadata && caller.metadata.current < 0.08"
+    action: log.crash_risk
+    description: "Fires when the bot is within crash range of a wall"
+
+  - id: log.crash_risk
+    kind: program
+    code: |
+      const d = (await runtime.get('sensor.distance_ahead')).data ?? 1;
+      return { severity: 'warn', message: `Crash risk — only ${Math.round(d*100)/100} ahead`, at: Date.now() };
+    description: "Logs an imminent-crash warning"
+
+  # ---- A one-line fleet-facing status (pure formula) ----
+
+  - id: status.line
+    kind: formula
+    expr: '=decision.mode + " @ dist " + sensor.distance_ahead'
+    description: "Human-readable status: MODE @ distance (formula scope has no round())"
