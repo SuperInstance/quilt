@@ -102,7 +102,7 @@ cells:
 
   it('handles all 7 sub-kinds', async () => {
     const stubEngine: AIEngineLike = {
-      call: async (config) => `mock ${config.kind}`,
+      call: async (config) => `mock ${config.ai_kind}`,
     };
     const engine = new QuiltEngine('test', { ai: stubEngine });
     const sheet = parseSheet(`id: test5
