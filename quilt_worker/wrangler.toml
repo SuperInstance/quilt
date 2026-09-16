@@ -1,0 +1,17 @@
+name = "quilt-demo"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# No vars needed; secrets will be used for CF_ACCOUNT_ID and CF_AI_TOKEN
+
+[env.production]
+# Production environment can have different limits if needed
+
+[triggers]
+# No scheduled triggers needed
+
+[[kv_namespaces]]
+binding = "USAGE"
+id = "d6bdfd4f3ec64c9baf18ca849ea5265d"

@@ -43,3 +43,8 @@ Thumbs.db
 # CellFlow state
 .cellflow/
 *.cellflow.lock
+target/
+.cargo-artifact-lock
+.cargo-build-lock
+.cargo-lock
+
