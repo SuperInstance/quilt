@@ -20,7 +20,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @quilt/core -w @quilt/sdk -w @quilt/mcp -w @quilt/tui -w @quilt/cli --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:core": "cd packages/core && npm run test",
     "dev": "cd packages/cli && npm run dev",
