@@ -1,5 +1,3 @@
-import { URLSearchParams } from 'node:url';
-
 /** Simple Cloudflare AI Engine wrapper for Workers.
  *  - Uses fetch (available in Workers).
  *  - Reads CF_ACCOUNT_ID and CF_AI_TOKEN from Secrets.
