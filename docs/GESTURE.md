@@ -79,6 +79,35 @@ room.bendingEnergy(); // how much the sheet's state keeps turning
 room.twistEnergy();   // whether it keeps opening new dimensions
 ```
 
+## Comparing motion across domains
+
+`gestureDistance(a, b)` is the payoff of reading motion instead of position. It
+resamples both gestures to a common count of points spaced **evenly by arc
+length** (`Gesture.resample(n)`), reduces each to unit directions of travel, and
+scores the mean angular difference — so it is invariant to *where* a gesture sits,
+*how big* it is, and *how fast or often it was sampled*. A path recorded in 6 lazy
+readings and the same path in 60 frantic ones score ~0.
+
+That invariance is what lets motions from unrelated spaces be compared by shape
+alone. A melody's rise-and-fall through pitch space and a room's rise-and-fall
+through mood space — different coordinates, scales, and sampling — come out
+*close*, while a steady climb comes out far, even though none share an axis:
+
+```ts
+import { Gesture, gestureDistance } from '@quilt/core';
+
+const melody = new Gesture([60,64,67,72,74,72,67,64,60].map((p, i) => [i, p]));
+const room   = new Gesture([0,0.5,1,0.5,0].map((m, i) => [1000 + i*250, 500 + m*900]));
+const climb  = new Gesture(Array.from({ length: 7 }, (_, i) => [i, i]));
+
+gestureDistance(melody, room)  // ~0.1  — same rise-then-reverse shape
+gestureDistance(melody, climb) // larger — a monotone climb is a different motion
+```
+
+This is the concrete form of the fleet's thesis: notes, rooms, conversations,
+cells and converging models live in different coordinate systems, but the *shape
+of their going* is one comparable thing.
+
 ## Honest edges
 
 - The path is **discrete** (one point per reading); no spline is imposed on data
@@ -88,5 +117,12 @@ room.twistEnergy();   // whether it keeps opening new dimensions
 - `twistEnergy` is a discrete, dimension-agnostic generalization of torsion (the
   unsigned angle each step leaves the osculating plane), not the classical signed
   scalar, which only exists in 3-space. It needs ≥4 readings to be non-zero.
-- `gestureDistance` compares steps position-for-position over the shorter path; for
-  paths of very different length, resample to a common count first.
+- `bendingEnergy`/`twistEnergy` still measure turning between the *actual*
+  discrete readings (no reparameterization), so compare them at a similar
+  sampling density. `gestureDistance`, by contrast, resamples by arc length
+  first, so it is the sampling-robust one — reach for it when two gestures were
+  recorded at different rates or lengths.
+- `gestureDistance` compares the *directions* of motion, so it is blind to a pure
+  reversal of speed profile that keeps the same path and to differences in total
+  length; it answers "do these move the same way?", not "are these the same
+  size?".

@@ -183,6 +183,44 @@ export class Gesture {
     if (vertices === 0) return 1;
     return Math.min(1, Math.max(0, 1 - this.twistEnergy() / vertices));
   }
+
+  /**
+   * Resample the gesture to `n` points spaced evenly **by arc length** along the
+   * path (not by index). This is the reparameterization that makes two gestures
+   * comparable regardless of how fast or how often each was sampled: a path
+   * recorded in 6 lazy readings and the same path recorded in 60 frantic ones
+   * resample to the same shape. Returns the original points for `n < 2` or a
+   * path with no length; a still gesture resamples to repeats of its point.
+   */
+  resample(n: number): Point[] {
+    if (n < 1) return [];
+    if (this.points.length === 0) return [];
+    if (this.points.length === 1 || n === 1) {
+      return Array.from({ length: Math.max(1, n) }, () => [...this.points[0]]);
+    }
+    const steps = this.steps();
+    const segLen = steps.map((d) => norm(d));
+    const total = segLen.reduce((s, l) => s + l, 0);
+    if (total < 1e-12) {
+      // No travel: every resample point is the start.
+      return Array.from({ length: n }, () => [...this.points[0]]);
+    }
+    // Cumulative arc length at each original point.
+    const cum: number[] = [0];
+    for (const l of segLen) cum.push(cum[cum.length - 1] + l);
+    const out: Point[] = [];
+    let seg = 0;
+    for (let i = 0; i < n; i++) {
+      const target = (i / (n - 1)) * total;
+      while (seg < segLen.length - 1 && cum[seg + 1] < target) seg++;
+      const segStart = cum[seg];
+      const t = segLen[seg] > 1e-12 ? (target - segStart) / segLen[seg] : 0;
+      const p0 = this.points[seg];
+      const p1 = this.points[seg + 1];
+      out.push(p0.map((x, k) => x + t * (p1[k] - x)));
+    }
+    return out;
+  }
 }
 
 /**
@@ -198,24 +236,39 @@ export function headingAlignment(a: Gesture, b: Gesture): number {
 }
 
 /**
- * How differently two gestures **move**, free of where they are and how big
- * they are: each is reduced to its unit step-directions and scored by mean
- * angular difference (`1 − cos`) over their overlapping steps. Invariant to
- * translation and uniform scale — the comparison that travels across nodes,
- * whose absolute coordinates differ but whose *shape of going* is comparable.
- * Range 0 (same motion) to 2 (opposed at every step); 0 to itself.
+ * How differently two gestures **move**, free of where they are, how big they
+ * are, and how fast or often each was sampled.
+ *
+ * Both gestures are first resampled to a common count of points spaced evenly by
+ * **arc length** ({@link Gesture.resample}), then reduced to unit step-directions
+ * and scored by mean angular difference (`1 − cos`). The arc-length
+ * reparameterization is what lets a path recorded in 6 readings be compared with
+ * the same path recorded in 60 — so this is the comparison that genuinely travels
+ * across nodes, whose absolute coordinates, scales, and sampling rates all
+ * differ but whose *shape of going* is comparable.
+ *
+ * Range 0 (same motion) to 2 (opposed at every step); symmetric; 0 to itself.
+ * `samples` is the shared resolution (default 32; clamped to ≥ 3).
  */
-export function gestureDistance(a: Gesture, b: Gesture): number {
-  const sa = a.steps();
-  const sb = b.steps();
-  const n = Math.min(sa.length, sb.length);
-  if (n === 0) return sa.length === sb.length ? 0 : 2;
-  let sum = 0;
-  for (let i = 0; i < n; i++) {
-    const da = sa[i];
-    const db = sb[i];
-    if (norm(da) < 1e-12 || norm(db) < 1e-12) sum += 1;
-    else sum += 1 - cosine(da, db);
+export function gestureDistance(a: Gesture, b: Gesture, samples = 32): number {
+  const n = Math.max(3, Math.floor(samples));
+  const pa = a.resample(n);
+  const pb = b.resample(n);
+  if (pa.length < 2 || pb.length < 2) {
+    return pa.length === pb.length ? 0 : 2;
   }
-  return Math.min(2, Math.max(0, sum / n));
+  const dirs = (pts: Point[]): Point[] => {
+    const out: Point[] = [];
+    for (let i = 1; i < pts.length; i++) out.push(sub(pts[i], pts[i - 1]));
+    return out;
+  };
+  const da = dirs(pa);
+  const db = dirs(pb);
+  const m = Math.min(da.length, db.length);
+  let sum = 0;
+  for (let i = 0; i < m; i++) {
+    if (norm(da[i]) < 1e-12 || norm(db[i]) < 1e-12) sum += 1;
+    else sum += 1 - cosine(da[i], db[i]);
+  }
+  return m === 0 ? 0 : Math.min(2, Math.max(0, sum / m));
 }
