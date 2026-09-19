@@ -1,14 +1,14 @@
 ---
 canon: 1
 name: quilt
-mission: "A spreadsheet where every cell is a live, addressable capability — the grid is the runtime. Home of the 5-opcode polyformalism (BIND/LINK/EFFECT/VIEW/TICK)."
+mission: "The reactive, typed, cellular runtime — a spreadsheet that thinks, a database that reacts."
 state: active
 family: quilt
-vessel: Forgemaster
+vessel: unattributed
 born_from: []
 feeds: [quilt-studio]
 owed_by: []
 canonical_docs: [README.md]
 ledger: git-log
-verified: 2026-09-18
+verified: 2026-09-20
 ---
