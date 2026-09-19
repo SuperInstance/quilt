@@ -6,7 +6,7 @@ state: active
 family: infrastructure
 vessel: FM
 born_from: []
-feeds: [quilt-studio, quilt-cell, hermit, tidepool]
+feeds: [quilt-studio, quilt-cell, hermit, tidepool, quilt-live-canon]
 owed_by: []
 canonical_docs: [README.md]
 ledger: quilt-wal
