@@ -65,3 +65,9 @@ export { fireListener } from './cells/listener.js';
 export { makeSensorValue } from './cells/sensor.js';
 export { makeIoValue } from './cells/io.js';
 export { evaluateAI, type AIKind, type AICellConfig, type AIEngineLike } from './cells/ai.js';
+
+// =====================================================================
+//  GESTURE — the shape of a value's motion through state space
+// =====================================================================
+
+export { Gesture, headingAlignment, gestureDistance, type Point } from './gesture.js';
