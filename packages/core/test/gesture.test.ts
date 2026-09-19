@@ -102,3 +102,75 @@ describe('Gesture — from a cell value series', () => {
     expect(g.twistEnergy()).toBe(0); // 1-D can never leave a plane
   });
 });
+
+describe('Gesture — arc-length resampling', () => {
+  it('returns n points, preserves endpoints, and spaces evenly by arc length', () => {
+    // An unevenly-sampled straight line: tight near the start, sparse after.
+    const g = new Gesture([[0, 0], [0.1, 0], [0.2, 0], [1, 0], [3, 0]]);
+    const r = g.resample(5);
+    expect(r.length).toBe(5);
+    expect(r[0]).toEqual([0, 0]);
+    expect(r[4][0]).toBeCloseTo(3, 6);
+    // Even arc-length spacing → equal gaps of total/4 = 0.75 along x.
+    for (let i = 1; i < r.length; i++) {
+      expect(r[i][0] - r[i - 1][0]).toBeCloseTo(0.75, 6);
+    }
+  });
+
+  it('a still gesture resamples to repeats of its point', () => {
+    const g = new Gesture([[2, 2], [2, 2], [2, 2]]);
+    expect(g.resample(4)).toEqual([[2, 2], [2, 2], [2, 2], [2, 2]]);
+  });
+});
+
+describe('gestureDistance — robust to sampling rate and length', () => {
+  it('the same path sampled 6 vs 60 times is ~zero distance', () => {
+    const path = (n: number): number[][] =>
+      Array.from({ length: n }, (_, i) => {
+        const a = (i / (n - 1)) * 3.0;
+        return [Math.cos(a), Math.sin(a)];
+      });
+    const coarse = new Gesture(path(6));
+    const fine = new Gesture(path(60));
+    expect(gestureDistance(coarse, fine)).toBeLessThan(0.02);
+  });
+});
+
+describe('gestureDistance — the cross-node claim', () => {
+  // The payoff of the whole "abstraction as gesture" arc: motions from different
+  // domains, in different coordinate systems / scales / sampling rates, compared
+  // purely by the SHAPE of their going.
+  //
+  // Two "rise then reverse" gestures live in unrelated spaces:
+  //   - a "melody": pitch rises then falls (2-D, small values, 9 points)
+  //   - a "room":   mood rises then falls (2-D, large values + offset, 5 points)
+  // A "steady climb" gesture shares neither's shape.
+  const riseFallMelody = new Gesture(
+    [60, 64, 67, 72, 74, 72, 67, 64, 60].map((p, i) => [i, p]) // 9 points
+  );
+  const riseFallRoom = new Gesture(
+    // Same shape, different space: scaled ×100, offset, only 5 points.
+    [0, 0.5, 1, 0.5, 0].map((m, i) => [1000 + i * 250, 500 + m * 900])
+  );
+  const steadyClimb = new Gesture(
+    Array.from({ length: 7 }, (_, i) => [i, i]) // monotone, never reverses
+  );
+
+  it('same-shape motions across domains are closer than different-shape ones', () => {
+    const across = gestureDistance(riseFallMelody, riseFallRoom);
+    const apart = gestureDistance(riseFallMelody, steadyClimb);
+    expect(across).toBeLessThan(apart);
+    // And the cross-domain rise-fall pair is genuinely close despite the
+    // different scale, offset, and sampling.
+    expect(across).toBeLessThan(0.2);
+  });
+
+  it('is symmetric', () => {
+    expect(
+      Math.abs(
+        gestureDistance(riseFallMelody, steadyClimb) -
+          gestureDistance(steadyClimb, riseFallMelody)
+      )
+    ).toBeLessThan(1e-9);
+  });
+});
