@@ -6,7 +6,7 @@ state: active
 family: quilt
 vessel: unattributed
 born_from: []
-feeds: [quilt-studio]
+feeds: [quilt-studio, hermit]
 owed_by: []
 canonical_docs: [README.md]
 ledger: git-log
