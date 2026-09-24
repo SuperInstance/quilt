@@ -245,6 +245,7 @@ footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
         <div class="stat"><div class="stat-num plain" id="stat-size">—</div><div class="stat-label">ocean size</div></div>
         <div class="stat"><div class="stat-num plain" id="stat-hit">—</div><div class="stat-label">hit rate</div></div>
         <div class="stat"><div class="stat-num plain" id="stat-tokens">—</div><div class="stat-label">tokens saved (est)</div></div>
+        <div class="stat"><div class="stat-num plain" id="stat-tide" title="dollar-metered inference budget — refills on a semi-random window">—</div><div class="stat-label">tide (budget)</div></div>
       </div>
       <div class="spark-card">
         <h4>last 20 serves — green = ocean · blue = inference</h4>
@@ -480,6 +481,20 @@ async function pollStats() {
     const hr = (typeof s.hit_rate === "number") ? s.hit_rate : null;
     document.getElementById("stat-hit").textContent = hr === null ? "—" : (hr * 100).toFixed(1) + "%";
     document.getElementById("stat-tokens").textContent = fmt(s.tokens_saved_estimate);
+    /* the tide: dollar-metered leaky budget. When stats carries budget fields we show
+       remaining + countdown; ocean hits keep serving while the tide is out (by design). */
+    const tideEl = document.getElementById("stat-tide");
+    if (tideEl) {
+      if (typeof s.budget_remaining_usd === "number" && typeof s.window_reset_in_seconds === "number") {
+        const left = Math.max(0, s.budget_remaining_usd);
+        const mm = Math.floor(s.window_reset_in_seconds / 60);
+        const ss = String(Math.max(0, Math.round(s.window_reset_in_seconds % 60))).padStart(2, "0");
+        tideEl.textContent = "$" + left.toFixed(4) + " · " + mm + ":" + ss;
+        tideEl.title = "$" + (typeof s.hourly_cap_usd === "number" ? s.hourly_cap_usd : "0.02") + "/hour cap · window refills semi-randomly (2–20 min) · ocean hits bypass the budget";
+      } else {
+        tideEl.textContent = "pre-tide";
+      }
+    }
     drawSpark(s.cost_curve);
   } catch (e) { /* leave last values; honesty pill covers connectivity */ }
 }
@@ -570,12 +585,20 @@ askForm.addEventListener("submit", async function (ev) {
     const latency = Math.round(performance.now() - t0);
     askLatency.textContent = latency + "ms";
     if (r.status === 429) {
-      let ra = null;
-      try { const b = await r.json(); ra = b.retry_after_seconds; } catch (e) {}
-      const msg = ra ? "rate-limited — retry in " + ra + "s" : "rate-limited — slow down a little";
-      askRetry.textContent = "⏳ " + msg;
+      let ra = null, isTide = false;
+      try { const b = await r.json(); ra = b.retry_after_seconds; isTide = (b.error === "tide_out"); } catch (e) {}
+      let msg;
+      if (isTide) {
+        const mm = ra ? Math.floor(ra / 60) : 0;
+        const ss = ra ? String(Math.max(1, Math.round(ra % 60))).padStart(2, "0") : "?";
+        msg = "🌊 the tide is out — the hourly inference budget is spent for this window (ocean hits still answer from memory) · fresh thinking returns in " + (ra ? (mm > 0 ? mm + ":" + ss : ss + "s") : "a few minutes");
+        askRetry.textContent = msg;
+      } else {
+        msg = "⏳ " + (ra ? "rate-limited — retry in " + ra + "s" : "rate-limited — slow down a little");
+        askRetry.textContent = msg;
+      }
       askRetry.classList.add("show");
-      addError("⏳ rate-limited by the worker. " + (ra ? "Retry in " + ra + "s." : "Give it a moment."));
+      addError(msg);
     } else if (!r.ok) {
       addError("worker error " + r.status + " — the ocean hiccuped; try again.");
     } else {
