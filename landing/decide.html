@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Decide — the substrate's decision, witnessed</title>
+<meta name="description" content="Schema-bounded decisions: Choice, Score, Noul. Typed, calibrated, witnessed — the System One substrate deciding in the open.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237ec699'/%3E%3Cstop offset='0.5' stop-color='%235fa8d3'/%3E%3Cstop offset='1' stop-color='%23bb7ec6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Ctext x='50' y='65' font-family='sans-serif' font-size='55' font-weight='bold' text-anchor='middle' fill='%230a0a0a'%3EQ%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Quilt design system (copied from landing/index.html)
+   ============================================================ */
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --green-glow: rgba(126,198,153,0.3);
+  --blue: #5fa8d3;
+  --blue-glow: rgba(95,168,211,0.3);
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --grad: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --grad-text: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  --radius: 8px;
+  --radius-lg: 16px;
+  --t-fast: 150ms;
+  --t-med: 300ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--text); text-decoration: none; transition: color var(--t-fast) var(--ease); }
+a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 0.875em; }
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+section.tight { padding: 64px 0; }
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -0.04em; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -0.03em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 16px; }
+.lead { font-size: clamp(1.125rem, 1.5vw, 1.375rem); color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.section-head { text-align: center; margin-bottom: 48px; }
+.section-head .lead { margin: 0 auto; }
+
+/* Navigation */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; max-width: 1280px; margin: 0 auto; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.125rem; }
+.brand-mark { width: 28px; height: 28px; background: var(--grad); border-radius: 6px; position: relative; }
+.brand-mark::before, .brand-mark::after { content: ''; position: absolute; border: 1.5px solid #0a0a0a; border-radius: 2px; }
+.brand-mark::before { top: 4px; left: 4px; right: 12px; bottom: 12px; }
+.brand-mark::after { top: 12px; left: 12px; right: 4px; bottom: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.nav-links a { padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; color: var(--text-dim); }
+.nav-links a:hover { color: var(--text); background: var(--bg-card-hover); }
+.nav-links a.cta { color: var(--bg); background: var(--text); padding: 8px 16px; margin-left: 8px; font-weight: 500; }
+.nav-links a.cta:hover { background: var(--green); color: var(--bg); }
+.nav-links a.ai-link { color: var(--green); }
+.nav-links a.ai-link:hover { color: var(--green); background: rgba(126,198,153,0.1); }
+
+/* Honesty pill */
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.pill.live { color: var(--green); border-color: rgba(126,198,153,0.4); }
+.pill.live .dot { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s ease-in-out infinite; }
+.pill.offline { color: var(--yellow); border-color: rgba(198,198,126,0.4); }
+.pill.offline .dot { background: var(--yellow); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.offline-banner { display: none; background: rgba(198,198,126,0.08); border-bottom: 1px solid rgba(198,198,126,0.3); color: var(--yellow); font-size: 0.85rem; text-align: center; padding: 8px 16px; }
+.offline-banner.show { display: block; }
+
+/* Hero */
+.hero { padding: 80px 0 40px; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%); width: 1200px; height: 1200px; background: radial-gradient(circle, var(--green-glow) 0%, transparent 50%); opacity: 0.3; pointer-events: none; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 32px; }
+.hero-tag .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 2s ease-in-out infinite; }
+.hero h1 { margin-bottom: 24px; }
+.hero p.lead { margin: 0 auto 40px; }
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 500; transition: all var(--t-fast) var(--ease); border: 1px solid var(--border-strong); cursor: pointer; background: transparent; color: var(--text); font-family: inherit; }
+.btn:hover { background: var(--bg-card-hover); border-color: var(--text-dim); color: var(--text); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-decide { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-decide:hover { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+
+/* Demo card */
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.demo-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.demo-title { font-weight: 600; font-size: 0.95rem; }
+.demo-pills { display: flex; gap: 6px; }
+.demo-pill { font-size: 0.7rem; padding: 3px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.demo-body { padding: 32px; }
+@media (max-width: 768px) { .demo-body { padding: 20px; } }
+
+/* Schema builder */
+.schema-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.schema-tab { padding: 10px 18px; font-size: 0.85rem; font-weight: 600; color: var(--text-dim); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; transition: all var(--t-fast) var(--ease); }
+.schema-tab:hover { color: var(--text); }
+.schema-tab.active { color: var(--green); border-bottom-color: var(--green); }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; font-weight: 600; }
+.field textarea, .field input[type="text"], .field input[type="number"] { width: 100%; padding: 12px 14px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; outline: none; transition: border-color var(--t-fast) var(--ease); resize: vertical; }
+.field textarea { min-height: 110px; font-family: 'Inter', sans-serif; line-height: 1.55; }
+.field textarea.mono { font-family: 'JetBrains Mono', monospace; }
+.field textarea:focus, .field input:focus { border-color: var(--green); }
+.field .hint { font-size: 0.72rem; color: var(--text-faint); margin-top: 5px; font-family: 'JetBrains Mono', monospace; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .field-row { grid-template-columns: 1fr; } }
+.counter { float: right; color: var(--text-faint); }
+
+/* Presets */
+.presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 24px; }
+.preset { font-size: 0.78rem; padding: 6px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); cursor: pointer; font-family: inherit; transition: all var(--t-fast) var(--ease); }
+.preset:hover { color: var(--green); border-color: rgba(126,198,153,0.4); }
+
+/* Decision render */
+.decision-out { margin-top: 24px; display: none; }
+.decision-out.show { display: block; }
+.opt-row { margin-bottom: 14px; }
+.opt-name { display: flex; justify-content: space-between; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+.opt-name .p { color: var(--text-dim); }
+.opt-bar { height: 10px; background: var(--bg-elev-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.opt-fill { height: 100%; border-radius: 999px; background: var(--blue); width: 0; transition: width 800ms var(--ease); }
+.opt-row.winner .opt-fill { background: var(--grad); }
+.opt-row.winner .opt-name { color: var(--green); font-weight: 600; }
+.opt-row.winner .opt-name .p { color: var(--green); }
+.gauge-wrap { text-align: center; padding: 16px 0; }
+.gauge-val { font-size: 3.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; }
+.gauge-range { color: var(--text-faint); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; margin-top: 6px; }
+.gauge-track { height: 12px; background: var(--bg-elev-2); border-radius: 999px; border: 1px solid var(--border); margin-top: 18px; overflow: hidden; position: relative; }
+.gauge-fill { height: 100%; background: var(--grad); width: 0; transition: width 900ms var(--ease); }
+.gauge-marker { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); left: 0; transition: left 900ms var(--ease); }
+.noul-out { text-align: center; padding: 24px 0; }
+.noul-word { font-size: clamp(3rem, 9vw, 6rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.noul-word.yes { color: var(--green); text-shadow: 0 0 40px var(--green-glow); }
+.noul-word.no { color: var(--red); }
+.noul-prob { font-size: 1.1rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; margin-top: 12px; }
+
+/* Receipt */
+.receipt { margin-top: 20px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.receipt h5 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; }
+.receipt .rrow { display: flex; gap: 10px; padding: 3px 0; }
+.receipt .rk { color: var(--text-faint); min-width: 110px; }
+.receipt .rv { color: var(--text); word-break: break-all; }
+
+/* History */
+.history { margin-top: 28px; }
+.history h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; }
+.hist-item { display: flex; gap: 12px; align-items: baseline; padding: 8px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: border-color var(--t-fast) var(--ease); }
+.hist-item:hover { border-color: var(--border-strong); }
+.hist-type { color: var(--green); min-width: 52px; }
+.hist-sum { color: var(--text-dim); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-ts { color: var(--text-faint); }
+.hist-empty { color: var(--text-faint); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
+
+/* Explainer */
+.explainer { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; }
+.explainer h3 { margin-bottom: 12px; }
+.explainer p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 12px; }
+.explainer code { background: var(--bg-elev-2); padding: 2px 6px; border-radius: 4px; color: var(--green); }
+.kind-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.kind-chip { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; padding: 4px 12px; border-radius: 999px; background: rgba(95,168,211,0.1); border: 1px solid rgba(95,168,211,0.35); color: var(--blue); }
+
+/* Code block */
+.code-block { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; color: var(--text-dim); }
+.code-block .c-str { color: var(--green); }
+.code-block .c-com { color: var(--text-faint); font-style: italic; }
+
+/* Footer */
+footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+.footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.footer-col a { display: block; padding: 4px 0; color: var(--text-dim); font-size: 0.9rem; }
+.footer-col a:hover { color: var(--green); }
+.footer-bottom { padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); }
+@media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 768px) { section { padding: 64px 0; } .nav-links a:not(.cta):not(.ai-link) { display: none; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="ocean.html" class="ai-link">💧 Ocean</a>
+      <a href="decide.html" class="ai-link">🧠 Decide</a>
+      <a href="quantum.html" class="ai-link">⚛ Quantum</a>
+      <a href="zai-live.html" class="ai-link">⚡ z.ai</a>
+      <a href="kimi-live.html" class="ai-link">🌙 Kimi</a>
+      <a href="index.html">Home</a>
+      <a href="quilt-live.html" class="cta">Open Live</a>
+      <span class="pill" id="honesty-pill"><span class="dot"></span><span id="honesty-text">checking…</span></span>
+    </div>
+  </div>
+</nav>
+<div class="offline-banner" id="offline-banner">⚠ worker offline — live AI unavailable below; any numbers shown are clearly-labeled sample data</div>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag"><span class="dot"></span> 🧠 Decide — System One, live</div>
+    <h1>The substrate's decision,<br><span class="grad-text">witnessed.</span></h1>
+    <p class="lead">A decision is not a chat completion. It's a schema-bounded act: a Choice among declared options, a Score on a declared rubric, a Noul — yes or no. The model can only answer inside the type. Every call is timed, hashed, and receipted.</p>
+    <div class="hero-ctas">
+      <a href="#playground" class="btn btn-decide">Build a decision</a>
+      <a href="#why" class="btn">Why schemas bound it</a>
+      <a href="index.html" class="btn btn-ghost">← Quilt home</a>
+    </div>
+  </div>
+</header>
+
+<section class="tight" id="playground">
+  <div class="container">
+    <div class="demo-card">
+      <div class="demo-head">
+        <span class="demo-title">🧠 systemone.decide</span>
+        <div class="demo-pills">
+          <span class="demo-pill" id="dec-latency">idle</span>
+          <span class="demo-pill">POST /api/systemone</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="presets">
+          <button class="preset" data-preset="cell">BIND vs FORGET vs LINK for this cell</button>
+          <button class="preset" data-preset="thermal">Rate this sheet's thermal risk 1–100</button>
+          <button class="preset" data-preset="scout">Should the fleet spawn a scout? (Noul)</button>
+        </div>
+
+        <div class="schema-tabs">
+          <button class="schema-tab active" data-tab="Choice">Choice</button>
+          <button class="schema-tab" data-tab="Score">Score</button>
+          <button class="schema-tab" data-tab="Noul">Noul</button>
+        </div>
+
+        <div id="panel-Choice">
+          <div class="field">
+            <label>options — one per line <span class="counter" id="opt-counter">0 / 255</span></label>
+            <textarea class="mono" id="opt-options" placeholder="BIND&#10;FORGET&#10;LINK" maxlength="255"></textarea>
+            <div class="hint">each line is one option · total ≤ 255 chars · the decision must be one of these, nothing else</div>
+          </div>
+        </div>
+        <div id="panel-Score" style="display:none;">
+          <div class="field">
+            <label>rubric</label>
+            <textarea id="score-rubric" placeholder="Rate thermal risk: 1 = stone cold, 100 = about to melt the fan curve. Consider load, ambient, and history."></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>min</label><input type="number" id="score-min" value="1"></div>
+            <div class="field"><label>max</label><input type="number" id="score-max" value="100"></div>
+          </div>
+        </div>
+        <div id="panel-Noul" style="display:none;">
+          <div class="field">
+            <label>context — the full question</label>
+            <textarea id="noul-context" placeholder="Should the fleet spawn a scout for the plato room tonight? Crew is at 40% load, last scout found 3 seams, and the room changed 12 cells since."></textarea>
+            <div class="hint">a Noul decides yes or no — with a calibrated probability</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>context — what the decision is about</label>
+          <textarea id="ctx" placeholder="The cell 'ocean.hit_rate' has been above 0.9 for 6 hours. The sheet is due to compact. What should happen to this cell?"></textarea>
+        </div>
+
+        <button class="btn btn-decide" id="send-btn">Send → System One</button>
+        <span class="retry-note" id="dec-retry" style="display:none; margin-left: 12px; font-size: 0.8rem; color: var(--yellow); font-family: 'JetBrains Mono', monospace;"></span>
+
+        <div class="decision-out" id="decision-out"></div>
+
+        <div class="history">
+          <h4>local history — last 10 (this browser only)</h4>
+          <div id="hist-list"><div class="hist-empty">no decisions yet</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="why">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Why this matters</span>
+      <h2>Schemas are <span class="grad-text">fences, not hints.</span></h2>
+    </div>
+    <div class="explainer">
+      <h3>A schema-bounded decision can't hallucinate outside its type.</h3>
+      <p>Ask a chat model "what should we do?" and it can say anything — that's the feature and the hazard. Hand System One a <code>Choice</code> schema and the response <em>is</em> one of your options, with probabilities. A <code>Score</code> comes back inside <code>[min, max]</code>. A <code>Noul</code> comes back yes or no, with calibration. There is no fourth thing it can say.</p>
+      <p>That property is what makes decisions safe to wire into a reactive graph. In Quilt, cell kinds are exactly this kind of fence:</p>
+      <div class="kind-chips">
+        <span class="kind-chip">BIND — link two cells' fates</span>
+        <span class="kind-chip">LINK — reference without owning</span>
+        <span class="kind-chip">EFFECT — act on the world</span>
+        <span class="kind-chip">VIEW — render without mutating</span>
+        <span class="kind-chip">TICK — advance on a clock</span>
+      </div>
+      <p style="margin-top: 16px;">A cell whose kind is <code>VIEW</code> can never mutate, no matter what a model suggests. When a model decides which kind a new cell should get, the decision itself is a <code>Choice</code> schema over <code>{BIND, LINK, EFFECT, VIEW, TICK}</code> — the substrate literally cannot propose a sixth kind. That's what "typed" means when AI is in the loop.</p>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="container">
+    <div class="section-head" style="margin-bottom: 32px;">
+      <span class="eyebrow">No browser required</span>
+      <h2>curl a <span class="grad-text">decision.</span></h2>
+    </div>
+    <div class="code-block">
+<pre style="margin:0; color: var(--text-dim);"><span class="c-com"># a Choice — schema declares the only legal answers</span>
+curl -X POST <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/systemone</span> \
+  -H <span class="c-str">'Content-Type: application/json'</span> \
+  -d <span class="c-str">'{"schema":{"type":"Choice","options":["BIND","FORGET","LINK"]},"context":"cell ocean.hit_rate is hot; compact due"}'</span>
+
+<span class="c-com"># a Score — rubric + range</span>
+curl -X POST <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/systemone</span> \
+  -H <span class="c-str">'Content-Type: application/json'</span> \
+  -d <span class="c-str">'{"schema":{"type":"Score","rubric":"thermal risk, 1=cold 100=melting","min":1,"max":100},"context":"fan at 80%, ambient 31C"}'</span>
+
+<span class="c-com"># a Noul — yes or no, calibrated</span>
+curl -X POST <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/systemone</span> \
+  -H <span class="c-str">'Content-Type: application/json'</span> \
+  -d <span class="c-str">'{"schema":{"type":"Noul"},"context":"spawn a scout tonight? crew at 40%, room changed 12 cells"}'</span></pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom: 12px;">
+          <span class="brand-mark"></span>
+          <span>Quilt</span>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.9rem; max-width: 320px;">A reactive, typed, cellular runtime. Decide is its typed decision surface.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Live infra</h4>
+        <a href="ocean.html">💧 The Ocean</a>
+        <a href="decide.html">🧠 Decide</a>
+        <a href="quantum.html">⚛ Quantum</a>
+      </div>
+      <div class="footer-col">
+        <h4>Try it</h4>
+        <a href="quilt-live.html">Quilt Live</a>
+        <a href="index.html">Landing</a>
+        <a href="quilt-cloudflare.html">Cloudflare</a>
+      </div>
+      <div class="footer-col">
+        <h4>Source</h4>
+        <a href="https://github.com/SuperInstance/quilt" target="_blank">quilt</a>
+        <a href="https://github.com/SuperInstance/quilt-cloudflare" target="_blank">quilt-cloudflare</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>MIT licensed. Built by humans, for humans and their cells.</div>
+      <div>2026 — and beyond</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const WORKER = "https://quilt-cloudflare.superinstance.workers.dev";
+
+/* ---------------- shared honesty pill ---------------- */
+(function honestyPill() {
+  let lastOk = 0;
+  const pill = document.getElementById("honesty-pill");
+  const text = document.getElementById("honesty-text");
+  const banner = document.getElementById("offline-banner");
+  function render() {
+    const live = lastOk > 0 && (Date.now() - lastOk) < 10000;
+    pill.classList.toggle("live", live);
+    pill.classList.toggle("offline", !live);
+    text.textContent = live ? "LIVE" : "OFFLINE";
+    banner.classList.toggle("show", !live);
+  }
+  async function poll() {
+    try {
+      const r = await fetch(WORKER + "/api/ocean/health", { cache: "no-store" });
+      if (r.ok) lastOk = Date.now();
+    } catch (e) {}
+    render();
+  }
+  setInterval(poll, 10000);
+  poll();
+})();
+
+/* ---------------- helpers ---------------- */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/* ---------------- schema tabs ---------------- */
+let activeTab = "Choice";
+const tabs = document.querySelectorAll(".schema-tab");
+tabs.forEach(function (t) {
+  t.addEventListener("click", function () {
+    activeTab = t.dataset.tab;
+    tabs.forEach(function (x) { x.classList.toggle("active", x === t); });
+    ["Choice", "Score", "Noul"].forEach(function (k) {
+      document.getElementById("panel-" + k).style.display = (k === activeTab) ? "" : "none";
+    });
+  });
+});
+
+/* option counter */
+const optBox = document.getElementById("opt-options");
+const optCounter = document.getElementById("opt-counter");
+optBox.addEventListener("input", function () {
+  optCounter.textContent = optBox.value.length + " / 255";
+});
+
+/* ---------------- presets ---------------- */
+const PRESETS = {
+  cell: {
+    tab: "Choice",
+    options: "BIND\nFORGET\nLINK",
+    ctx: "The cell 'ocean.hit_rate' has served above 0.9 for six hours. The sheet is due to compact, and this cell has 14 dependents. What should the compaction do with it?"
+  },
+  thermal: {
+    tab: "Score",
+    rubric: "Thermal risk for this sheet: consider fan duty cycle, ambient temperature, cell churn, and how long until the next maintenance window. 1 = stone cold, 100 = about to throttle.",
+    min: 1, max: 100,
+    ctx: "Fan at 80% steady, ambient 31°C, churn is 240 cells/min, maintenance is 6 hours out."
+  },
+  scout: {
+    tab: "Noul",
+    noul: "Should the fleet spawn a scout for the plato room tonight? Crew is at 40% load, the last scout found 3 seams, and the room changed 12 cells since sundown.",
+    ctx: "Fleet load 40%. Plato room changed 12 cells today. Last scout found 3 seams. Scout costs ~$0.02 and one worker slot."
+  }
+};
+document.querySelectorAll(".preset").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    const p = PRESETS[btn.dataset.preset];
+    if (!p) return;
+    /* switch tab */
+    document.querySelector('.schema-tab[data-tab="' + p.tab + '"]').click();
+    if (p.tab === "Choice") {
+      optBox.value = p.options || "";
+      optBox.dispatchEvent(new Event("input"));
+      document.getElementById("ctx").value = p.ctx || "";
+    } else if (p.tab === "Score") {
+      document.getElementById("score-rubric").value = p.rubric || "";
+      document.getElementById("score-min").value = p.min;
+      document.getElementById("score-max").value = p.max;
+      document.getElementById("ctx").value = p.ctx || "";
+    } else {
+      document.getElementById("noul-context").value = p.noul || "";
+      document.getElementById("ctx").value = p.ctx || "";
+    }
+  });
+});
+
+/* ---------------- build schema payload ---------------- */
+function buildSchema() {
+  if (activeTab === "Choice") {
+    const options = optBox.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+    if (options.length < 2) { alert("Choice needs at least 2 options."); return null; }
+    return { type: "Choice", options: options };
+  }
+  if (activeTab === "Score") {
+    const min = Number(document.getElementById("score-min").value);
+    const max = Number(document.getElementById("score-max").value);
+    if (isNaN(min) || isNaN(max) || min >= max) { alert("Score needs min < max."); return null; }
+    return { type: "Score", rubric: document.getElementById("score-rubric").value, min: min, max: max };
+  }
+  return { type: "Noul" };
+}
+function buildContext() {
+  if (activeTab === "Noul") {
+    const n = document.getElementById("noul-context").value.trim();
+    if (n) return n;
+  }
+  return document.getElementById("ctx").value.trim();
+}
+
+/* ---------------- render decision ---------------- */
+const out = document.getElementById("decision-out");
+function normProb(p) {
+  /* accept object {opt: p} or array [{option,p}] etc → [[name, p], ...] */
+  const pairs = [];
+  if (Array.isArray(p)) {
+    p.forEach(function (x) {
+      if (x && typeof x === "object") pairs.push([x.option || x.name || x.label || "?", Number(x.p ?? x.probability ?? x.value ?? 0)]);
+      else pairs.push([String(x), 0]);
+    });
+  } else if (p && typeof p === "object") {
+    Object.keys(p).forEach(function (k) { pairs.push([k, Number(p[k])]); });
+  }
+  return pairs;
+}
+function renderDecision(schema, context, data, latencyMs) {
+  out.innerHTML = "";
+  out.classList.add("show");
+  const holder = el("div");
+  const type = (data && (data.type || (data.decision && data.decision.type))) || schema.type;
+
+  if (type === "Choice") {
+    const winner = data.choice ?? data.decision ?? data.answer;
+    const pairs = normProb(data.probabilities || (data.decision && data.decision.probabilities));
+    if (!pairs.length && winner) pairs.push([winner, 1]);
+    pairs.forEach(function (kv) {
+      const row = el("div", "opt-row" + (kv[0] === winner ? " winner" : ""));
+      const name = el("div", "opt-name");
+      name.appendChild(el("span", null, (kv[0] === winner ? "✓ " : "") + kv[0]));
+      name.appendChild(el("span", "p", Math.round((kv[1] || 0) * 100) + "%"));
+      row.appendChild(name);
+      const bar = el("div", "opt-bar");
+      const fill = el("div", "opt-fill");
+      bar.appendChild(fill);
+      row.appendChild(bar);
+      holder.appendChild(row);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { fill.style.width = Math.max((kv[1] || 0) * 100, 2) + "%"; });
+      });
+    });
+  } else if (type === "Score") {
+    const val = Number(data.score ?? (data.decision && data.decision.score) ?? data.value ?? NaN);
+    const conf = Number(data.confidence ?? (data.decision && data.decision.confidence) ?? NaN);
+    const wrap = el("div", "gauge-wrap");
+    wrap.appendChild(el("div", "gauge-val", isNaN(val) ? "—" : String(Math.round(val * 10) / 10)));
+    wrap.appendChild(el("div", "gauge-range", "range " + schema.min + " → " + schema.max + (isNaN(conf) ? "" : " · confidence " + (conf <= 1 ? Math.round(conf * 100) + "%" : Math.round(conf) + "%"))));
+    const track = el("div", "gauge-track");
+    const fill = el("div", "gauge-fill");
+    const marker = el("div", "gauge-marker");
+    track.appendChild(fill); track.appendChild(marker);
+    wrap.appendChild(track);
+    if (!isNaN(val)) {
+      const frac = Math.min(Math.max((val - schema.min) / (schema.max - schema.min), 0), 1);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          fill.style.width = (frac * 100) + "%";
+          marker.style.left = "calc(" + (frac * 100) + "% - 1px)";
+        });
+      });
+    }
+    holder.appendChild(wrap);
+  } else if (type === "Noul") {
+    const raw = data.noul ?? (data.decision && data.decision.noul) ?? data.decision ?? data.answer;
+    const yes = (typeof raw === "string" && /^y/i.test(raw)) || raw === true || raw === 1;
+    const prob = Number(data.probability ?? (data.decision && data.decision.probability) ?? NaN);
+    const wrap = el("div", "noul-out");
+    wrap.appendChild(el("div", "noul-word " + (yes ? "yes" : "no"), yes ? "YES" : "NO"));
+    wrap.appendChild(el("div", "noul-prob",
+      (isNaN(prob) ? "" : "calibrated p = " + (prob <= 1 ? (Math.round(prob * 1000) / 10) + "%" : Math.round(prob) + "%") + " · ") +
+      "decided in " + latencyMs + "ms"));
+    holder.appendChild(wrap);
+  } else {
+    /* unknown shape — show it honestly rather than invent a render */
+    holder.appendChild(el("div", "code-block", JSON.stringify(data, null, 2)));
+  }
+  out.appendChild(holder);
+
+  /* receipt card */
+  const ts = new Date().toISOString();
+  const respHash = fnv1a(JSON.stringify(data));
+  const schemaHash = fnv1a(JSON.stringify(schema));
+  const promptHash = fnv1a(context + JSON.stringify(schema));
+  const receipt = el("div", "receipt");
+  const h = el("h5", null, "⛓ witness receipt");
+  receipt.appendChild(h);
+  [
+    ["timestamp", ts],
+    ["latency_ms", String(latencyMs)],
+    ["prompt_hash", "fnv1a:" + promptHash],
+    ["schema_hash", "fnv1a:" + schemaHash],
+    ["response_hash", "fnv1a:" + respHash]
+  ].forEach(function (kv) {
+    const row = el("div", "rrow");
+    row.appendChild(el("span", "rk", kv[0]));
+    row.appendChild(el("span", "rv", kv[1]));
+    receipt.appendChild(row);
+  });
+  out.appendChild(receipt);
+
+  /* history */
+  pushHistory({ ts: ts, type: type, summary: summarize(type, data), latency: latencyMs });
+}
+function summarize(type, data) {
+  try {
+    if (type === "Choice") return "→ " + String(data.choice ?? data.decision ?? data.answer);
+    if (type === "Score") return "→ " + String(data.score ?? (data.decision && data.decision.score) ?? data.value);
+    if (type === "Noul") return "→ " + String(data.noul ?? (data.decision && data.decision.noul) ?? data.decision ?? data.answer);
+  } catch (e) {}
+  return "→ (rendered)";
+}
+
+/* ---------------- local history (last 10) ---------------- */
+const HIST_KEY = "quilt.decide.history";
+function loadHist() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch (e) { return []; }
+}
+function pushHistory(entry) {
+  const h = loadHist();
+  h.unshift(entry);
+  localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 10)));
+  renderHist();
+}
+function renderHist() {
+  const list = document.getElementById("hist-list");
+  const h = loadHist();
+  list.innerHTML = "";
+  if (!h.length) { list.appendChild(el("div", "hist-empty", "no decisions yet")); return; }
+  h.forEach(function (x) {
+    const item = el("div", "hist-item");
+    item.appendChild(el("span", "hist-type", x.type));
+    item.appendChild(el("span", "hist-sum", x.summary));
+    item.appendChild(el("span", "hist-ts", new Date(x.ts).toLocaleTimeString() + " · " + x.latency + "ms"));
+    list.appendChild(item);
+  });
+}
+renderHist();
+
+/* ---------------- send ---------------- */
+const sendBtn = document.getElementById("send-btn");
+const decLatency = document.getElementById("dec-latency");
+const decRetry = document.getElementById("dec-retry");
+sendBtn.addEventListener("click", async function () {
+  const schema = buildSchema();
+  if (!schema) return;
+  const context = buildContext();
+  if (!context) { alert("Context is empty — the substrate needs something to decide about."); return; }
+  sendBtn.disabled = true;
+  decRetry.style.display = "none";
+  decLatency.textContent = "deciding…";
+  const t0 = performance.now();
+  try {
+    const r = await fetch(WORKER + "/api/systemone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ schema: schema, context: context })
+    });
+    const latency = Math.round(performance.now() - t0);
+    decLatency.textContent = latency + "ms";
+    if (r.status === 429) {
+      let ra = null;
+      try { const b = await r.json(); ra = b.retry_after_seconds; } catch (e) {}
+      decRetry.textContent = "⏳ rate-limited — retry in " + (ra || "a few") + "s";
+      decRetry.style.display = "inline";
+    } else if (!r.ok) {
+      decRetry.textContent = "worker error " + r.status;
+      decRetry.style.display = "inline";
+    } else {
+      const data = await r.json();
+      renderDecision(schema, context, data, latency);
+    }
+  } catch (e) {
+    decLatency.textContent = "unreachable";
+    decRetry.textContent = "network error — check the pill above";
+    decRetry.style.display = "inline";
+  }
+  sendBtn.disabled = false;
+});
+</script>
+</body>
+</html>
