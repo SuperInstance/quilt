@@ -125,11 +125,20 @@ export interface EngineOptions {
   tracing?: boolean;
   /** Optional AI engine for `kind: 'ai'` cells. If null, AI cells will error. */
   ai?: AIEngineLike;
+  /**
+   * Eager reactive mode (opt-in). When true, set/push recomputes stale
+   * formula cells during propagation instead of lazily on the next get.
+   * Listeners and subscribers then observe real prev->current transitions
+   * of derived cells — edge-triggered conditions work. Default false
+   * (preserves the original pull-based semantics).
+   */
+  eager?: boolean;
 }
 
 const defaultOptions: Required<Omit<EngineOptions, 'ai'>> = {
   maxConcurrency: 16,
   tracing: false,
+  eager: false,
 };
 
 /**
@@ -354,7 +363,7 @@ export class QuiltEngine implements ProgramRuntime {
     cell.contextCache.clear();
 
     await this.notify(id, newValue, prev);
-    await this.propagate(id, fullCtx);
+    await this.propagate(id, fullCtx, undefined, prev);
   }
 
   /**
@@ -421,7 +430,7 @@ export class QuiltEngine implements ProgramRuntime {
     cell.value = newValue;
 
     await this.notify(id, newValue, prev);
-    await this.propagate(id, extendContext(ctx, id));
+    await this.propagate(id, extendContext(ctx, id), undefined, prev);
   }
 
   // ===========================================================================
@@ -583,10 +592,34 @@ export class QuiltEngine implements ProgramRuntime {
    * Propagate a change to all dependents. Mark formula/value
    * dependents as stale and invalidate their cache. Fire listener
    * dependents whose conditions are met.
+   *
+   * `changedPrev` threads the changed cell's previous value so
+   * listeners observe a real prev->current pair. When `eager` is on,
+   * stale formula cells are recomputed DURING propagation (after the
+   * mark-stale pass reaches them), so listeners/subscribers on derived
+   * cells see fresh transitions.
    */
-  private async propagate(changedId: CellId, ctx: CallerContext): Promise<void> {
+  private async propagate(
+    changedId: CellId,
+    ctx: CallerContext,
+    _visited?: Set<CellId>,
+    changedPrev?: CellValue,
+  ): Promise<void> {
     const cell = this.cells.get(changedId);
     if (!cell) return;
+
+    let current = cell.value;
+    let prev = changedPrev ?? current;
+
+    // EAGER: recompute a stale formula now so downstream sees fresh values.
+    if (this.options.eager && cell.def.kind === 'formula' &&
+        (cell.value.status === 'stale' || cell.value.status === 'idle')) {
+      prev = cell.value; // the stale value still carries the OLD data
+      await this.refreshDeps(cell, ctx);
+      current = evaluateFormula(cell, ctx, this.cells);
+      cell.value = current;
+      await this.notify(cell.id, current, prev);
+    }
 
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
@@ -603,7 +636,7 @@ export class QuiltEngine implements ProgramRuntime {
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
       if (!dep || dep.def.kind !== 'listener') continue;
-      await fireListener(dep, changedId, cell.value, cell.value, this);
+      await fireListener(dep, changedId, current, prev, this);
     }
   }
 

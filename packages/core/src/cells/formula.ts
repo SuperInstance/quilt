@@ -196,6 +196,12 @@ export function evaluateFormula(cell: Cell, ctx: CallerContext, allCells: Map<Ce
       computedAt: Date.now(),
     };
     cell.contextCache.set(key, value);
+    // Persist the computed value on the cell itself. A pull seeds the
+    // graph: propagation events (listener prev/current, subscriber
+    // notifications) read cell.value, and without this store they saw
+    // undefined — listeners missed the first real threshold crossing
+    // of any formula that had only been pulled, never pushed.
+    cell.value = value;
     return value;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
