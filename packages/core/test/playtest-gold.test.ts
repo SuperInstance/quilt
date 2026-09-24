@@ -13,6 +13,54 @@ function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   return engine;
 }
 
+describe('playtest-gold class 7: program/router caches invalidated on upstream change', () => {
+  it('program cell with deps recomputes on upstream change', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'n', kind: 'value', value: 1 },
+        {
+          id: 'p',
+          kind: 'program',
+          deps: ['n'],
+          code: `
+            const v = await runtime.get('n');
+            return (v.data ?? 0) * 10;
+          `,
+        },
+      ],
+    });
+    expect((await engine.call('p')).data).toBe(10);
+    await engine.set('n', 2);
+    // Previously the program kept serving its FIRST result forever.
+    expect((await engine.call('p')).data).toBe(20);
+  });
+
+  it('router cache is invalidated when a declared upstream changes', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'mode', kind: 'value', value: 'fast' },
+        { id: 'fast', kind: 'value', value: 'fast-result' },
+        {
+          id: 'r',
+          kind: 'router',
+          deps: ['mode'],
+          rules: [{ when: 'true', route: 'fast' }],
+        },
+      ],
+    });
+    const ctx = { timestamp: 0 };
+    expect((await engine.call('r', undefined, ctx)).data).toBe('fast-result');
+    expect(engine.getCell('r')?.value.status).toBe('ready');
+    await engine.set('mode', 'other');
+    // The declared upstream changed: the cached router result is stale
+    // and the cache map is cleared, so the next call re-evaluates.
+    expect(engine.getCell('r')?.value.status).toBe('stale');
+    expect(engine.getCell('r')?.contextCache.size).toBe(0);
+  });
+});
+
 describe('playtest-gold class 6: router context delegation + dotted contains', () => {
   it('delegated cell sees the original caller context', async () => {
     const engine = define({

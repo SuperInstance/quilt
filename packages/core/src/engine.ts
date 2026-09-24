@@ -630,9 +630,13 @@ export class QuiltEngine implements ProgramRuntime {
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
       if (!dep || seen.has(depId)) continue;
-      // Effectful cells (api, program, router, ai) also need cache invalidation
-      // when an upstream value changes
-      if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai') {
+      // Formula/value/ai/program/router caches all invalidate when an
+      // upstream changes. Previously program and router were omitted:
+      // a program that declared deps on an upstream cell kept serving
+      // its FIRST result forever (e.g. an LLM workflow that never saw
+      // new input).
+      if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai' ||
+          dep.def.kind === 'program' || dep.def.kind === 'router') {
         dep.value = { ...dep.value, status: 'stale' };
         dep.contextCache.clear();
       }
