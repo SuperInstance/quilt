@@ -44,7 +44,7 @@ This is the end-state. The next 5 years is the path.
 
 ## The repos (built and to-build)
 
-We have **6 shipped** + **6 sketched** + **15+ to ideate**. The list is not exhaustive. There are more repos we haven't thought of yet.
+We have **6 shipped** at the time of writing — plus what the fleet actually shipped in Q3, which is a different list. See **2026 Q3 — what actually shipped** below for the September retrospective. The full ledger is not exhaustive; there are more repos we haven't thought of yet.
 
 ### Shipped (have first releases)
 
@@ -116,6 +116,33 @@ This shift is the privacy story. A room is a logical group with an access policy
 
 ---
 
+## 2026 Q3 — what actually shipped (September retrospective)
+
+The Q3 plan said "Intelligence." Here's what actually exists, measured, in repos:
+
+**The substrate-walker fleet.**
+
+- **jev-quilt** — 81 tests passing, published to PyPI. The event-sourced walker substrate is installable, not just clonable.
+- **quilt-cli / quilt-bootstrap / quilt-brewer** — the command surface: bootstrap a fleet node, brew a room, walk a sheet from the terminal.
+- **schema-registry** — the 8-field witness envelope is fixed and shared. Every call in every repo can be hashed, chained, and audited the same way.
+- **canary-port** — the same witness idiom expressed in 5 languages. Polyformalism as a compatibility check, not a stunt.
+- **tidepool** — the vector ocean itself: embeddings in, similarity out, D1 + Vectorize behind it.
+
+**The quantum line.**
+
+- **quilt-quantum-audio** — 5 modulation schemes over 16 amplitudes, running against certified QRNG hardware.
+- **OTOC chaos cells** — out-of-time-order correlator cells in the Moth family; the channel's noise is measured, not assumed.
+- **quantumaudio-demo PR #2** — the shots-envelope fix landed. Decode fidelity now runs pearson 0.62–0.67 at 2,000 shots, and the cross-prompt decode–decode correlation of 0.77 is published as the honest limit.
+
+**Discipline, in production.**
+
+- **Canon/witness hash-chain discipline** now spans the repos — commits, calls, and decisions reference the same envelope.
+- **jev canon-gate oracle** is in production: canon proposals get gated on-chain before they become canon.
+- **quilt-cloudflare** — Workers + D1 + Vectorize + KV + AI in one deployable repo, serving the landing demos.
+- **30+ active repos** across the org. The fleet grew past the roadmap's imagination; the cell model held.
+
+---
+
 ## 12-month roadmap
 
 A build order. Each item is a first release. We ship in this sequence.
@@ -139,6 +166,13 @@ A build order. Each item is a first release. We ship in this sequence.
 - ✅ **`quilt-zk`** (2 months) — zero-knowledge proofs over cells. **Sketched.** 7 tests pass.
 - **`quilt-build`** (1 month) — compile cells to WASM, native, embedded.
 
+**Q4 2026 — The Ocean**
+
+- **The Ocean** (in flight) — cloud inference with a vector memory in front. Every question makes the next one cheaper; every call is witness-receipted.
+- **Typed decisions** — System One Choice/Score/Noul as a public API, schema-bounded, ~150ms, receipted.
+- **Quantum audio demos** — encode/decode through the real Moth channel, fidelity witness published.
+- **Best-of featuring on superinstance.dev** — the quarter's output, curated.
+
 **Q4 2026 — Polish**
 
 - ✅ **`quilt-flow`** (1 month) — visual editor. **Sketched.** 8 tests pass.
@@ -148,7 +182,7 @@ A build order. Each item is a first release. We ship in this sequence.
 - **`quilt-civic`** (1 month) — public data cells. The cell model, for the public sector.
 - **`quilt-fs`** (1 month) — files as cells. Replaces the file system metaphor.
 
-By end of 2026: 18 first releases, 3 paradigm shifts demonstrated, a working mesh from microcontroller to cloud.
+By end of 2026: 18 first releases, 3 paradigm shifts demonstrated, a working mesh from microcontroller to cloud — and public infrastructure on top: the Ocean, typed decisions, quantum audio.
 
 **Beyond 2026 — the long arc**
 
