@@ -183,6 +183,15 @@ export class QuiltEngine implements ProgramRuntime {
       if (cell.def.kind === 'formula' || cell.def.kind === 'ai') {
         this.autoDetectDeps(cell);
       }
+      // Wire listener `watch` lists into the graph. Without this edge,
+      // propagate() never reaches listener cells and fireListener is
+      // dead code for sheets authored per the documented schema
+      // (watch/condition/action with no deps).
+      if (cell.def.kind === 'listener') {
+        for (const w of cell.def.watch ?? []) {
+          this.addDep(cell.id, w);
+        }
+      }
       for (const dep of cell.def.deps ?? []) {
         this.addDep(cell.id, dep);
       }
@@ -232,6 +241,11 @@ export class QuiltEngine implements ProgramRuntime {
    */
   register(def: CellDef): Cell {
     const cell = this.defineCell(def);
+    if (def.kind === 'listener') {
+      for (const w of def.watch ?? []) {
+        this.addDep(def.id, w);
+      }
+    }
     for (const dep of def.deps ?? []) {
       this.addDep(def.id, dep);
     }
