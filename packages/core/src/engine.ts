@@ -200,6 +200,11 @@ export class QuiltEngine implements ProgramRuntime {
         for (const w of cell.def.watch ?? []) {
           this.addDep(cell.id, w);
         }
+        // Loud-failure warning: a listener that can never do anything
+        // used to fail silently. Surface it at load time instead.
+        if (!cell.def.action || ['io', 'sensor'].includes(this.cells.get(cell.def.action)?.def.kind ?? '')) {
+          console.warn(`[quilt] listener "${cell.id}" ${!cell.def.action ? 'has no action and will never fire one' : `routes to io/sensor cell "${cell.def.action}" — routing is not implemented for io cells yet`}`);
+        }
       }
       for (const dep of cell.def.deps ?? []) {
         this.addDep(cell.id, dep);

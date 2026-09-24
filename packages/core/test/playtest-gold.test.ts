@@ -300,6 +300,75 @@ describe('playtest-gold class 2: value-cell get() returns the live value', () =>
   });
 });
 
+describe('playtest-gold class 9: loud failures', () => {
+  const captureWarnings = (fn: () => void): string[] => {
+    const warnings: string[] = [];
+    const orig = console.warn;
+    console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')); };
+    try {
+      fn();
+    } finally {
+      console.warn = orig;
+    }
+    return warnings;
+  };
+
+  it('warns at load when a listener has no action', () => {
+    const warnings = captureWarnings(() => {
+      define({
+        id: 'test',
+        cells: [{ id: 'broken', kind: 'listener', watch: ['nope'] }],
+      });
+    });
+    expect(warnings.some(w => w.includes('broken'))).toBe(true);
+  });
+
+  it('warns at load when a listener action is an io/sensor cell', () => {
+    const warnings = captureWarnings(() => {
+      define({
+        id: 'test',
+        cells: [
+          { id: 'feed', kind: 'sensor' },
+          { id: 'bad', kind: 'listener', watch: ['feed'], action: 'feed' },
+        ],
+      });
+    });
+    expect(warnings.some(w => w.includes('bad') && w.includes('feed'))).toBe(true);
+  });
+
+  it('logs when a listener condition cannot be parsed (semantics unchanged: false)', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'x', kind: 'value', value: 1 },
+        { id: 'fired', kind: 'value', value: 0 },
+        { id: 'w', kind: 'listener', watch: ['x'], condition: 'f(}', action: 'bump' },
+        {
+          id: 'bump',
+          kind: 'program',
+          code: `
+            const n = await runtime.get('fired');
+            await runtime.set('fired', (n.data ?? 0) + 1);
+            return n.data ?? 0;
+          `,
+        },
+      ],
+    });
+    const warnings: string[] = [];
+    const orig = console.warn;
+    console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')); };
+    try {
+      await engine.set('x', 2);
+    } finally {
+      console.warn = orig;
+    }
+    // The failure is now LOUD...
+    expect(warnings.some(w => w.includes('f(}'))).toBe(true);
+    // ...but the truth semantics are untouched: unparseable = false.
+    expect(engine.getCell('fired')?.value.data).toBe(0);
+  });
+});
+
 describe('playtest-gold class 8: ai-cell schema fields reach the provider', () => {
   // sysone.choice / sysone.score declare their fence in the sheet —
   // options, min, max, rubric — and the provider adapter must receive

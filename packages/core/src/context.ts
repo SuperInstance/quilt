@@ -170,10 +170,13 @@ export function evalWhen(when: string, ctx: CallerContext): boolean {
     const fn = new Function('caller', `return (${expr});`);
     return Boolean(fn(caller));
   } catch (err) {
-    // Be loud in dev, quiet in prod
-    if (process.env.QUILT_DEBUG) {
-      console.error(`[quilt] evalWhen failed: ${when}`, err);
-    }
+    // Be LOUD about rule typos. Previously this only logged behind
+    // QUILT_DEBUG, so a syntactically invalid condition silently
+    // evaluated to false — the rule just never matched and nobody
+    // knew why. Log it unconditionally; do NOT change the truth
+    // semantics (unparseable = false, matching how an undefined
+    // left-hand side behaves).
+    console.warn(`[quilt] evalWhen failed: ${when}`, err);
     return false;
   }
 }
