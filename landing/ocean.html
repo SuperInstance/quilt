@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💧 The Ocean — a memory that makes answers cheaper</title>
+<meta name="description" content="Every question makes the next one cheaper. A live vector memory in front of inference, with hash-chained witness receipts.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237ec699'/%3E%3Cstop offset='0.5' stop-color='%235fa8d3'/%3E%3Cstop offset='1' stop-color='%23bb7ec6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Ctext x='50' y='65' font-family='sans-serif' font-size='55' font-weight='bold' text-anchor='middle' fill='%230a0a0a'%3EQ%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Quilt design system (copied from landing/index.html)
+   ============================================================ */
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --green-glow: rgba(126,198,153,0.3);
+  --blue: #5fa8d3;
+  --blue-glow: rgba(95,168,211,0.3);
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --grad: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --grad-text: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6);
+  --radius: 8px;
+  --radius-lg: 16px;
+  --t-fast: 150ms;
+  --t-med: 300ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--text); text-decoration: none; transition: color var(--t-fast) var(--ease); }
+a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 0.875em; }
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+section.tight { padding: 64px 0; }
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -0.04em; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -0.03em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 16px; }
+.lead { font-size: clamp(1.125rem, 1.5vw, 1.375rem); color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.section-head { text-align: center; margin-bottom: 64px; }
+.section-head .lead { margin: 0 auto; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Navigation */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; max-width: 1280px; margin: 0 auto; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.125rem; }
+.brand-mark { width: 28px; height: 28px; background: var(--grad); border-radius: 6px; position: relative; }
+.brand-mark::before, .brand-mark::after { content: ''; position: absolute; border: 1.5px solid #0a0a0a; border-radius: 2px; }
+.brand-mark::before { top: 4px; left: 4px; right: 12px; bottom: 12px; }
+.brand-mark::after { top: 12px; left: 12px; right: 4px; bottom: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.nav-links a { padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; color: var(--text-dim); }
+.nav-links a:hover { color: var(--text); background: var(--bg-card-hover); }
+.nav-links a.cta { color: var(--bg); background: var(--text); padding: 8px 16px; margin-left: 8px; font-weight: 500; }
+.nav-links a.cta:hover { background: var(--green); color: var(--bg); }
+.nav-links a.ai-link { color: var(--green); }
+.nav-links a.ai-link:hover { color: var(--green); background: rgba(126,198,153,0.1); }
+
+/* Honesty pill */
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.pill.live { color: var(--green); border-color: rgba(126,198,153,0.4); }
+.pill.live .dot { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s ease-in-out infinite; }
+.pill.offline { color: var(--yellow); border-color: rgba(198,198,126,0.4); }
+.pill.offline .dot { background: var(--yellow); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.offline-banner { display: none; background: rgba(198,198,126,0.08); border-bottom: 1px solid rgba(198,198,126,0.3); color: var(--yellow); font-size: 0.85rem; text-align: center; padding: 8px 16px; }
+.offline-banner.show { display: block; }
+
+/* Hero */
+.hero { padding: 80px 0 40px; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%); width: 1200px; height: 1200px; background: radial-gradient(circle, var(--blue-glow) 0%, transparent 50%); opacity: 0.35; pointer-events: none; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 32px; }
+.hero-tag .dot { width: 6px; height: 6px; background: var(--blue); border-radius: 50%; box-shadow: 0 0 8px var(--blue); animation: pulse 2s ease-in-out infinite; }
+.hero h1 { margin-bottom: 24px; }
+.hero p.lead { margin: 0 auto 40px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 500; transition: all var(--t-fast) var(--ease); border: 1px solid var(--border-strong); cursor: pointer; background: transparent; color: var(--text); font-family: inherit; }
+.btn:hover { background: var(--bg-card-hover); border-color: var(--text-dim); color: var(--text); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-ocean { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+.btn-ocean:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Stats strip */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.stat { background: var(--bg-elev); padding: 24px 16px; text-align: center; }
+.stat-num { font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; margin-bottom: 4px; }
+.stat-num.plain { background: none; color: var(--text); font-size: 1.9rem; }
+.stat-label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+.stats-wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: stretch; }
+.spark-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; display: flex; flex-direction: column; }
+.spark-card h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; font-weight: 600; }
+.spark-legend { display: flex; gap: 16px; margin-top: 10px; font-size: 0.7rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.spark-legend span::before { content: '●'; margin-right: 6px; }
+.spark-legend .lg-green::before { color: var(--green); }
+.spark-legend .lg-blue::before { color: var(--blue); }
+
+/* Demo card */
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.demo-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.demo-title { font-weight: 600; font-size: 0.95rem; }
+.demo-pills { display: flex; gap: 6px; }
+.demo-pill { font-size: 0.7rem; padding: 3px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.demo-body { padding: 32px; }
+
+/* Chat */
+.chat-log { min-height: 260px; max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+.chat-empty { color: var(--text-faint); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; text-align: center; padding: 60px 0; }
+.msg { max-width: 85%; }
+.msg-user { align-self: flex-end; }
+.msg-ai { align-self: flex-start; }
+.msg-bubble { padding: 14px 18px; border-radius: 12px; font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; }
+.msg-user .msg-bubble { background: var(--blue); color: var(--bg); border-bottom-right-radius: 4px; }
+.msg-ai .msg-bubble { background: var(--bg-elev-2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; }
+.msg-user .msg-meta { justify-content: flex-end; }
+.badge { padding: 2px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+.badge-ocean { background: rgba(126,198,153,0.12); color: var(--green); border: 1px solid rgba(126,198,153,0.35); }
+.badge-infer { background: rgba(95,168,211,0.12); color: var(--blue); border: 1px solid rgba(95,168,211,0.35); }
+.witness { color: var(--text-faint); cursor: pointer; border-bottom: 1px dashed var(--text-faint); }
+.witness:hover { color: var(--green); border-bottom-color: var(--green); }
+.chat-input { display: flex; gap: 12px; }
+.chat-input input { flex: 1; padding: 12px 16px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 0.95rem; outline: none; transition: border-color var(--t-fast) var(--ease); }
+.chat-input input:focus { border-color: var(--green); }
+.chat-input input:disabled { opacity: 0.5; }
+.retry-note { margin-top: 10px; font-size: 0.8rem; color: var(--yellow); font-family: 'JetBrains Mono', monospace; display: none; }
+.retry-note.show { display: block; }
+
+/* The Stream */
+.stream-wrap { position: relative; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.stream-canvas { display: block; width: 100%; height: 340px; cursor: crosshair; }
+.stream-tip { position: absolute; pointer-events: none; background: var(--bg-elev-2); border: 1px solid var(--border-strong); border-radius: 6px; padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text); max-width: 320px; display: none; z-index: 5; box-shadow: var(--shadow); }
+.stream-legend { display: flex; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.stream-legend span::before { content: '●'; margin-right: 6px; }
+.stream-legend .lg-green::before { color: var(--green); }
+.stream-legend .lg-blue::before { color: var(--blue); }
+
+/* How it works */
+.hiw { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.hiw-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: all var(--t-med) var(--ease); position: relative; }
+.hiw-card:hover { border-color: var(--border-strong); background: var(--bg-elev-2); transform: translateY(-2px); }
+.hiw-step { position: absolute; top: 20px; right: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); }
+.hiw-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; background: var(--bg-card); border: 1px solid var(--border); }
+.hiw-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.hiw-card p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; }
+
+/* Code block */
+.code-block { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.7; overflow-x: auto; color: var(--text-dim); }
+.code-block .c-kw { color: var(--purple); }
+.code-block .c-str { color: var(--green); }
+.code-block .c-com { color: var(--text-faint); font-style: italic; }
+.code-block .c-fn { color: var(--blue); }
+
+/* Footer */
+footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+.footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.footer-col a { display: block; padding: 4px 0; color: var(--text-dim); font-size: 0.9rem; }
+.footer-col a:hover { color: var(--green); }
+.footer-bottom { padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); }
+
+@media (max-width: 900px) {
+  .stats-wrap { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  section { padding: 64px 0; }
+  .nav-links a:not(.cta):not(.ai-link) { display: none; }
+  .demo-body { padding: 20px; }
+  .chat-input { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="ocean.html" class="ai-link">💧 Ocean</a>
+      <a href="decide.html" class="ai-link">🧠 Decide</a>
+      <a href="quantum.html" class="ai-link">⚛ Quantum</a>
+      <a href="zai-live.html" class="ai-link">⚡ z.ai</a>
+      <a href="kimi-live.html" class="ai-link">🌙 Kimi</a>
+      <a href="quilt-cloudflare.html">Cloudflare</a>
+      <a href="index.html">Home</a>
+      <a href="quilt-live.html" class="cta">Open Live</a>
+      <span class="pill" id="honesty-pill"><span class="dot"></span><span id="honesty-text">checking…</span></span>
+    </div>
+  </div>
+</nav>
+<div class="offline-banner" id="offline-banner">⚠ worker offline — live AI unavailable below; any numbers shown are clearly-labeled sample data</div>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag"><span class="dot"></span> 💧 The Ocean — public infrastructure, live</div>
+    <h1>A memory that makes<br><span class="grad-text">answers cheaper.</span></h1>
+    <p class="lead">Every question makes the next one cheaper. The Ocean is a vector memory that sits in front of inference: embeddings are searched first, hits are served straight from memory, misses are answered fresh — and then remembered, hash-chained, witnessed.</p>
+    <div class="hero-ctas">
+      <a href="#ask" class="btn btn-ocean">Ask the Ocean</a>
+      <a href="#how" class="btn">How it works</a>
+      <a href="index.html" class="btn btn-ghost">← Quilt home</a>
+    </div>
+  </div>
+</header>
+
+<section class="tight" id="live">
+  <div class="container">
+    <div class="section-head" style="margin-bottom: 32px;">
+      <span class="eyebrow">Live counters</span>
+      <h2>The Ocean, <span class="grad-text">right now.</span></h2>
+    </div>
+    <div class="stats-wrap">
+      <div class="stats">
+        <div class="stat"><div class="stat-num plain" id="stat-calls">—</div><div class="stat-label">calls total</div></div>
+        <div class="stat"><div class="stat-num plain" id="stat-size">—</div><div class="stat-label">ocean size</div></div>
+        <div class="stat"><div class="stat-num plain" id="stat-hit">—</div><div class="stat-label">hit rate</div></div>
+        <div class="stat"><div class="stat-num plain" id="stat-tokens">—</div><div class="stat-label">tokens saved (est)</div></div>
+      </div>
+      <div class="spark-card">
+        <h4>last 20 serves — green = ocean · blue = inference</h4>
+        <canvas id="sparkline" style="flex:1; width:100%; min-height:80px;"></canvas>
+        <div class="spark-legend"><span class="lg-green">served from ocean</span><span class="lg-blue">fresh inference</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="ask">
+  <div class="container">
+    <div class="section-head" style="margin-bottom: 32px;">
+      <span class="eyebrow">Ask it anything</span>
+      <h2>Watch the <span class="grad-text">serve decision.</span></h2>
+      <p class="lead">Every answer carries its provenance: ⚡ served from the ocean, or 🧠 fresh inference — now remembered. Every call gets a hash-chained witness receipt.</p>
+    </div>
+    <div class="demo-card">
+      <div class="demo-head">
+        <span class="demo-title">💧 ocean.ask</span>
+        <div class="demo-pills">
+          <span class="demo-pill" id="ask-latency">idle</span>
+          <span class="demo-pill">POST /api/ocean/ask</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="chat-log" id="chat-log"><div class="chat-empty">the ocean is listening — ask a question</div></div>
+        <form class="chat-input" id="ask-form">
+          <input type="text" id="ask-input" placeholder="e.g. what is a quilt cell?" autocomplete="off" maxlength="2000">
+          <button class="btn btn-ocean" type="submit" id="ask-btn">Send</button>
+        </form>
+        <div class="retry-note" id="ask-retry"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="stream">
+  <div class="container">
+    <div class="section-head" style="margin-bottom: 32px;">
+      <span class="eyebrow">The stream</span>
+      <h2>A tide of <span class="grad-text">questions.</span></h2>
+      <p class="lead">The most recent calls across the whole ocean, rendered as a tide. Each dot's position is deterministic — derived from its timestamp and prompt. Hover any dot.</p>
+    </div>
+    <div class="stream-wrap">
+      <canvas class="stream-canvas" id="stream-canvas"></canvas>
+      <div class="stream-tip" id="stream-tip"></div>
+      <div class="stream-legend"><span class="lg-green">served from ocean</span><span class="lg-blue">fresh inference</span><span style="margin-left:auto;" id="stream-count"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="how">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Under the surface</span>
+      <h2>How it <span class="grad-text">works.</span></h2>
+    </div>
+    <div class="hiw">
+      <div class="hiw-card">
+        <span class="hiw-step">01</span>
+        <div class="hiw-icon" style="color: var(--green);">⇢</div>
+        <h3>Embed</h3>
+        <p>Every prompt is embedded at the edge. The question becomes a vector before it becomes an answer — the same embedding model every time, so the ocean stays one geometry.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">02</span>
+        <div class="hiw-icon" style="color: var(--blue);">◎</div>
+        <h3>Search the ocean</h3>
+        <p>The vector is searched against every memory the ocean holds. Top hit's similarity is compared against the serve threshold — Vectorize does this in milliseconds.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">03</span>
+        <div class="hiw-icon" style="color: var(--purple);">⚡</div>
+        <h3>Hit? serve : infer</h3>
+        <p>Above threshold: the remembered answer is served straight back — no model call, tokens saved. Below: a real model answers, and the exchange is written into the ocean so the next asker gets the cheap path.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">04</span>
+        <div class="hiw-icon" style="color: var(--tan);">⛓</div>
+        <h3>Witness receipt</h3>
+        <p>Every call — hit or miss — mints a hash-chained witness receipt. The chain is append-only and verifiable; you can audit exactly what the ocean served and when.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight">
+  <div class="container">
+    <div class="section-head" style="margin-bottom: 32px;">
+      <span class="eyebrow">No browser required</span>
+      <h2>curl the <span class="grad-text">ocean.</span></h2>
+    </div>
+    <div class="code-block">
+<pre style="margin:0; color: var(--text-dim);"><span class="c-com"># ask — the serve decision comes back with the answer</span>
+curl -X POST <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/ocean/ask</span> \
+  -H <span class="c-str">'Content-Type: application/json'</span> \
+  -d <span class="c-str">'{"prompt":"what is a quilt cell?"}'</span>
+
+<span class="c-com"># → {"answer":"…","served":"ocean","similarity":0.94,"witness":"a1b2c3d4…", …}</span>
+
+<span class="c-com"># live counters</span>
+curl <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/ocean/stats</span>
+
+<span class="c-com"># the recent tide</span>
+curl <span class="c-str">https://quilt-cloudflare.superinstance.workers.dev/api/ocean/recent</span></pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom: 12px;">
+          <span class="brand-mark"></span>
+          <span>Quilt</span>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.9rem; max-width: 320px;">A reactive, typed, cellular runtime. The Ocean is its public memory.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Live infra</h4>
+        <a href="ocean.html">💧 The Ocean</a>
+        <a href="decide.html">🧠 Decide</a>
+        <a href="quantum.html">⚛ Quantum</a>
+      </div>
+      <div class="footer-col">
+        <h4>Try it</h4>
+        <a href="quilt-live.html">Quilt Live</a>
+        <a href="index.html">Landing</a>
+        <a href="quilt-cloudflare.html">Cloudflare</a>
+      </div>
+      <div class="footer-col">
+        <h4>Source</h4>
+        <a href="https://github.com/SuperInstance/quilt" target="_blank">quilt</a>
+        <a href="https://github.com/SuperInstance/quilt-cloudflare" target="_blank">quilt-cloudflare</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>MIT licensed. Built by humans, for humans and their cells.</div>
+      <div>2026 — and beyond</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* =========================================================================
+   The Ocean — live demo client
+   Honesty rules: never fake AI client-side; never silently fall back.
+   If the worker is offline or rate-limits, we say so.
+   ========================================================================= */
+const WORKER = "https://quilt-cloudflare.superinstance.workers.dev";
+
+/* ---------------- shared honesty pill ---------------- */
+const Honesty = (function () {
+  let lastOk = 0;
+  const pill = document.getElementById("honesty-pill");
+  const text = document.getElementById("honesty-text");
+  const banner = document.getElementById("offline-banner");
+  function render() {
+    const live = lastOk > 0 && (Date.now() - lastOk) < 10000;
+    pill.classList.toggle("live", live);
+    pill.classList.toggle("offline", !live);
+    text.textContent = live ? "LIVE" : "OFFLINE";
+    banner.classList.toggle("show", !live);
+    return live;
+  }
+  async function poll() {
+    try {
+      const r = await fetch(WORKER + "/api/ocean/health", { cache: "no-store" });
+      if (r.ok) lastOk = Date.now();
+    } catch (e) { /* network error = still offline */ }
+    render();
+  }
+  setInterval(poll, 10000);
+  poll();
+  return { render: render };
+})();
+
+/* ---------------- tiny helpers ---------------- */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return Number(n).toLocaleString("en-US");
+}
+function short8(s) {
+  return (s || "").slice(0, 8);
+}
+
+/* ---------------- live stats strip + sparkline ---------------- */
+const sparkCanvas = document.getElementById("sparkline");
+function drawSpark(curve) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = sparkCanvas.clientWidth, h = sparkCanvas.clientHeight || 90;
+  sparkCanvas.width = w * dpr; sparkCanvas.height = h * dpr;
+  const ctx = sparkCanvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  const pts = (curve || []).slice(-20);
+  if (!pts.length) {
+    ctx.fillStyle = "#707070";
+    ctx.font = "12px 'JetBrains Mono', monospace";
+    ctx.fillText("waiting for first serves…", 8, h / 2);
+    return;
+  }
+  const pad = 6;
+  const step = (w - pad * 2) / Math.max(pts.length, 1);
+  const r = Math.min(5, step / 2.4);
+  pts.forEach(function (p, i) {
+    const x = pad + i * step + step / 2;
+    const wave = Math.sin((p.t || i) * 0.7) * (h * 0.18);
+    const y = h / 2 + wave;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = p.served === "ocean" ? "#7ec699" : "#5fa8d3";
+    ctx.globalAlpha = 0.9;
+    ctx.fill();
+  });
+}
+async function pollStats() {
+  try {
+    const r = await fetch(WORKER + "/api/ocean/stats", { cache: "no-store" });
+    if (!r.ok) return;
+    const s = await r.json();
+    document.getElementById("stat-calls").textContent = fmt(s.calls_total);
+    document.getElementById("stat-size").textContent = fmt(s.ocean_size);
+    const hr = (typeof s.hit_rate === "number") ? s.hit_rate : null;
+    document.getElementById("stat-hit").textContent = hr === null ? "—" : (hr * 100).toFixed(1) + "%";
+    document.getElementById("stat-tokens").textContent = fmt(s.tokens_saved_estimate);
+    drawSpark(s.cost_curve);
+  } catch (e) { /* leave last values; honesty pill covers connectivity */ }
+}
+setInterval(pollStats, 5000);
+pollStats();
+window.addEventListener("resize", function () {
+  if (lastStatsCurve) drawSpark(lastStatsCurve);
+});
+let lastStatsCurve = null;
+const _drawSpark = drawSpark;
+drawSpark = function (curve) { lastStatsCurve = curve; _drawSpark(curve); };
+
+/* ---------------- chat demo ---------------- */
+const chatLog = document.getElementById("chat-log");
+const askForm = document.getElementById("ask-form");
+const askInput = document.getElementById("ask-input");
+const askBtn = document.getElementById("ask-btn");
+const askLatency = document.getElementById("ask-latency");
+const askRetry = document.getElementById("ask-retry");
+
+function clearEmpty() {
+  const e = chatLog.querySelector(".chat-empty");
+  if (e) e.remove();
+}
+function addUser(text) {
+  clearEmpty();
+  const wrap = el("div", "msg msg-user");
+  wrap.appendChild(el("div", "msg-bubble", text));
+  const meta = el("div", "msg-meta");
+  meta.appendChild(el("span", null, new Date().toLocaleTimeString()));
+  wrap.appendChild(meta);
+  chatLog.appendChild(wrap);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function addAI(data, latencyMs) {
+  clearEmpty();
+  const wrap = el("div", "msg msg-ai");
+  wrap.appendChild(el("div", "msg-bubble", data.answer || "(empty answer)"));
+  const meta = el("div", "msg-meta");
+  const fromOcean = data.served === "ocean";
+  const badge = el("span", "badge " + (fromOcean ? "badge-ocean" : "badge-infer"),
+    fromOcean ? "⚡ served from the ocean (similarity " + (data.similarity ?? "—") + ")" : "🧠 fresh inference (now remembered)");
+  meta.appendChild(badge);
+  if (data.model) meta.appendChild(el("span", null, "model: " + data.model));
+  if (latencyMs !== undefined) meta.appendChild(el("span", null, latencyMs + "ms"));
+  if (data.witness) {
+    const w = el("span", "witness", "⛓ " + short8(data.witness));
+    w.title = "witness " + data.witness + " — click to copy";
+    w.addEventListener("click", function () {
+      const full = data.witness;
+      const done = function () {
+        w.textContent = "⛓ copied ✓";
+        setTimeout(function () { w.textContent = "⛓ " + short8(full); }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).then(done, function () { w.textContent = "⛓ " + short8(full); });
+      }
+    });
+    meta.appendChild(w);
+  }
+  wrap.appendChild(meta);
+  chatLog.appendChild(wrap);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function addError(text) {
+  clearEmpty();
+  const wrap = el("div", "msg msg-ai");
+  wrap.appendChild(el("div", "msg-bubble", text));
+  chatLog.appendChild(wrap);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+askForm.addEventListener("submit", async function (ev) {
+  ev.preventDefault();
+  const prompt = askInput.value.trim();
+  if (!prompt) return;
+  askInput.value = "";
+  askInput.disabled = true; askBtn.disabled = true;
+  askRetry.classList.remove("show");
+  addUser(prompt);
+  askLatency.textContent = "thinking…";
+  const t0 = performance.now();
+  try {
+    const r = await fetch(WORKER + "/api/ocean/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt })
+    });
+    const latency = Math.round(performance.now() - t0);
+    askLatency.textContent = latency + "ms";
+    if (r.status === 429) {
+      let ra = null;
+      try { const b = await r.json(); ra = b.retry_after_seconds; } catch (e) {}
+      const msg = ra ? "rate-limited — retry in " + ra + "s" : "rate-limited — slow down a little";
+      askRetry.textContent = "⏳ " + msg;
+      askRetry.classList.add("show");
+      addError("⏳ rate-limited by the worker. " + (ra ? "Retry in " + ra + "s." : "Give it a moment."));
+    } else if (!r.ok) {
+      addError("worker error " + r.status + " — the ocean hiccuped; try again.");
+    } else {
+      const data = await r.json();
+      addAI(data, latency);
+    }
+  } catch (e) {
+    addError("network error — can't reach the worker. Check the pill above.");
+    askLatency.textContent = "unreachable";
+  }
+  askInput.disabled = false; askBtn.disabled = false;
+  askInput.focus();
+});
+
+/* ---------------- the stream ---------------- */
+const streamCanvas = document.getElementById("stream-canvas");
+const streamTip = document.getElementById("stream-tip");
+const streamCount = document.getElementById("stream-count");
+let streamData = [];
+let streamDots = [];
+
+function hashStr(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function layoutStream() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = streamCanvas.clientWidth, h = 340;
+  streamCanvas.width = w * dpr; streamCanvas.height = h * dpr;
+  const ctx = streamCanvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  /* faint tide lines */
+  ctx.strokeStyle = "rgba(255,255,255,0.04)";
+  for (let i = 1; i < 4; i++) {
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 6) {
+      const y = (h / 4) * i + Math.sin(x * 0.012 + i * 1.7) * 12;
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  streamDots = streamData.map(function (item) {
+    const key = String(item.ts) + "|" + String(item.prompt_trunc);
+    const h1 = hashStr(key);
+    const h2 = hashStr(key + "~salt");
+    const x = 20 + (h1 % Math.max(w - 40, 1));
+    const baseY = (h2 % Math.max(h - 60, 1)) + 30;
+    const y = baseY + Math.sin(x * 0.012) * 12; /* ride the tide lines */
+    return { x: x, y: y, item: item };
+  });
+  streamDots.forEach(function (d) {
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = d.item.served === "ocean" ? "#7ec699" : "#5fa8d3";
+    ctx.globalAlpha = 0.85;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+  streamCount.textContent = streamDots.length + " recent";
+}
+async function pollRecent() {
+  try {
+    const r = await fetch(WORKER + "/api/ocean/recent", { cache: "no-store" });
+    if (!r.ok) return;
+    streamData = await r.json();
+    layoutStream();
+  } catch (e) { /* offline covered by pill */ }
+}
+setInterval(pollRecent, 5000);
+pollRecent();
+window.addEventListener("resize", layoutStream);
+streamCanvas.addEventListener("mousemove", function (ev) {
+  const rect = streamCanvas.getBoundingClientRect();
+  const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+  let best = null, bestD = 14;
+  streamDots.forEach(function (d) {
+    const dist = Math.hypot(d.x - mx, d.y - my);
+    if (dist < bestD) { bestD = dist; best = d; }
+  });
+  if (best) {
+    const it = best.item;
+    streamTip.style.display = "block";
+    streamTip.textContent = (it.prompt_trunc || "") + "  ·  " + (it.served === "ocean" ? "⚡ ocean" : "🧠 inference") +
+      (typeof it.similarity === "number" ? "  ·  sim " + it.similarity : "");
+    const wrapRect = streamCanvas.parentElement.getBoundingClientRect();
+    let tx = ev.clientX - wrapRect.left + 14;
+    let ty = ev.clientY - wrapRect.top + 14;
+    if (tx > wrapRect.width - 340) tx = ev.clientX - wrapRect.left - 330;
+    streamTip.style.left = tx + "px";
+    streamTip.style.top = ty + "px";
+  } else {
+    streamTip.style.display = "none";
+  }
+});
+streamCanvas.addEventListener("mouseleave", function () {
+  streamTip.style.display = "none";
+});
+</script>
+</body>
+</html>
