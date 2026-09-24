@@ -199,8 +199,8 @@ export function evaluateFormula(cell: Cell, ctx: CallerContext, allCells: Map<Ce
     // Persist the computed value on the cell itself. A pull seeds the
     // graph: propagation events (listener prev/current, subscriber
     // notifications) read cell.value, and without this store they saw
-    // undefined — listeners missed the first real threshold crossing
-    // of any formula that had only been pulled, never pushed.
+    // undefined — listeners missed the first real crossing of any
+    // threshold (z.ai patch-9 symptom statement).
     cell.value = value;
     return value;
   } catch (err) {
