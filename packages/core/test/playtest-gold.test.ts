@@ -13,6 +13,30 @@ function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   return engine;
 }
 
+describe('playtest-gold class 4: propagation cycle guard', () => {
+  it('cyclic deps do not recurse forever', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'a', kind: 'formula', expr: '=b + 1' },
+        { id: 'b', kind: 'formula', expr: '=a + 1' },
+      ],
+    });
+    await expect(engine.set('a', 1)).resolves.toBeUndefined();
+  });
+
+  it('self-dependency terminates', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'l', kind: 'listener', watch: ['l'], action: 'noop' },
+        { id: 'noop', kind: 'program', code: 'return 1;' },
+      ],
+    });
+    await expect(engine.set('l', 'x')).resolves.toBeUndefined();
+  });
+});
+
 describe('playtest-gold class 3: eager recompute + real prev source', () => {
   // The prev-source pin stands alone (lazy mode): a pull must store the
   // computed value on the cell itself. Without it, listener events

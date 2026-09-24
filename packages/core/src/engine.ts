@@ -602,11 +602,17 @@ export class QuiltEngine implements ProgramRuntime {
   private async propagate(
     changedId: CellId,
     ctx: CallerContext,
-    _visited?: Set<CellId>,
+    visited?: Set<CellId>,
     changedPrev?: CellValue,
   ): Promise<void> {
     const cell = this.cells.get(changedId);
     if (!cell) return;
+
+    // Cycle guard: a set()/push() on a cyclic sheet previously recursed
+    // until stack overflow. One visited set per propagation walk.
+    const seen = visited ?? new Set<CellId>();
+    if (seen.has(changedId)) return;
+    seen.add(changedId);
 
     let current = cell.value;
     let prev = changedPrev ?? current;
@@ -623,14 +629,14 @@ export class QuiltEngine implements ProgramRuntime {
 
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
-      if (!dep) continue;
+      if (!dep || seen.has(depId)) continue;
       // Effectful cells (api, program, router, ai) also need cache invalidation
       // when an upstream value changes
       if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai') {
         dep.value = { ...dep.value, status: 'stale' };
         dep.contextCache.clear();
       }
-      await this.propagate(depId, ctx);
+      await this.propagate(depId, ctx, seen);
     }
 
     for (const depId of cell.dependents) {
