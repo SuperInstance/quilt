@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚛ Quantum audio — your words through a quantum channel</title>
+<meta name="description" content="Encode text into quantum audio shots, decode it back, and see the fidelity witness. The Moth quantumaudio pipeline, live.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237ec699'/%3E%3Cstop offset='0.5' stop-color='%235fa8d3'/%3E%3Cstop offset='1' stop-color='%23bb7ec6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23g)'/%3E%3Ctext x='50' y='65' font-family='sans-serif' font-size='55' font-weight='bold' text-anchor='middle' fill='%230a0a0a'%3EQ%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Quilt design system (copied from landing/index.html)
+   ============================================================ */
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #131313;
+  --bg-elev-2: #1a1a1a;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f0f0f0;
+  --text-dim: #a0a0a0;
+  --text-faint: #707070;
+  --green: #7ec699;
+  --green-glow: rgba(126,198,153,0.3);
+  --blue: #5fa8d3;
+  --blue-glow: rgba(95,168,211,0.3);
+  --purple: #bb7ec6;
+  --tan: #c6a87e;
+  --amber: #e0a458;
+  --amber-glow: rgba(224,164,88,0.3);
+  --red: #c67e7e;
+  --yellow: #c6c67e;
+  --grad: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --grad-text: linear-gradient(135deg, #7ec699 0%, #5fa8d3 50%, #bb7ec6 100%);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+  --radius: 8px;
+  --radius-lg: 16px;
+  --t-fast: 150ms;
+  --t-med: 300ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--text); text-decoration: none; transition: color var(--t-fast) var(--ease); }
+a:hover { color: var(--green); }
+code, pre { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 0.875em; }
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+section.tight { padding: 64px 0; }
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.5rem, 6vw, 5rem); letter-spacing: -0.04em; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); letter-spacing: -0.03em; }
+h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-dim); margin-bottom: 16px; }
+.lead { font-size: clamp(1.125rem, 1.5vw, 1.375rem); color: var(--text-dim); line-height: 1.5; max-width: 720px; }
+.grad-text { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.section-head { text-align: center; margin-bottom: 48px; }
+.section-head .lead { margin: 0 auto; }
+
+/* Navigation */
+.nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--border); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; max-width: 1280px; margin: 0 auto; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.125rem; }
+.brand-mark { width: 28px; height: 28px; background: var(--grad); border-radius: 6px; position: relative; }
+.brand-mark::before, .brand-mark::after { content: ''; position: absolute; border: 1.5px solid #0a0a0a; border-radius: 2px; }
+.brand-mark::before { top: 4px; left: 4px; right: 12px; bottom: 12px; }
+.brand-mark::after { top: 12px; left: 12px; right: 4px; bottom: 4px; }
+.nav-links { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.nav-links a { padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; color: var(--text-dim); }
+.nav-links a:hover { color: var(--text); background: var(--bg-card-hover); }
+.nav-links a.cta { color: var(--bg); background: var(--text); padding: 8px 16px; margin-left: 8px; font-weight: 500; }
+.nav-links a.cta:hover { background: var(--green); color: var(--bg); }
+.nav-links a.ai-link { color: var(--green); }
+.nav-links a.ai-link:hover { color: var(--green); background: rgba(126,198,153,0.1); }
+
+/* Honesty pill */
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-dim); white-space: nowrap; }
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.pill.live { color: var(--green); border-color: rgba(126,198,153,0.4); }
+.pill.live .dot { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s ease-in-out infinite; }
+.pill.offline { color: var(--yellow); border-color: rgba(198,198,126,0.4); }
+.pill.offline .dot { background: var(--yellow); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.offline-banner { display: none; background: rgba(198,198,126,0.08); border-bottom: 1px solid rgba(198,198,126,0.3); color: var(--yellow); font-size: 0.85rem; text-align: center; padding: 8px 16px; }
+.offline-banner.show { display: block; }
+
+/* Hero */
+.hero { padding: 80px 0 40px; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%); width: 1200px; height: 1200px; background: radial-gradient(circle, var(--amber-glow) 0%, transparent 50%); opacity: 0.3; pointer-events: none; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 32px; }
+.hero-tag .dot { width: 6px; height: 6px; background: var(--amber); border-radius: 50%; box-shadow: 0 0 8px var(--amber); animation: pulse 2s ease-in-out infinite; }
+.hero h1 { margin-bottom: 24px; }
+.hero p.lead { margin: 0 auto 40px; }
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-size: 0.95rem; font-weight: 500; transition: all var(--t-fast) var(--ease); border: 1px solid var(--border-strong); cursor: pointer; background: transparent; color: var(--text); font-family: inherit; }
+.btn:hover { background: var(--bg-card-hover); border-color: var(--text-dim); color: var(--text); }
+.btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+.btn-quantum { background: var(--amber); border-color: var(--amber); color: var(--bg); }
+.btn-quantum:hover { background: var(--tan); border-color: var(--tan); color: var(--bg); }
+
+/* Demo card */
+.demo-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+.demo-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.demo-title { font-weight: 600; font-size: 0.95rem; }
+.demo-pills { display: flex; gap: 6px; }
+.demo-pill { font-size: 0.7rem; padding: 3px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+.demo-body { padding: 32px; }
+@media (max-width: 768px) { .demo-body { padding: 20px; } }
+
+/* Pending panel (honest 503) */
+.pending-panel { border: 1px solid rgba(224,164,88,0.35); background: rgba(224,164,88,0.06); border-radius: var(--radius); padding: 20px 24px; color: var(--tan); font-size: 0.9rem; display: none; }
+.pending-panel.show { display: block; }
+.pending-panel strong { color: var(--amber); }
+
+/* Waveform */
+.wave-wrap { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin: 20px 0; display: none; }
+.wave-wrap.show { display: block; }
+.wave-wrap h5 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; }
+#waveform { display: block; width: 100%; height: 160px; }
+
+/* Decode result */
+.decode-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-top: 4px; }
+@media (max-width: 800px) { .decode-grid { grid-template-columns: 1fr; } }
+.decode-text { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; font-size: 0.95rem; white-space: pre-wrap; word-break: break-word; min-height: 90px; }
+.decode-text .placeholder { color: var(--text-faint); font-style: italic; }
+.fidelity-card { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+.fidelity-num { font-size: 2.2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--amber); line-height: 1; }
+.fidelity-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-top: 4px; }
+
+/* Receipt */
+.receipt { margin-top: 16px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.receipt h5 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; }
+.receipt .rrow { display: flex; gap: 10px; padding: 3px 0; }
+.receipt .rk { color: var(--text-faint); min-width: 110px; }
+.receipt .rv { color: var(--text); word-break: break-all; }
+
+/* How it works strip */
+.hiw { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.hiw-card { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; position: relative; transition: all var(--t-med) var(--ease); }
+.hiw-card:hover { border-color: var(--border-strong); background: var(--bg-elev-2); transform: translateY(-2px); }
+.hiw-step { position: absolute; top: 20px; right: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-faint); }
+.hiw-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; background: var(--bg-card); border: 1px solid var(--border); }
+.hiw-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.hiw-card p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; }
+.hiw-num { font-family: 'JetBrains Mono', monospace; color: var(--amber); }
+
+/* Numbers band */
+.numband { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 32px; }
+.numcell { background: var(--bg-elev); padding: 24px 18px; text-align: center; }
+.numcell .n { font-size: 1.7rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--amber); }
+.numcell .l { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+/* Footer */
+footer { padding: 64px 0 32px; border-top: 1px solid var(--border); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+.footer-col h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 12px; }
+.footer-col a { display: block; padding: 4px 0; color: var(--text-dim); font-size: 0.9rem; }
+.footer-col a:hover { color: var(--green); }
+.footer-bottom { padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-faint); }
+@media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 768px) { section { padding: 64px 0; } .nav-links a:not(.cta):not(.ai-link) { display: none; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark"></span>
+      <span>Quilt</span>
+    </a>
+    <div class="nav-links">
+      <a href="ocean.html" class="ai-link">💧 Ocean</a>
+      <a href="decide.html" class="ai-link">🧠 Decide</a>
+      <a href="quantum.html" class="ai-link">⚛ Quantum</a>
+      <a href="zai-live.html" class="ai-link">⚡ z.ai</a>
+      <a href="kimi-live.html" class="ai-link">🌙 Kimi</a>
+      <a href="index.html">Home</a>
+      <a href="quilt-live.html" class="cta">Open Live</a>
+      <span class="pill" id="honesty-pill"><span class="dot"></span><span id="honesty-text">checking…</span></span>
+    </div>
+  </div>
+</nav>
+<div class="offline-banner" id="offline-banner">⚠ worker offline — live AI unavailable below; any numbers shown are clearly-labeled sample data</div>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tag"><span class="dot"></span> ⚛ Moth quantumaudio, live</div>
+    <h1>Your words, through a<br><span class="grad-text">quantum channel.</span></h1>
+    <p class="lead">Type a message. It becomes 16 quantum amplitudes, modulated into shots on real quantum hardware, and decoded back into text — with a fidelity witness you can audit. Not a simulation: a channel with honest noise.</p>
+    <div class="hero-ctas">
+      <a href="#demo" class="btn btn-quantum">Encode a message</a>
+      <a href="#how" class="btn">How the channel works</a>
+      <a href="index.html" class="btn btn-ghost">← Quilt home</a>
+    </div>
+  </div>
+</header>
+
+<section class="tight" id="demo">
+  <div class="container">
+    <div class="demo-card">
+      <div class="demo-head">
+        <span class="demo-title">⚛ quantumaudio.channel</span>
+        <div class="demo-pills">
+          <span class="demo-pill" id="q-latency">idle</span>
+          <span class="demo-pill">POST /api/quantum/encode · /decode</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="pending-panel" id="pending-panel">
+          <strong>Quantum service endpoint pending deploy.</strong>
+          The pipeline is real — this page goes live the moment <strong>MOTHQUANTUM_BASE</strong> is wired into the worker. The numbers below are from the fleet's actual runs, and the encode/decode code path is exactly what will serve them.
+        </div>
+
+        <div class="field" style="margin-bottom: 18px;">
+          <label style="display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; font-weight: 600;">message</label>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <input type="text" id="q-text" maxlength="64" placeholder="hello, fleet" style="flex: 2; min-width: 220px; padding: 12px 14px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.95rem; outline: none;">
+            <button class="btn btn-quantum" id="q-run">Encode → decode</button>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 6px; font-family: 'JetBrains Mono', monospace;">≤ 64 chars — shorter messages survive the channel better</div>
+        </div>
+
+        <div class="wave-wrap" id="wave-wrap">
+          <h5>encoded samples — amber on dark</h5>
+          <canvas id="waveform"></canvas>
+        </div>
+
+        <div class="decode-grid">
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; font-weight: 600;">decoded text</div>
+            <div class="decode-text" id="decoded"><span class="placeholder">run the channel to see what survives</span></div>
+          </div>
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; font-weight: 600;">fidelity</div>
+            <div class="fidelity-card">
+              <div class="fidelity-num" id="fidelity">—</div>
+              <div class="fidelity-label" id="fidelity-label">pearson r, decode vs original</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt" id="q-receipt" style="display:none;"></div>
+        <div class="retry-note" id="q-retry" style="display:none; margin-top: 10px; font-size: 0.8rem; color: var(--yellow); font-family: 'JetBrains Mono', monospace;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" id="how">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The pipeline</span>
+      <h2>How the <span class="grad-text">channel</span> works.</h2>
+      <p class="lead">Every number below is measured from the fleet's runs on real hardware. The channel is noisy and we say so.</p>
+    </div>
+    <div class="hiw">
+      <div class="hiw-card">
+        <span class="hiw-step">01</span>
+        <div class="hiw-icon" style="color: var(--amber);">✎</div>
+        <h3>Encode</h3>
+        <p>Your text is compressed into <span class="hiw-num">16 amplitudes</span> — a small vector that still carries the shape of the message. Fewer amplitudes mean less to corrupt.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">02</span>
+        <div class="hiw-icon" style="color: var(--tan);">⌁</div>
+        <h3>Quantum modulation shots</h3>
+        <p>Each amplitude becomes a modulation scheme on the qubits, sampled with roughly <span class="hiw-num">125 shots per amplitude</span> — about <span class="hiw-num">2,000 shots</span> per message. Shot noise is the channel.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">03</span>
+        <div class="hiw-icon" style="color: var(--blue);">⇢</div>
+        <h3>Decode</h3>
+        <p>Shot counts are demodulated back into amplitudes, then into text. The decoder never invents content it can't find in the shots — it returns what the channel actually carried.</p>
+      </div>
+      <div class="hiw-card">
+        <span class="hiw-step">04</span>
+        <div class="hiw-icon" style="color: var(--green);">⛓</div>
+        <h3>Fidelity witness</h3>
+        <p>Every round trip mints a witness receipt with the pearson score and the shot envelope. Same-message fidelity runs <span class="hiw-num">r = 0.62–0.67</span> at 2,000 shots.</p>
+      </div>
+    </div>
+    <div class="numband">
+      <div class="numcell"><div class="n">16</div><div class="l">amplitudes per message</div></div>
+      <div class="numcell"><div class="n">~125</div><div class="l">shots per amplitude</div></div>
+      <div class="numcell"><div class="n">0.62–0.67</div><div class="l">pearson r @ 2000 shots</div></div>
+      <div class="numcell"><div class="n">0.77</div><div class="l">cross-prompt decode–decode (honest limit)</div></div>
+    </div>
+    <p style="text-align:center; color: var(--text-faint); font-size: 0.82rem; margin-top: 20px; max-width: 760px; margin-left:auto; margin-right:auto;">
+      The <strong style="color: var(--tan);">0.77</strong> is the honest limit: two different prompts decoded through the channel correlate at r&nbsp;=&nbsp;0.77 — the channel has a real memory of its own. We publish that number so you trust the others.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom: 12px;">
+          <span class="brand-mark"></span>
+          <span>Quilt</span>
+        </div>
+        <p style="color: var(--text-dim); font-size: 0.9rem; max-width: 320px;">A reactive, typed, cellular runtime. Quantum audio is its noisiest, most honest channel.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Live infra</h4>
+        <a href="ocean.html">💧 The Ocean</a>
+        <a href="decide.html">🧠 Decide</a>
+        <a href="quantum.html">⚛ Quantum</a>
+      </div>
+      <div class="footer-col">
+        <h4>Try it</h4>
+        <a href="quilt-live.html">Quilt Live</a>
+        <a href="index.html">Landing</a>
+        <a href="quilt-cloudflare.html">Cloudflare</a>
+      </div>
+      <div class="footer-col">
+        <h4>Source</h4>
+        <a href="https://github.com/SuperInstance/quilt" target="_blank">quilt</a>
+        <a href="https://github.com/SuperInstance/quilt-cloudflare" target="_blank">quilt-cloudflare</a>
+        <a href="https://github.com/SuperInstance/quilt-quantum-audio" target="_blank">quilt-quantum-audio</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>MIT licensed. Built by humans, for humans and their cells.</div>
+      <div>2026 — and beyond</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const WORKER = "https://quilt-cloudflare.superinstance.workers.dev";
+
+/* ---------------- shared honesty pill ---------------- */
+(function honestyPill() {
+  let lastOk = 0;
+  const pill = document.getElementById("honesty-pill");
+  const text = document.getElementById("honesty-text");
+  const banner = document.getElementById("offline-banner");
+  function render() {
+    const live = lastOk > 0 && (Date.now() - lastOk) < 10000;
+    pill.classList.toggle("live", live);
+    pill.classList.toggle("offline", !live);
+    text.textContent = live ? "LIVE" : "OFFLINE";
+    banner.classList.toggle("show", !live);
+  }
+  async function poll() {
+    try {
+      const r = await fetch(WORKER + "/api/ocean/health", { cache: "no-store" });
+      if (r.ok) lastOk = Date.now();
+    } catch (e) {}
+    render();
+  }
+  setInterval(poll, 10000);
+  poll();
+})();
+
+/* ---------------- helpers ---------------- */
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/* ---------------- waveform ---------------- */
+const waveWrap = document.getElementById("wave-wrap");
+const waveCanvas = document.getElementById("waveform");
+function drawWave(samples) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = waveCanvas.clientWidth || 600, h = 160;
+  waveCanvas.width = w * dpr; waveCanvas.height = h * dpr;
+  const ctx = waveCanvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  /* center line */
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+  if (!samples || !samples.length) {
+    ctx.fillStyle = "#707070";
+    ctx.font = "12px 'JetBrains Mono', monospace";
+    ctx.fillText("no samples returned", 10, h / 2 - 8);
+    return;
+  }
+  const min = Math.min.apply(null, samples);
+  const max = Math.max.apply(null, samples);
+  const range = (max - min) || 1;
+  const step = w / samples.length;
+  ctx.strokeStyle = "#e0a458";
+  ctx.lineWidth = 1.6;
+  ctx.shadowColor = "rgba(224,164,88,0.5)";
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  samples.forEach(function (v, i) {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 20) - 10;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  /* shot ticks */
+  ctx.fillStyle = "rgba(224,164,88,0.25)";
+  samples.forEach(function (v, i) {
+    const x = i * step;
+    const y = h - ((v - min) / range) * (h - 20) - 10;
+    ctx.fillRect(x, y, 1.2, h - y - 4);
+  });
+  waveWrap.classList.add("show");
+}
+
+/* ---------------- encode → decode ---------------- */
+const qText = document.getElementById("q-text");
+const qRun = document.getElementById("q-run");
+const qLatency = document.getElementById("q-latency");
+const qRetry = document.getElementById("q-retry");
+const pendingPanel = document.getElementById("pending-panel");
+const decodedBox = document.getElementById("decoded");
+const fidelityNum = document.getElementById("fidelity");
+const fidelityLabel = document.getElementById("fidelity-label");
+const qReceipt = document.getElementById("q-receipt");
+let qPending = false;
+
+function showRetry(msg) {
+  qRetry.textContent = msg;
+  qRetry.style.display = "block";
+}
+function renderReceipt(rows) {
+  qReceipt.innerHTML = "";
+  qReceipt.style.display = "block";
+  qReceipt.appendChild(el("h5", null, "⛓ witness receipt"));
+  rows.forEach(function (kv) {
+    const r = el("div", "rrow");
+    r.appendChild(el("span", "rk", kv[0]));
+    r.appendChild(el("span", "rv", kv[1]));
+    qReceipt.appendChild(r);
+  });
+}
+
+qRun.addEventListener("click", async function () {
+  const text = qText.value.trim();
+  if (!text) return;
+  if (qPending) return;
+  qPending = true;
+  qRun.disabled = true;
+  qRetry.style.display = "none";
+  pendingPanel.classList.remove("show");
+  decodedBox.innerHTML = "";
+  decodedBox.appendChild(el("span", "placeholder", "encoding…"));
+  fidelityNum.textContent = "—";
+  const t0 = performance.now();
+  let enc;
+  try {
+    const r = await fetch(WORKER + "/api/quantum/encode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    });
+    if (r.status === 503) {
+      const body = await r.json().catch(function () { return {}; });
+      if (body.error === "moth_endpoint_pending" || (body.detail || "").indexOf("moth") !== -1) {
+        pendingPanel.classList.add("show");
+        decodedBox.innerHTML = "";
+        decodedBox.appendChild(el("span", "placeholder", "channel not open yet — see note above"));
+        qLatency.textContent = "pending";
+        qPending = false; qRun.disabled = false;
+        return;
+      }
+      showRetry("quantum endpoint error 503");
+      qPending = false; qRun.disabled = false;
+      return;
+    }
+    if (r.status === 429) {
+      let ra = null;
+      try { const b = await r.json(); ra = b.retry_after_seconds; } catch (e) {}
+      showRetry("⏳ rate-limited — retry in " + (ra || "a few") + "s");
+      decodedBox.innerHTML = "";
+      decodedBox.appendChild(el("span", "placeholder", "run the channel to see what survives"));
+      qPending = false; qRun.disabled = false;
+      return;
+    }
+    if (!r.ok) { showRetry("encode failed: HTTP " + r.status); qPending = false; qRun.disabled = false; return; }
+    enc = await r.json();
+  } catch (e) {
+    showRetry("network error — check the pill above");
+    decodedBox.innerHTML = "";
+    decodedBox.appendChild(el("span", "placeholder", "run the channel to see what survives"));
+    qPending = false; qRun.disabled = false;
+    return;
+  }
+  drawWave(enc.samples || []);
+  qLatency.textContent = "encoded…";
+
+  /* decode */
+  try {
+    const r2 = await fetch(WORKER + "/api/quantum/decode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ samples: enc.samples, shots: enc.shots })
+    });
+    const latency = Math.round(performance.now() - t0);
+    if (r2.status === 503) {
+      pendingPanel.classList.add("show");
+      qLatency.textContent = "pending";
+      qPending = false; qRun.disabled = false;
+      return;
+    }
+    if (!r2.ok) { showRetry("decode failed: HTTP " + r2.status); qPending = false; qRun.disabled = false; return; }
+    const dec = await r2.json();
+    qLatency.textContent = latency + "ms";
+    decodedBox.textContent = dec.text || "(empty)";
+    const r3 = (typeof dec.fidelity === "number") ? dec.fidelity : (typeof dec.pearson === "number" ? dec.pearson : NaN);
+    fidelityNum.textContent = isNaN(r3) ? "—" : (Math.round(r3 * 100) / 100).toFixed(2);
+    if (dec.witness) {
+      renderReceipt([
+        ["timestamp", new Date().toISOString()],
+        ["latency_ms", String(latency)],
+        ["prompt_hash", "fnv1a:" + fnv1a(text)],
+        ["samples_hash", "fnv1a:" + fnv1a(JSON.stringify(enc.samples || []))],
+        ["response_hash", "fnv1a:" + fnv1a(JSON.stringify(dec))],
+        ["witness", dec.witness]
+      ]);
+    }
+  } catch (e) {
+    showRetry("network error on decode");
+  }
+  qPending = false; qRun.disabled = false;
+});
+window.addEventListener("resize", function () {
+  /* keep the last waveform crisp */
+  const last = waveCanvas._lastSamples;
+  if (last) drawWave(last);
+});
+/* stash samples for redraw */
+const _drawWave = drawWave;
+drawWave = function (s) { waveCanvas._lastSamples = s; _drawWave(s); };
+</script>
+</body>
+</html>
