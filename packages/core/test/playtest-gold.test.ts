@@ -13,6 +13,57 @@ function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   return engine;
 }
 
+describe('playtest-gold class 6: router context delegation + dotted contains', () => {
+  it('delegated cell sees the original caller context', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        {
+          id: 'r',
+          kind: 'router',
+          rules: [{ when: 'true', route: 'whoami' }],
+        },
+        {
+          id: 'whoami',
+          kind: 'program',
+          code: `return { row: caller.row ?? null, id: caller.identity?.id ?? null };`,
+        },
+      ],
+    });
+    const v = await engine.call('r', undefined, {
+      row: 'boat-7',
+      timestamp: 0,
+      identity: { id: 'agent-1', type: 'agent' },
+    });
+    expect(v.status).toBe('ready');
+    expect(v.data).toEqual({ row: 'boat-7', id: 'agent-1' });
+  });
+
+  it('matches on caller.identity.tags (dotted path contains)', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'cheap', kind: 'value', value: 'cheap-result' },
+        { id: 'premium', kind: 'value', value: 'premium-result' },
+        {
+          id: 'r',
+          kind: 'router',
+          rules: [
+            { when: 'caller.identity.tags contains "premium"', route: 'premium' },
+            { when: 'true', route: 'cheap' },
+          ],
+        },
+      ],
+    });
+    const ctx = (tags: string[]): { timestamp: number; identity: { id: string; type: 'human'; tags: string[] } } => ({
+      timestamp: 0,
+      identity: { id: 'u1', type: 'human', tags },
+    });
+    expect((await engine.call('r', undefined, ctx(['premium']))).data).toBe('premium-result');
+    expect((await engine.call('r', undefined, ctx(['free']))).data).toBe('cheap-result');
+  });
+});
+
 describe('playtest-gold class 5: fresh event context per listener fire', () => {
   it('action body runs on every fire (no cache swallowing)', async () => {
     const engine = define({

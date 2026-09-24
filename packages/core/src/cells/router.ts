@@ -88,11 +88,15 @@ export async function evaluateRouter(
   for (const rule of cell.def.rules) {
     if (evalWhen(rule.when, ctx)) {
       // Rule matched — dispatch on route type
+      // Pass the caller's context through to the delegated cell.
+      // Previously runtime.call dropped it, so every caller shared one
+      // per-context cache entry on the delegated cell (tenant isolation
+      // and caller-aware downstream routing both collapsed).
       if (typeof rule.route === 'string') {
-        return await runtime.call(rule.route as CellId, input);
+        return await runtime.call(rule.route as CellId, input, ctx);
       }
       if (typeof rule.route === 'object' && 'cell' in rule.route) {
-        const result = await runtime.call(rule.route.cell, input);
+        const result = await runtime.call(rule.route.cell, input, ctx);
         if (rule.route.with && result.status === 'ready' && result.data && typeof result.data === 'object') {
           return { ...result, data: { ...(result.data as object), ...rule.route.with } };
         }

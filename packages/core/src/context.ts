@@ -156,8 +156,14 @@ export function evalWhen(when: string, ctx: CallerContext): boolean {
     // Replace 'contains' with a method call. This is a syntactic
     // convenience — "tags contains 'premium'" reads better than
     // "tags.includes('premium')".
+    //
+    // The left side may be a dotted path (caller.identity.tags). The
+    // previous rewrite captured only the trailing \w+ segment and
+    // emitted a bare `tags` reference, which is out of scope inside
+    // the compiled function — a silent ReferenceError, rule never
+    // matches. Capture the full dotted path and rewrite it in place.
     const expr = when.replace(
-      /(\w+)\s+contains\s+"([^"]+)"/g,
+      /([\w.]+)\s+contains\s+"([^"]+)"/g,
       'Array.isArray($1) && $1.includes("$2")',
     );
     // eslint-disable-next-line no-new-func
