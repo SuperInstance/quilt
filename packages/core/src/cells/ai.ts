@@ -151,6 +151,26 @@ export async function evaluateAI(
   if (cell.max_tokens !== undefined) config.max_tokens = cell.max_tokens;
   if (cell.system !== undefined) config.system = substitute(cell.system);
 
+  // Forward schema-carrying fields the explicit whitelist above drops.
+  // Typed-decision cells (sysone.choice / sysone.score / sysone.noul)
+  // declare their fence in the sheet — options, min, max, rubric — and
+  // the provider adapter must receive them or the fence silently
+  // degenerates to adapter defaults (no error, just a weaker system).
+  // Rule: pass through any own field not already handled, when it is a
+  // primitive or an array of primitives (never functions / cell graphs).
+  const HANDLED = new Set(['id', 'kind', 'ai_kind', 'provider', 'model', 'prompt', 'input',
+    'image', 'target', 'language', 'max_words', 'temperature', 'max_tokens', 'system',
+    'deps', 'watch', 'condition', 'action', 'code', 'value', 'default', 'description']);
+  for (const [k, v] of Object.entries(cell)) {
+    if (HANDLED.has(k) || k in config) continue;
+    const passthrough =
+      v === null ||
+      typeof v === 'number' || typeof v === 'boolean' ||
+      (typeof v === 'string' && k !== 'expr') ||
+      (Array.isArray(v) && v.every(x => typeof x !== 'object' || x === null));
+    if (passthrough) ((config as unknown) as Record<string, unknown>)[k] = v;
+  }
+
   try {
     const result = await engine.call(config, { useCache: true });
     return { value: result, error: null };

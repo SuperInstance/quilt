@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { QuiltEngine, type SheetDef } from '../src/index.js';
+import type { AIEngineLike } from '../src/cells/ai.js';
 
 function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   const engine = new QuiltEngine(id);
@@ -296,6 +297,64 @@ describe('playtest-gold class 2: value-cell get() returns the live value', () =>
     expect((await engine.get('b')).data).toBe(20);
     // ...and a direct read must agree (previously it returned def.value).
     expect((await engine.get('a')).data).toBe(10);
+  });
+});
+
+describe('playtest-gold class 8: ai-cell schema fields reach the provider', () => {
+  // sysone.choice / sysone.score declare their fence in the sheet —
+  // options, min, max, rubric — and the provider adapter must receive
+  // them or the fence silently degenerates to adapter defaults.
+  it('passes options/min/max/rubric through to the provider config', async () => {
+    let lastConfig: Record<string, unknown> | null = null;
+    const stub: AIEngineLike = {
+      call: async (config) => { lastConfig = config as unknown as Record<string, unknown>; return 'ok'; },
+    };
+    const engine = new QuiltEngine('test', { ai: stub });
+    const decide = {
+      id: 'decide',
+      kind: 'ai',
+      ai_kind: 'ai.llm',
+      provider: 'zai',
+      model: 'glm-4.5',
+      prompt: 'pick one',
+      options: ['alpha', 'beta'],
+      min: 0,
+      max: 100,
+      rubric: 'clarity',
+    } as unknown as SheetDef['cells'][number];
+    engine.loadSheet({ id: 'test', cells: [decide] });
+    await engine.get('decide');
+    expect(lastConfig).not.toBeNull();
+    expect(lastConfig?.options).toEqual(['alpha', 'beta']);
+    expect(lastConfig?.min).toBe(0);
+    expect(lastConfig?.max).toBe(100);
+    expect(lastConfig?.rubric).toBe('clarity');
+  });
+
+  it('does NOT forward functions or nested cell graphs', async () => {
+    let lastConfig: Record<string, unknown> | null = null;
+    const stub: AIEngineLike = {
+      call: async (config) => { lastConfig = config as unknown as Record<string, unknown>; return 'ok'; },
+    };
+    const engine = new QuiltEngine('test', { ai: stub });
+    const decide = {
+      id: 'decide',
+      kind: 'ai',
+      ai_kind: 'ai.llm',
+      provider: 'zai',
+      model: 'glm-4.5',
+      prompt: 'x',
+      options: ['a'],
+      evilFn: () => 1,
+      nested: { a: 1 },
+    } as unknown as SheetDef['cells'][number];
+    engine.loadSheet({ id: 'test', cells: [decide] });
+    await engine.get('decide');
+    expect(lastConfig).not.toBeNull();
+    expect('evilFn' in (lastConfig as Record<string, unknown>)).toBe(false);
+    expect('nested' in (lastConfig as Record<string, unknown>)).toBe(false);
+    // Whitelisted fields still arrive.
+    expect(lastConfig?.options).toEqual(['a']);
   });
 });
 
