@@ -62,6 +62,9 @@ import type { Cell, CellValue, CellId } from '../types.js';
 import type { ProgramRuntime } from './program.js';
 import { evalWhen, emptyContext } from '../context.js';
 
+/** Monotonic counter for unique event-context keys. */
+let evtCounter = 0;
+
 /**
  * Fire a listener cell if its condition is met.
  *
@@ -99,8 +102,21 @@ export async function fireListener(
   // Fire the action. The action is treated as a program call (or
   // any callable cell). Future: also support webhooks and MCP tools
   // as actions.
+  //
+  // The action is invoked with a FRESH event context on every fire.
+  // Previously runtime.call used a default empty context, which meant
+  // (a) the per-context memoization cache served the FIRST fire's
+  // result forever (listener-driven state machines ran exactly once),
+  // and (b) the action could not see changed/prev/current via
+  // caller.metadata. The event context carries a unique `row` key per
+  // fire, which both busts the cache and exposes the event payload.
   if (cell.def.action) {
-    await runtime.call(cell.def.action, { changed: changedCellId, value: newValue.data });
+    evtCounter += 1;
+    const evtCtx = emptyContext();
+    evtCtx.caller = cell.id;
+    evtCtx.row = `evt-${Date.now()}-${evtCounter}`;
+    evtCtx.metadata = { changed: changedCellId, prev: prevValue.data, current: newValue.data };
+    await runtime.call(cell.def.action, { changed: changedCellId, value: newValue.data }, evtCtx);
   }
 
   return true;

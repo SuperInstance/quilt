@@ -13,6 +13,57 @@ function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   return engine;
 }
 
+describe('playtest-gold class 5: fresh event context per listener fire', () => {
+  it('action body runs on every fire (no cache swallowing)', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'x', kind: 'value', value: 0 },
+        { id: 'count', kind: 'value', value: 0 },
+        { id: 'onX', kind: 'listener', watch: ['x'], action: 'bump' },
+        {
+          id: 'bump',
+          kind: 'program',
+          code: `
+            const n = await runtime.get('count');
+            await runtime.set('count', (n.data ?? 0) + 1);
+            return n.data ?? 0;
+          `,
+        },
+      ],
+    });
+    await engine.set('x', 1);
+    await engine.set('x', 2);
+    expect(engine.getCell('count')?.value.data).toBe(2);
+  });
+
+  it('action sees changed/prev/current via caller.metadata', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'x', kind: 'value', value: 0 },
+        { id: 'seen', kind: 'value', value: null },
+        { id: 'onX', kind: 'listener', watch: ['x'], action: 'record' },
+        {
+          id: 'record',
+          kind: 'program',
+          code: `
+            await runtime.set('seen', {
+              changed: caller.metadata?.changed ?? null,
+              prev: caller.metadata?.prev ?? null,
+              current: caller.metadata?.current ?? null,
+            });
+            return caller.metadata?.current ?? null;
+          `,
+        },
+      ],
+    });
+    await engine.set('x', 7);
+    expect(engine.getCell('seen')?.value.data)
+      .toEqual({ changed: 'x', prev: 0, current: 7 });
+  });
+});
+
 describe('playtest-gold class 4: propagation cycle guard', () => {
   it('cyclic deps do not recurse forever', async () => {
     const engine = define({

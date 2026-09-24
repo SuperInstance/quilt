@@ -68,8 +68,13 @@ export interface ProgramRuntime {
   get: (id: CellId) => Promise<CellValue>;
   /** Set a cell's value. Triggers downstream recomputation. */
   set: (id: CellId, value: unknown) => Promise<void>;
-  /** Call a cell as a capability, with optional input. */
-  call: (id: CellId, input?: unknown) => Promise<CellValue>;
+  /**
+   * Call a cell as a capability, with optional input. An optional
+   * CallerContext can be supplied (listener actions pass a fresh event
+   * context so actions can read caller.metadata and are not swallowed
+   * by the per-context memoization cache).
+   */
+  call: (id: CellId, input?: unknown, ctx?: import('../types.js').CallerContext) => Promise<CellValue>;
 }
 
 /**
