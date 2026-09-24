@@ -13,6 +13,33 @@ function define(sheet: SheetDef, id = 'test'): QuiltEngine {
   return engine;
 }
 
+describe('playtest-gold class 2: value-cell get() returns the live value', () => {
+  it('set() is visible to get() on the same cell', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [{ id: 'x', kind: 'value', value: 1 }],
+    });
+    expect((await engine.get('x')).data).toBe(1);
+    await engine.set('x', 42);
+    expect((await engine.get('x')).data).toBe(42);
+  });
+
+  it('downstream formula and direct read agree after set()', async () => {
+    const engine = define({
+      id: 'test',
+      cells: [
+        { id: 'a', kind: 'value', value: 3 },
+        { id: 'b', kind: 'formula', expr: '=a * 2' },
+      ],
+    });
+    await engine.set('a', 10);
+    // The formula sees the new value through cell.value.data...
+    expect((await engine.get('b')).data).toBe(20);
+    // ...and a direct read must agree (previously it returned def.value).
+    expect((await engine.get('a')).data).toBe(10);
+  });
+});
+
 describe('playtest-gold class 1: listener watch lists are wired into the dep graph', () => {
   it('fires the listener action when a watched cell changes', async () => {
     const engine = define({

@@ -281,7 +281,11 @@ export class QuiltEngine implements ProgramRuntime {
 
     switch (cell.def.kind) {
       case 'value':
-        return evaluateValue(cell, fullCtx);
+        // Return the LIVE cell value (seeded from def.value at load,
+        // updated by set()). Reading cell.def.value here made set()
+        // on a value cell invisible to get() — downstream formulas saw
+        // the new value while a direct read returned the old one.
+        return cell.value.status === 'idle' ? evaluateValue(cell, fullCtx) : cell.value;
 
       case 'formula': {
         await this.refreshDeps(cell, fullCtx);
