@@ -101,7 +101,7 @@ import type {
   Cell, CellDef, CellId, CellRef, CellKind, CallerContext, CellValue,
   SheetDef, Subscription, EvaluationTrace,
 } from './types.js';
-import { emptyContext, extendContext, contextKey } from './context.js';
+import { emptyContext, extendContext, contextKey, callKey } from './context.js';
 import { evaluateValue } from './cells/value.js';
 import { evaluateFormula } from './cells/formula.js';
 import { evaluateApi } from './cells/api.js';
@@ -395,7 +395,8 @@ export class QuiltEngine implements ProgramRuntime {
       return cell.value;
     }
 
-    const key = contextKey(fullCtx);
+    // PLAY-TEST PATCH 10: include the call's input in the memo key.
+    const key = callKey(fullCtx, input);
     const cached = cell.contextCache.get(key);
     if (cached && cached.status === 'ready') {
       return cached;
@@ -516,7 +517,19 @@ export class QuiltEngine implements ProgramRuntime {
     if (cell.def.kind === 'api') {
       result = await evaluateApi(cell, ctx, input);
     } else if (cell.def.kind === 'program') {
-      result = await evaluateProgram(cell, ctx, input, this);
+      // PLAY-TEST PATCH 11: programs receive a context-bound runtime.
+      // Previously they got the raw engine, whose get/set/call default to
+      // emptyContext() — so a nested runtime.call from inside a program
+      // silently DROPPED the caller identity (tenant tier, tags, metadata).
+      // Same bug family as the router-delegation fix: per-tenant
+      // memoization collapsed to a single shared answer. Explicit contexts
+      // still win.
+      const boundRuntime: ProgramRuntime = {
+        get: (id: CellId) => this.get(id, ctx),
+        set: (id: CellId, value: unknown) => this.set(id, value, ctx),
+        call: (id: CellId, i?: unknown, c?: CallerContext) => this.call(id, i, c ?? ctx),
+      };
+      result = await evaluateProgram(cell, ctx, input, boundRuntime);
     } else if (cell.def.kind === 'router') {
       result = await evaluateRouter(cell, ctx, input, this);
     } else if (cell.def.kind === 'ai') {
