@@ -156,18 +156,47 @@ export function evalWhen(when: string, ctx: CallerContext): boolean {
     // Replace 'contains' with a method call. This is a syntactic
     // convenience — "tags contains 'premium'" reads better than
     // "tags.includes('premium')".
+    //
+    // The left side may be a dotted path (caller.identity.tags). The
+    // previous rewrite captured only the trailing \w+ segment and
+    // emitted a bare `tags` reference, which is out of scope inside
+    // the compiled function — a silent ReferenceError, rule never
+    // matches. Capture the full dotted path and rewrite it in place.
     const expr = when.replace(
-      /(\w+)\s+contains\s+"([^"]+)"/g,
+      /([\w.]+)\s+contains\s+"([^"]+)"/g,
       'Array.isArray($1) && $1.includes("$2")',
     );
     // eslint-disable-next-line no-new-func
     const fn = new Function('caller', `return (${expr});`);
     return Boolean(fn(caller));
   } catch (err) {
-    // Be loud in dev, quiet in prod
-    if (process.env.QUILT_DEBUG) {
-      console.error(`[quilt] evalWhen failed: ${when}`, err);
-    }
+    // Be LOUD about rule typos. Previously this only logged behind
+    // QUILT_DEBUG, so a syntactically invalid condition silently
+    // evaluated to false — the rule just never matched and nobody
+    // knew why. Log it unconditionally; do NOT change the truth
+    // semantics (unparseable = false, matching how an undefined
+    // left-hand side behaves).
+    console.warn(`[quilt] evalWhen failed: ${when}`, err);
     return false;
   }
+}
+
+/**
+ * PLAY-TEST PATCH 10: stable cache key for effectful calls that take input.
+ * contextKey() alone ignores `input`, so runtime.call(id, a) and
+ * runtime.call(id, b) collided on the same context and the second call was
+ * served the first call's memoized result. A program is a function of its
+ * arguments; the cache key must be too.
+ */
+export function stableJson(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null';
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(',')}]`;
+  const keys = Object.keys(v as Record<string, unknown>).sort();
+  return `{${keys.map(k => `${JSON.stringify(k)}:${stableJson((v as Record<string, unknown>)[k])}`).join(',')}}`;
+}
+
+export function callKey(ctx: CallerContext, input: unknown): string {
+  const base = contextKey(ctx);
+  if (input === undefined) return base;
+  return `${base}|in:${stableJson(input)}`;
 }

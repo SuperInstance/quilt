@@ -101,7 +101,7 @@ import type {
   Cell, CellDef, CellId, CellRef, CellKind, CallerContext, CellValue,
   SheetDef, Subscription, EvaluationTrace,
 } from './types.js';
-import { emptyContext, extendContext, contextKey } from './context.js';
+import { emptyContext, extendContext, contextKey, callKey } from './context.js';
 import { evaluateValue } from './cells/value.js';
 import { evaluateFormula } from './cells/formula.js';
 import { evaluateApi } from './cells/api.js';
@@ -125,11 +125,20 @@ export interface EngineOptions {
   tracing?: boolean;
   /** Optional AI engine for `kind: 'ai'` cells. If null, AI cells will error. */
   ai?: AIEngineLike;
+  /**
+   * Eager reactive mode (opt-in). When true, set/push recomputes stale
+   * formula cells during propagation instead of lazily on the next get.
+   * Listeners and subscribers then observe real prev->current transitions
+   * of derived cells — edge-triggered conditions work. Default false
+   * (preserves the original pull-based semantics).
+   */
+  eager?: boolean;
 }
 
 const defaultOptions: Required<Omit<EngineOptions, 'ai'>> = {
   maxConcurrency: 16,
   tracing: false,
+  eager: false,
 };
 
 /**
@@ -183,6 +192,20 @@ export class QuiltEngine implements ProgramRuntime {
       if (cell.def.kind === 'formula' || cell.def.kind === 'ai') {
         this.autoDetectDeps(cell);
       }
+      // Wire listener `watch` lists into the graph. Without this edge,
+      // propagate() never reaches listener cells and fireListener is
+      // dead code for sheets authored per the documented schema
+      // (watch/condition/action with no deps).
+      if (cell.def.kind === 'listener') {
+        for (const w of cell.def.watch ?? []) {
+          this.addDep(cell.id, w);
+        }
+        // Loud-failure warning: a listener that can never do anything
+        // used to fail silently. Surface it at load time instead.
+        if (!cell.def.action || ['io', 'sensor'].includes(this.cells.get(cell.def.action)?.def.kind ?? '')) {
+          console.warn(`[quilt] listener "${cell.id}" ${!cell.def.action ? 'has no action and will never fire one' : `routes to io/sensor cell "${cell.def.action}" — routing is not implemented for io cells yet`}`);
+        }
+      }
       for (const dep of cell.def.deps ?? []) {
         this.addDep(cell.id, dep);
       }
@@ -232,6 +255,11 @@ export class QuiltEngine implements ProgramRuntime {
    */
   register(def: CellDef): Cell {
     const cell = this.defineCell(def);
+    if (def.kind === 'listener') {
+      for (const w of def.watch ?? []) {
+        this.addDep(def.id, w);
+      }
+    }
     for (const dep of def.deps ?? []) {
       this.addDep(def.id, dep);
     }
@@ -267,7 +295,11 @@ export class QuiltEngine implements ProgramRuntime {
 
     switch (cell.def.kind) {
       case 'value':
-        return evaluateValue(cell, fullCtx);
+        // Return the LIVE cell value (seeded from def.value at load,
+        // updated by set()). Reading cell.def.value here made set()
+        // on a value cell invisible to get() — downstream formulas saw
+        // the new value while a direct read returned the old one.
+        return cell.value.status === 'idle' ? evaluateValue(cell, fullCtx) : cell.value;
 
       case 'formula': {
         await this.refreshDeps(cell, fullCtx);
@@ -336,7 +368,7 @@ export class QuiltEngine implements ProgramRuntime {
     cell.contextCache.clear();
 
     await this.notify(id, newValue, prev);
-    await this.propagate(id, fullCtx);
+    await this.propagate(id, fullCtx, undefined, prev);
   }
 
   /**
@@ -363,7 +395,8 @@ export class QuiltEngine implements ProgramRuntime {
       return cell.value;
     }
 
-    const key = contextKey(fullCtx);
+    // PLAY-TEST PATCH 10: include the call's input in the memo key.
+    const key = callKey(fullCtx, input);
     const cached = cell.contextCache.get(key);
     if (cached && cached.status === 'ready') {
       return cached;
@@ -403,7 +436,7 @@ export class QuiltEngine implements ProgramRuntime {
     cell.value = newValue;
 
     await this.notify(id, newValue, prev);
-    await this.propagate(id, extendContext(ctx, id));
+    await this.propagate(id, extendContext(ctx, id), undefined, prev);
   }
 
   // ===========================================================================
@@ -484,7 +517,19 @@ export class QuiltEngine implements ProgramRuntime {
     if (cell.def.kind === 'api') {
       result = await evaluateApi(cell, ctx, input);
     } else if (cell.def.kind === 'program') {
-      result = await evaluateProgram(cell, ctx, input, this);
+      // PLAY-TEST PATCH 11: programs receive a context-bound runtime.
+      // Previously they got the raw engine, whose get/set/call default to
+      // emptyContext() — so a nested runtime.call from inside a program
+      // silently DROPPED the caller identity (tenant tier, tags, metadata).
+      // Same bug family as the router-delegation fix: per-tenant
+      // memoization collapsed to a single shared answer. Explicit contexts
+      // still win.
+      const boundRuntime: ProgramRuntime = {
+        get: (id: CellId) => this.get(id, ctx),
+        set: (id: CellId, value: unknown) => this.set(id, value, ctx),
+        call: (id: CellId, i?: unknown, c?: CallerContext) => this.call(id, i, c ?? ctx),
+      };
+      result = await evaluateProgram(cell, ctx, input, boundRuntime);
     } else if (cell.def.kind === 'router') {
       result = await evaluateRouter(cell, ctx, input, this);
     } else if (cell.def.kind === 'ai') {
@@ -565,27 +610,61 @@ export class QuiltEngine implements ProgramRuntime {
    * Propagate a change to all dependents. Mark formula/value
    * dependents as stale and invalidate their cache. Fire listener
    * dependents whose conditions are met.
+   *
+   * `changedPrev` threads the changed cell's previous value so
+   * listeners observe a real prev->current pair. When `eager` is on,
+   * stale formula cells are recomputed DURING propagation (after the
+   * mark-stale pass reaches them), so listeners/subscribers on derived
+   * cells see fresh transitions.
    */
-  private async propagate(changedId: CellId, ctx: CallerContext): Promise<void> {
+  private async propagate(
+    changedId: CellId,
+    ctx: CallerContext,
+    visited?: Set<CellId>,
+    changedPrev?: CellValue,
+  ): Promise<void> {
     const cell = this.cells.get(changedId);
     if (!cell) return;
 
+    // Cycle guard: a set()/push() on a cyclic sheet previously recursed
+    // until stack overflow. One visited set per propagation walk.
+    const seen = visited ?? new Set<CellId>();
+    if (seen.has(changedId)) return;
+    seen.add(changedId);
+
+    let current = cell.value;
+    let prev = changedPrev ?? current;
+
+    // EAGER: recompute a stale formula now so downstream sees fresh values.
+    if (this.options.eager && cell.def.kind === 'formula' &&
+        (cell.value.status === 'stale' || cell.value.status === 'idle')) {
+      prev = cell.value; // the stale value still carries the OLD data
+      await this.refreshDeps(cell, ctx);
+      current = evaluateFormula(cell, ctx, this.cells);
+      cell.value = current;
+      await this.notify(cell.id, current, prev);
+    }
+
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
-      if (!dep) continue;
-      // Effectful cells (api, program, router, ai) also need cache invalidation
-      // when an upstream value changes
-      if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai') {
+      if (!dep || seen.has(depId)) continue;
+      // Formula/value/ai/program/router caches all invalidate when an
+      // upstream changes. Previously program and router were omitted:
+      // a program that declared deps on an upstream cell kept serving
+      // its FIRST result forever (e.g. an LLM workflow that never saw
+      // new input).
+      if (dep.def.kind === 'formula' || dep.def.kind === 'value' || dep.def.kind === 'ai' ||
+          dep.def.kind === 'program' || dep.def.kind === 'router') {
         dep.value = { ...dep.value, status: 'stale' };
         dep.contextCache.clear();
       }
-      await this.propagate(depId, ctx);
+      await this.propagate(depId, ctx, seen);
     }
 
     for (const depId of cell.dependents) {
       const dep = this.cells.get(depId);
       if (!dep || dep.def.kind !== 'listener') continue;
-      await fireListener(dep, changedId, cell.value, cell.value, this);
+      await fireListener(dep, changedId, current, prev, this);
     }
   }
 
