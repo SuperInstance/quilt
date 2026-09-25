@@ -152,6 +152,55 @@ export class QuiltEngine implements ProgramRuntime {
   private subscriptions = new Map<string, Subscription>();
   private inflight = new Map<CellId, Promise<CellValue>>();
   private traces: EvaluationTrace[] = [];
+
+  /**
+   * PLAY-TEST PATCH 12 (welded): per-cell state versions. Bumped
+   * whenever a cell's served value may change (set/push, effectful
+   * re-evaluation, formula recompute, stale marking). Program-cell
+   * cache hits compare the versions recorded at evaluation time.
+   */
+  private cellVersions = new Map<CellId, number>();
+
+  /**
+   * Read-recorder stack: while a program cell evaluates, every cell
+   * read through get()/call() is recorded. Frames union into their
+   * parents so a delegate program invalidates when ITS reads change.
+   */
+  private readStack: Array<{ owner: CellId; reads: Set<CellId> }> = [];
+
+  /** Read-set of each program cell's most recent evaluation. */
+  private lastEvalReads = new Map<CellId, Set<CellId>>();
+
+  private bump(id: CellId): void {
+    this.cellVersions.set(id, (this.cellVersions.get(id) ?? 0) + 1);
+  }
+
+  /** Record a read when inside a program evaluation. */
+  private recordRead(id: CellId): void {
+    if (this.readStack.length === 0) return;
+    for (const frame of this.readStack) frame.reads.add(id);
+  }
+
+  /**
+   * PATCH 12 freshness check: is the cached verdict for `key` still
+   * backed by an unchanged read-set? A snapshotless entry is legacy
+   * behavior (fresh) — only program cells carry snapshots.
+   */
+  private readSetFresh(cell: Cell, key: string): boolean {
+    const snap = cell.readVersionCache?.get(key);
+    if (!snap) return true;
+    for (const [id, v] of snap) {
+      if ((this.cellVersions.get(id) ?? 0) !== v) return false;
+    }
+    return true;
+  }
+
+  /** Snapshot the current versions of the recorded read-set. */
+  private snapshotReads(reads: Set<CellId>): Map<CellId, number> {
+    const snap = new Map<CellId, number>();
+    for (const id of reads) snap.set(id, this.cellVersions.get(id) ?? 0);
+    return snap;
+  }
   private options: Required<Omit<EngineOptions, 'ai'>> & { ai?: AIEngineLike };
   private subscriptionCounter = 0;
 
@@ -290,6 +339,7 @@ export class QuiltEngine implements ProgramRuntime {
     if (!cell) {
       return { data: undefined, status: 'error', error: { message: `no such cell: ${id}` } };
     }
+    this.recordRead(id);
 
     const fullCtx = extendContext(ctx, id);
 
@@ -313,7 +363,14 @@ export class QuiltEngine implements ProgramRuntime {
         const key = contextKey(fullCtx);
         const cached = cell.contextCache.get(key);
         if (cached && cached.status === 'ready') {
-          return cached;
+          // PATCH 12: program verdicts are only as fresh as the
+          // state they read. Other effectful kinds keep their
+          // existing invalidation contract.
+          if (cell.def.kind !== 'program' || this.readSetFresh(cell, key)) {
+            return cached;
+          }
+          cell.contextCache.delete(key);
+          cell.readVersionCache?.delete(key);
         }
         if (this.inflight.has(id)) {
           return this.inflight.get(id)!;
@@ -323,6 +380,12 @@ export class QuiltEngine implements ProgramRuntime {
         try {
           const value = await promise;
           cell.contextCache.set(key, value);
+          if (cell.def.kind === 'program') {
+            const reads = this.lastEvalReads.get(cell.id);
+            if (reads) {
+              (cell.readVersionCache ??= new Map()).set(key, this.snapshotReads(reads));
+            }
+          }
           return value;
         } finally {
           this.inflight.delete(id);
@@ -366,6 +429,8 @@ export class QuiltEngine implements ProgramRuntime {
     };
     cell.value = newValue;
     cell.contextCache.clear();
+    cell.readVersionCache?.clear();
+    this.bump(id);
 
     await this.notify(id, newValue, prev);
     await this.propagate(id, fullCtx, undefined, prev);
@@ -386,6 +451,7 @@ export class QuiltEngine implements ProgramRuntime {
     }
 
     const fullCtx = extendContext(ctx, id);
+    this.recordRead(id);
 
     if (cell.def.kind === 'value' || cell.def.kind === 'formula') {
       return this.get(id, ctx);
@@ -399,7 +465,16 @@ export class QuiltEngine implements ProgramRuntime {
     const key = callKey(fullCtx, input);
     const cached = cell.contextCache.get(key);
     if (cached && cached.status === 'ready') {
-      return cached;
+      // PATCH 12: a program's verdict is a function of its arguments
+      // AND of the cells it read (z's hold'em fish-reset freeze:
+      // same caller+input, mutated undeclared state, stale verdict
+      // served forever). Serve cache only while the read-set versions
+      // are unchanged.
+      if (cell.def.kind !== 'program' || this.readSetFresh(cell, key)) {
+        return cached;
+      }
+      cell.contextCache.delete(key);
+      cell.readVersionCache?.delete(key);
     }
     if (this.inflight.has(id)) {
       return this.inflight.get(id)!;
@@ -409,6 +484,12 @@ export class QuiltEngine implements ProgramRuntime {
     try {
       const value = await promise;
       cell.contextCache.set(key, value);
+      if (cell.def.kind === 'program') {
+        const reads = this.lastEvalReads.get(cell.id);
+        if (reads) {
+          (cell.readVersionCache ??= new Map()).set(key, this.snapshotReads(reads));
+        }
+      }
       return value;
     } finally {
       this.inflight.delete(id);
@@ -434,6 +515,7 @@ export class QuiltEngine implements ProgramRuntime {
     const newValue: CellValue = cell.def.kind === 'sensor' ? makeSensorValue(data) : makeIoValue(data);
     const prev = cell.value;
     cell.value = newValue;
+    this.bump(id);
 
     await this.notify(id, newValue, prev);
     await this.propagate(id, extendContext(ctx, id), undefined, prev);
@@ -529,7 +611,26 @@ export class QuiltEngine implements ProgramRuntime {
         set: (id: CellId, value: unknown) => this.set(id, value, ctx),
         call: (id: CellId, i?: unknown, c?: CallerContext) => this.call(id, i, c ?? ctx),
       };
-      result = await evaluateProgram(cell, ctx, input, boundRuntime);
+      // PLAY-TEST PATCH 12 (welded): record the read-set. Every cell the
+      // program touches through the bound runtime is logged; on cache hit
+      // the verdict is only served while all read cells' state versions
+      // are unchanged. This is the deps-version term in the effectful
+      // cache key — it catches reads the sheet author did NOT declare as
+      // deps (the hold'em fish-reset freeze) without re-running programs
+      // whose read-set is untouched (fan-out cost profile preserved).
+      const frame = { owner: cell.id, reads: new Set<CellId>() };
+      this.readStack.push(frame);
+      try {
+        result = await evaluateProgram(cell, ctx, input, boundRuntime);
+      } finally {
+        this.readStack.pop();
+        // Union into parent frames: a delegate program must invalidate
+        // when the reads of the program it delegates to change.
+        for (const r of frame.reads) {
+          for (const parent of this.readStack) parent.reads.add(r);
+        }
+        this.lastEvalReads.set(cell.id, frame.reads);
+      }
     } else if (cell.def.kind === 'router') {
       result = await evaluateRouter(cell, ctx, input, this);
     } else if (cell.def.kind === 'ai') {
@@ -582,6 +683,7 @@ export class QuiltEngine implements ProgramRuntime {
 
     const prev = cell.value;
     cell.value = result;
+    this.bump(cell.id);
     await this.notify(cell.id, result, prev);
     return result;
   }
@@ -601,6 +703,7 @@ export class QuiltEngine implements ProgramRuntime {
         await this.refreshDeps(dep, ctx);
         const v = evaluateFormula(dep, ctx, this.cells);
         dep.value = v;
+        this.bump(depId);
         dep.contextCache.set(contextKey(ctx), v);
       }
     }
@@ -642,6 +745,7 @@ export class QuiltEngine implements ProgramRuntime {
       await this.refreshDeps(cell, ctx);
       current = evaluateFormula(cell, ctx, this.cells);
       cell.value = current;
+      this.bump(cell.id);
       await this.notify(cell.id, current, prev);
     }
 
@@ -657,6 +761,11 @@ export class QuiltEngine implements ProgramRuntime {
           dep.def.kind === 'program' || dep.def.kind === 'router') {
         dep.value = { ...dep.value, status: 'stale' };
         dep.contextCache.clear();
+        dep.readVersionCache?.clear();
+        // PATCH 12: a stale mark means the served value is about to
+        // change — bump so read-set snapshots taken by program cells
+        // treat this cell as changed.
+        this.bump(depId);
       }
       await this.propagate(depId, ctx, seen);
     }
