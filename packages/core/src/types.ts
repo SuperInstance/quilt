@@ -409,6 +409,15 @@ export interface Cell {
    * different cached value. Key is `contextKey(ctx)`.
    */
   contextCache: Map<string, CellValue>;
+  /**
+   * PLAY-TEST PATCH 12 (welded): read-set state-version snapshots for
+   * program cells, keyed exactly like `contextCache`. After a program
+   * evaluation, the engine records which cells the program read (via
+   * the bound runtime) and each read cell's state version. A cached
+   * verdict is only served while every read cell's version is
+   * unchanged. Populated for program cells only; absent elsewhere.
+   */
+  readVersionCache?: Map<string, Map<CellId, number>>;
 }
 
 // =====================================================================
