@@ -111,7 +111,18 @@ cells:
     expr: '=task.healthcheck.next_run_at > 0 && task.healthcheck.next_run_at < clock.now && task.healthcheck.status != "running"'
     description: "Is this task overdue?"
 
+  # PLAY-TEST FIX: was a `program` cell. Programs are only re-evaluated on
+  # explicit call — propagation never recomputes them, so the listener below
+  # could only ever see a stale value. Derived boolean state belongs in a
+  # formula (pure, auto-tracked, recomputed eagerly on push).
   - id: scheduler.any_overdue
+    kind: formula
+    expr: '=task.daily_summary.is_overdue || task.backup.is_overdue || task.healthcheck.is_overdue'
+    description: "True when any task is overdue"
+
+  # Kept the program variant under a new id — useful for dashboards that
+  # want the LIST of overdue tasks, called explicitly by the harness.
+  - id: scheduler.overdue_list
     kind: program
     code: |
       const tasks = ['daily_summary', 'backup', 'healthcheck'];
@@ -148,11 +159,19 @@ cells:
   - id: alert.overdue
     kind: listener
     watch: [scheduler.any_overdue]
+    condition: "caller.metadata.current === true && caller.metadata.prev !== true"
     action: log.overdue
-    description: "Fires when any task is overdue"
+    description: "Fires on the ok->overdue edge"
 
+  # PLAY-TEST FIX: was `kind: io` — io cells are push-only, so calling one
+  # as a listener action is a silent no-op. Program cells are the action kind.
   - id: log.overdue
-    kind: io
-    direction: out
-    port: log:stderr
-    description: "Writes a warning when tasks are overdue"
+    kind: program
+    description: "Builds the overdue warning"
+    code: |
+      const list = (await runtime.get('scheduler.overdue_list')).data;
+      return {
+        severity: 'warn',
+        message: `Overdue tasks: ${(list ?? []).join(', ') || 'unknown'}`,
+        timestamp: Date.now(),
+      };

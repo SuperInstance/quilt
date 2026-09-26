@@ -92,27 +92,48 @@ cells:
   - id: alert.dangerous
     kind: listener
     watch: [is_dangerous]
+    condition: "caller.metadata.current === true && caller.metadata.prev !== true"
     action: log.dangerous
-    description: "Fires when conditions are dangerous"
+    description: "Fires on the safe->dangerous edge"
 
+  # PLAY-TEST FIX: was `kind: io` — io cells are push-only value holders,
+  # so calling one as a listener action is a silent no-op. A program cell
+  # is the action kind that actually produces an observable effect.
   - id: log.dangerous
-    kind: io
-    direction: out
-    port: log:stderr
-    description: "Writes a warning to stderr when conditions are dangerous"
+    kind: program
+    description: "Writes a warning when conditions are dangerous"
+    code: |
+      // NOTE (play-test finding): listener actions receive the event via
+      // `input` ({changed, value}) — caller.metadata is NOT propagated to
+      // the action, so read live cells via runtime.get instead.
+      const feels = (await runtime.get('feels_like_c')).data;
+      return {
+        severity: 'warn',
+        message: `Dangerous conditions: feels like ${feels}C`,
+        timestamp: Date.now(),
+      };
 
   - id: alert.comfort_lost
     kind: listener
     watch: [is_comfortable]
-    condition: "=is_comfortable == false"
+    # PLAY-TEST FIX: was "=is_comfortable == false" — the leading '=' made
+    # evalWhen throw a SyntaxError on every fire, silently swallowed, so
+    # this listener could never fire. Conditions are bare expressions.
+    condition: "caller.metadata.current === false && caller.metadata.prev === true"
     action: log.comfort_lost
-    description: "Fires when the comfort condition is no longer satisfied"
+    description: "Fires on the comfortable->uncomfortable edge"
 
+  # PLAY-TEST FIX: was `kind: io` — see log.dangerous note above.
   - id: log.comfort_lost
-    kind: io
-    direction: out
-    port: log:stderr
+    kind: program
     description: "Writes a notice when comfort zone is lost"
+    code: |
+      const temp = (await runtime.get('sensor.temperature')).data;
+      return {
+        severity: 'info',
+        message: `Comfort zone lost (temp is now ${temp}C)`,
+        timestamp: Date.now(),
+      };
 
   # -------------------------------------------------------------------------
   # Router — a caller-aware view. Different consumers ask for

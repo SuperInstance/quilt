@@ -1,12 +1,15 @@
 id: sensor-anomaly
-title: "Self-Tuning Anomaly Detector"
-description: "Local statistical loop + escalation to model — fewer false positives over time"
-version: 0.1.0
-
-# The "surprise loop" pattern:
-#   sensor cell  →  rolling stats  →  z-score  →  if surprising, call model
-# Over time, the system learns what's "normal" and only escalates
-# true anomalies to the (expensive) model.
+title: "Self-Tuning Anomaly Detector (play-test iteration)"
+description: >
+  Push-driven surprise loop that actually runs: listener+program maintain
+  an EWMA baseline in a value cell (programs are the only stateful cells,
+  so state lives in value cells and is updated via runtime.set), formulas
+  derive the z-score and escalation decision, and a listener escalates to
+  the model action. Patched during play-testing: the original sheet stored
+  the EWMA in a program cell (never re-evaluated by propagation), the
+  escalation listener had no action, and the model api endpoint used a
+  non-fetchable `model:` scheme.
+version: 0.2.0-playtest
 
 cells:
   # ---- Input: a simulated temperature sensor ----
@@ -16,38 +19,46 @@ cells:
     source: simulated
     rate: 100
     unit: celsius
+    default: 22
     description: "Temperature reading (simulated)"
 
-  # ---- Rolling statistics (classical, local) ----
+  # ---- Stateful baseline: EWMA lives in a VALUE cell, updated by a
+  #      listener -> program -> runtime.set loop. This is the working
+  #      idiom for stateful derived state in Quilt. ----
 
-  - id: rolling.window
+  - id: ewma.value
     kind: value
-    value: 60
-    description: "Window size in samples"
+    value: 22
+    description: "Running EWMA of temperature (state holder)"
 
-  - id: rolling.mean
+  - id: ewma.alpha
+    kind: value
+    value: 0.05
+    description: "EWMA smoothing factor"
+
+  - id: ewma.updater
+    kind: listener
+    watch: [sensor.temp]
+    action: ewma.update
+    description: "Every new reading updates the baseline"
+
+  - id: ewma.update
     kind: program
-    description: "Mean of the last N samples (classical loop)"
+    description: "EWMA update step: reads state, writes back via runtime.set"
     code: |
-      // In a real impl this would maintain a buffer. For the demo,
-      // we just track the running mean.
-      const cur = (await runtime.get('rolling.mean')).data;
-      const x = (await runtime.get('sensor.temp')).data;
-      const n = (await runtime.get('rolling.count')).data || 0;
-      const mean = (cur || 0);
-      return mean * 0.99 + (x || 0) * 0.01;
+      const x = input?.value;
+      if (typeof x !== 'number' || Number.isNaN(x)) return { updated: false };
+      const cur = (await runtime.get('ewma.value')).data ?? x;
+      const alpha = (await runtime.get('ewma.alpha')).data ?? 0.05;
+      await runtime.set('ewma.value', cur * (1 - alpha) + x * alpha);
+      return { updated: true, reading: x, baseline: cur * (1 - alpha) + x * alpha };
 
-  - id: rolling.count
-    kind: value
-    value: 0
-    description: "How many samples we've seen"
-
-  # ---- Surprise detection (classical) ----
+  # ---- Surprise detection (pure formulas — recomputed on every push) ----
 
   - id: surprise.z_score
     kind: formula
-    expr: "=abs(sensor.temp - rolling.mean) / 5"  # assume stddev of 5
-    description: "How many standard deviations from the mean"
+    expr: "=abs(sensor.temp - ewma.value) / 5"
+    description: "How many standard deviations from the EWMA baseline (assume stddev 5)"
 
   - id: surprise.threshold
     kind: value
@@ -59,28 +70,24 @@ cells:
     expr: "=surprise.z_score > surprise.threshold"
     description: "True if we should call the model"
 
-  # ---- The model (jazz — only called on surprise) ----
+  # ---- Escalation: listener on the decision formula, program as action ----
 
-  - id: model.analyzer
-    kind: api
-    endpoint: "model:claude-sonnet-4-5"
-    description: "The expensive model — only called on anomalies"
+  - id: alert.escalate
+    kind: listener
+    watch: [surprise.should_escalate]
+    condition: "caller.metadata.current === true && caller.metadata.prev !== true"
+    action: alert.emit
+    description: "Fires on the false->true escalation edge only"
 
-  # ---- Output ----
-
-  - id: alert
+  - id: alert.emit
     kind: program
-    description: "Triggers when surprise.should_escalate is true"
+    description: "The escalation action — in production this calls the model API"
     code: |
       const x = (await runtime.get('sensor.temp')).data;
       const z = (await runtime.get('surprise.z_score')).data;
+      const baseline = (await runtime.get('ewma.value')).data;
       return {
         severity: z > 4 ? 'critical' : 'warning',
-        message: `Anomaly: temp=${x}°C, z=${z?.toFixed(2)}`,
+        message: `Anomaly: temp=${x}C, z=${z?.toFixed(2)}, baseline=${baseline?.toFixed(1)}`,
         timestamp: Date.now(),
       };
-
-  - id: alert.listener
-    kind: listener
-    watch: [surprise.should_escalate]
-    description: "Fires when an anomaly is detected"
