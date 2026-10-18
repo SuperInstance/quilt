@@ -1,4 +1,4 @@
-# @quilt/tui
+# @superinstance/quilt-tui
 
 Terminal UI for Quilt — the power-tool view of a running engine.
 
@@ -15,7 +15,7 @@ shell history while it's running.
 ## Install
 
 ```sh
-npm install @quilt/tui @quilt/core
+npm install @superinstance/quilt-tui @superinstance/quilt-core
 ```
 
 ## Use

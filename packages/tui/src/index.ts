@@ -38,7 +38,7 @@
 //! - The `quilt-tui` binary in `bin/`.
 //! - Future: agents that prefer text output over structured JSON.
 
-import type { QuiltEngine, CellDef, CellValue } from '@quilt/core';
+import type { QuiltEngine, CellDef, CellValue } from '@superinstance/quilt-core';
 import { render } from './render.js';
 import { KeyReader } from './input.js';
 import type { TuiKey } from './input.js';

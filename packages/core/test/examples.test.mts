@@ -5,7 +5,7 @@
 // validates the engine handles real-world sheets.
 
 import { describe, it, expect } from 'vitest';
-import { QuiltEngine, parseSheet } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,0 +1,166 @@
+{
+  "$id": "https://superinstance.org/schemas/quilt-manifest.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Quilt Manifest",
+  "description": "Executable manifest schema for Quilt sheets. All extension fields are optional to preserve backward compatibility with simple value/formula sheets. Extension fields let planners and runtimes treat sheets as first-class artifacts with declared inputs, outputs, pre/postconditions, rollback, resource hints, and provenance.",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique sheet identifier (the manifest_id)."
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable sheet title."
+    },
+    "version": {
+      "type": "string",
+      "description": "Semver version of this manifest. Recommended for run traces and reproducibility."
+    },
+    "description": {
+      "type": "string",
+      "description": "Free-text description of what this sheet does."
+    },
+    "entrypoint": {
+      "type": "string",
+      "description": "Optional. If the sheet is invoked by an external runner, this is the cell id that runs first. Defaults to a topological sort of the dependency graph."
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Declared input cells (or external artifacts) this manifest needs to run.",
+      "items": {
+        "type": "object",
+        "required": ["name", "uri"],
+        "properties": {
+          "name": { "type": "string", "description": "Local name to bind the input to." },
+          "uri": { "type": "string", "description": "Quilt URI, e.g. quilt://ml/datasets/staged:latest or quilt://cells/data.staged" },
+          "required": { "type": "boolean", "default": true },
+          "type": { "type": "string", "description": "Optional type tag, e.g. 'dataset', 'model', 'text'." }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "description": "Declared output cells (or external artifacts) this manifest produces.",
+      "items": {
+        "type": "object",
+        "required": ["name", "uri"],
+        "properties": {
+          "name": { "type": "string" },
+          "uri": { "type": "string", "description": "Templated URI, e.g. quilt://ml/models/classifier:{{run_id}}." },
+          "type": { "type": "string" }
+        }
+      }
+    },
+    "preconditions": {
+      "type": "array",
+      "description": "Conditions that must be true before this manifest can run.",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["artifact_exists", "cell_ready", "expr", "policy_approved", "resource_available"],
+            "description": "The kind of precondition."
+          },
+          "uri": { "type": "string", "description": "For artifact_exists: the Quilt URI to check." },
+          "cell": { "type": "string", "description": "For cell_ready: the cell id that must be in 'ready' state." },
+          "expr": { "type": "string", "description": "For expr: a JavaScript expression evaluated in the engine context; must return truthy." },
+          "policy": { "type": "string", "description": "For policy_approved: the policy name." },
+          "resource": { "type": "string", "description": "For resource_available: e.g. 'gpu:1' or 'memory:32GB'." }
+        }
+      }
+    },
+    "postconditions": {
+      "type": "array",
+      "description": "Conditions that must be true after the manifest runs successfully.",
+      "items": { "$ref": "#/properties/preconditions/items" }
+    },
+    "rollback": {
+      "type": "object",
+      "description": "How to undo side-effects if this manifest fails.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["manifest", "cell_set", "none"],
+          "description": "Rollback strategy. 'manifest' invokes another sheet. 'cell_set' restores prior cell values. 'none' is a no-op (only valid for read-only manifests)."
+        },
+        "manifest_id": { "type": "string", "description": "For 'manifest': the id of the rollback sheet." },
+        "cells": {
+          "type": "array",
+          "description": "For 'cell_set': the list of cell ids whose prior values should be restored.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "resource_hints": {
+      "type": "object",
+      "description": "Hints for the runtime about hardware, timing, and isolation.",
+      "properties": {
+        "gpu": { "type": "integer", "minimum": 0, "description": "Number of GPUs required." },
+        "memory_gb": { "type": "integer", "minimum": 0, "description": "Memory requirement in GB." },
+        "timeout_s": { "type": "integer", "minimum": 0, "description": "Soft timeout in seconds." },
+        "network": { "type": "string", "enum": ["none", "restricted", "open"], "description": "Network policy for cell evaluators that touch the outside world." },
+        "sandbox": { "type": "string", "enum": ["none", "container", "wasm"], "description": "Preferred isolation level." }
+      }
+    },
+    "model_requirements": {
+      "type": "object",
+      "description": "For sheets that contain AI cells, hints for the model adapter layer.",
+      "properties": {
+        "llm_context_tokens": { "type": "integer", "minimum": 0, "description": "Minimum context window the model adapter must provide." },
+        "multimodal": { "type": "boolean", "description": "Whether vision/audio input is required." },
+        "min_accuracy": { "type": "number", "minimum": 0, "maximum": 1, "description": "Minimum benchmark score the model must achieve (advisory)." }
+      }
+    },
+    "provenance_tags": {
+      "type": "array",
+      "description": "Free-form tags used by planners and search to find relevant manifests.",
+      "items": { "type": "string" }
+    },
+    "irreversible": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, the manifest declares it cannot be rolled back. Planners must require human approval before executing."
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "id": "train-classifier",
+      "version": "1.0.0",
+      "description": "Train classifier on staged dataset",
+      "title": "Train Classifier",
+      "inputs": [
+        { "name": "dataset", "uri": "quilt://ml/datasets/staged:latest", "required": true, "type": "dataset" }
+      ],
+      "outputs": [
+        { "name": "model", "uri": "quilt://ml/models/classifier:{{run_id}}", "type": "model" }
+      ],
+      "preconditions": [
+        { "type": "artifact_exists", "uri": "quilt://ml/datasets/staged:latest" }
+      ],
+      "postconditions": [
+        { "type": "artifact_exists", "uri": "quilt://ml/models/classifier:{{run_id}}" }
+      ],
+      "rollback": {
+        "type": "manifest",
+        "manifest_id": "rollback-train"
+      },
+      "resource_hints": {
+        "gpu": 1,
+        "memory_gb": 32,
+        "timeout_s": 7200,
+        "network": "restricted",
+        "sandbox": "container"
+      },
+      "model_requirements": {
+        "llm_context_tokens": 0,
+        "multimodal": false
+      },
+      "provenance_tags": ["training", "weekly-run"]
+    }
+  ]
+}

@@ -106,7 +106,7 @@ Every repo at every layer cross-references the others. Every repo has the same e
 **1. A Quilt sheet, top to bottom:**
 
 ```ts
-import { QuiltEngine } from '@quilt/core';
+import { QuiltEngine } from '@superinstance/quilt-core';
 
 const engine = new QuiltEngine('expense-tracker');
 
@@ -223,7 +223,7 @@ The 12 polyformalism repos all express the same model in different language cons
 
 ```html
 <script type="module">
-  import { QuiltEngine } from 'https://cdn.jsdelivr.net/npm/@quilt/core@0.6.0/dist/index.js';
+  import { QuiltEngine } from 'https://cdn.jsdelivr.net/npm/@superinstance/quilt-core@0.6.0/dist/index.js';
   // ...
 </script>
 ```
@@ -233,18 +233,18 @@ The 12 polyformalism repos all express the same model in different language cons
 **In Node:**
 
 ```bash
-npm install @quilt/core
+npm install @superinstance/quilt-core
 ```
 
 ```ts
-import { QuiltEngine } from '@quilt/core';
+import { QuiltEngine } from '@superinstance/quilt-core';
 const engine = new QuiltEngine('my-app');
 ```
 
 **On a Cloudflare Worker:**
 
 ```bash
-npm install @quilt/cloudflare
+npm install @superinstance/quilt-cloudflare
 ```
 
 **On a Raspberry Pi / Jetson / ESP32:**
