@@ -46,8 +46,8 @@
  *
  * The AI cell is a thin wrapper around @quilt/ai's AIEngine. To use it:
  *
- *   import { Quilt } from '@quilt/core';
- *   import { AIEngine } from '@quilt/ai';
+ *   import { Quilt } from '@superinstance/quilt-core';
+ *   import { AIEngine } from '@superinstance/quilt-ai';
  *
  *   const ai = new AIEngine({ zaiKey: process.env.ZAI_TOKEN, ... });
  *   const q = new Quilt({ ai });

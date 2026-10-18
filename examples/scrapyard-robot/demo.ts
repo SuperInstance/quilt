@@ -11,7 +11,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { QuiltEngine, parseSheet } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 
 async function main() {
   const source = await readFile(resolve('examples/scrapyard-robot/sheet.yaml'), 'utf8');

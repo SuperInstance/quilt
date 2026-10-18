@@ -21,9 +21,9 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { QuiltEngine, parseSheet, type SheetDef } from '@quilt/core';
-import { startMcpServer } from '@quilt/mcp';
-import { validateManifest, resolveArtifact, resolveTemplate, InMemoryArtifactStore } from '@quilt/sdk';
+import { QuiltEngine, parseSheet, type SheetDef } from '@superinstance/quilt-core';
+import { startMcpServer } from '@superinstance/quilt-mcp';
+import { validateManifest, resolveArtifact, resolveTemplate, InMemoryArtifactStore } from '@superinstance/quilt-sdk';
 
 const HELP = `
 quilt — a spreadsheet where every cell is a live, addressable capability

@@ -1,4 +1,4 @@
-# @quilt/sdk
+# @superinstance/quilt-sdk
 
 > Agent substrate primitives for Quilt. Eight functions that turn Quilt sheets into executable, auditable, replayable artifacts — and that federate them across tiers.
 
@@ -7,12 +7,12 @@
 [![version](https://img.shields.io/badge/version-0.6.0-blue)](.)
 
 ```
-npm install @quilt/sdk
+npm install @superinstance/quilt-sdk
 ```
 
 ## What it is
 
-`@quilt/sdk` is the **smallest possible surface** for treating Quilt as an agent substrate and federated runtime. It exposes eight primitives that any planner, runtime, or UI can compose:
+`@superinstance/quilt-sdk` is the **smallest possible surface** for treating Quilt as an agent substrate and federated runtime. It exposes eight primitives that any planner, runtime, or UI can compose:
 
 | # | Primitive | Purpose |
 |---|---|---|
@@ -62,7 +62,7 @@ import {
   publishArtifact,
   publishRunTrace,
   InMemoryArtifactStore,
-} from '@quilt/sdk';
+} from '@superinstance/quilt-sdk';
 
 const store = new InMemoryArtifactStore();
 
@@ -189,11 +189,11 @@ for (const node of trace.nodes) {
 | Container entrypoint | Cell `evaluate()` (no Docker needed) |
 | Inputs/outputs | `derived_from` + reactive propagation |
 | Pre/postconditions | `kind: 'sensor'` + `validate` listeners |
-| Rollback | `@quilt/evolve` revert step |
+| Rollback | `@superinstance/quilt-evolve` revert step |
 | model_requirements | `kind: 'ai'` + ai_kind + provider config |
 | Run trace | `engine.serialize()` + reactive history |
-| Capability negotiation | `@quilt/ai` AIEngine routes across 4 providers |
-| Agent substrate | `@quilt/mcp` exposes Quilt to ANY agent |
+| Capability negotiation | `@superinstance/quilt-ai` AIEngine routes across 4 providers |
+| Agent substrate | `@superinstance/quilt-mcp` exposes Quilt to ANY agent |
 
 ## Architecture note
 

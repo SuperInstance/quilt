@@ -22,8 +22,8 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { QuiltEngine} from '@quilt/core';
-import { type CallerContext } from '@quilt/core';
+import type { QuiltEngine} from '@superinstance/quilt-core';
+import { type CallerContext } from '@superinstance/quilt-core';
 
 export interface McpServerOptions {
   // Optional identity attached to all calls made via this server

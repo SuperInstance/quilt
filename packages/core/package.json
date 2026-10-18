@@ -1,6 +1,6 @@
 {
   "name": "@superinstance/quilt-core",
-  "version": "0.3.1",
+  "version": "0.3.4",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,38 +10,18 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "yaml": "^2.9.1",
-    "zod": "^4.6.5"
-  },
-  "peerDependencies": {
-    "@quilt/ai": "*"
-  },
-  "peerDependenciesMeta": {
-    "@quilt/ai": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3",
-    "@types/node": "^26.6.5",
-    "vitest": "^5.0.3"
-  },
   "description": "Quilt cell model: yaml+zod cell kinds, a typed engine, and the operations that make a cell a cell.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SuperInstance/quilt.git",
-    "directory": "packages/core"
-  },
-  "homepage": "https://github.com/SuperInstance/quilt/tree/main/packages/core",
-  "bugs": {
-    "url": "https://github.com/SuperInstance/quilt/issues"
-  },
   "license": "MIT",
   "keywords": [
     "quilt",
@@ -51,10 +31,22 @@
     "yaml",
     "zod"
   ],
-  "files": [
-    "dist",
-    "src",
-    "README.md",
-    "LICENSE"
-  ]
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SuperInstance/quilt.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/SuperInstance/quilt/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/SuperInstance/quilt/issues"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@types/node": "^26.6.5",
+    "vitest": "^5.0.3"
+  }
 }

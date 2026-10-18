@@ -1,5 +1,5 @@
 {
-  "name": "@quilt/docs",
+  "name": "@superinstance/quilt-docs",
   "version": "0.6.0",
   "description": "Quilt documentation site (VitePress)",
   "type": "module",

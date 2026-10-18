@@ -36,7 +36,7 @@ import { createHash } from 'node:crypto';
 // Re-export the schema for convenience — consumers can import the JSON
 // directly, but having it exported from the package means types and
 // schema travel together.
-export { default as manifestSchema } from '../../../schemas/manifest.schema.json' with { type: 'json' };
+export { default as manifestSchema } from './schemas/manifest.schema.json' with { type: 'json' };
 
 // ──────────────────────────────────────────────────────────────────────────
 //  Types
@@ -368,7 +368,7 @@ export async function validateManifest(
   const AjvCtor = (AjvModule as unknown as { default: new (opts?: object) => unknown }).default;
   const addFormatsModule = await import('ajv-formats');
   const addFormats = (addFormatsModule as unknown as { default: (ajv: unknown) => void }).default;
-  const schemaModule = await import('../../../schemas/manifest.schema.json', { with: { type: 'json' } });
+  const schemaModule = await import('./schemas/manifest.schema.json', { with: { type: 'json' } });
   const schema = (schemaModule as unknown as { default: object }).default;
   type AjvInstance = {
     compile: (schema: object) => {
