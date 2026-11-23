@@ -9,7 +9,7 @@ npm install @superinstance/quilt-core
 ```
 
 This installs the latest published release (**0.3.3**). The repository
-carries 0.3.4, which will be the next publish. Node >= 18.
+carries 0.3.4, which will be the next publish. Node >= 22.
 
 (Or `@superinstance/quilt-sdk` if you only need the federation primitives.)
 

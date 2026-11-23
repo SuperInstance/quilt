@@ -18,7 +18,7 @@
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![version](https://img.shields.io/badge/version-0.3.4-orange.svg)](./packages/core/package.json)
-[![node](https://img.shields.io/badge/node-%3E%3D18-green.svg)](./packages/core/package.json)
+[![node](https://img.shields.io/badge/node-%3E%3D22-green.svg)](./packages/core/package.json)
 [![tests](https://img.shields.io/badge/tests-160-brightgreen.svg)](#)
 [![repos](https://img.shields.io/badge/repos-37-blue.svg)](#)
 [![platform](https://img.shields.io/badge/platform-cloud%20%7C%20workstation%20%7C%20esp32-blue.svg)](#)
@@ -236,7 +236,7 @@ npm install @superinstance/quilt-core
 ```
 
 This installs the latest published release (**0.3.3**). The repository
-carries 0.3.4, which will be the next publish. Node >= 18.
+carries 0.3.4, which will be the next publish. Node >= 22.
 
 ```ts
 import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';

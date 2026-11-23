@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/superinstance/quilt#readme",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "workspaces": [
     "packages/*"
@@ -41,5 +41,6 @@
   "dependencies": {
     "yaml": "^2.9.1",
     "zod": "^4.6.5"
-  }
+  },
+  "packageManager": "npm@11.6.0"
 }

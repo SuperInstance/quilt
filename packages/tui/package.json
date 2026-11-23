@@ -1,7 +1,7 @@
 {
   "name": "@superinstance/quilt-tui",
   "version": "0.3.0",
-  "description": "Terminal UI for Quilt — the power-tool view of a running engine.",
+  "description": "Terminal UI for Quilt \u2014 the power-tool view of a running engine.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "src/index.ts",
@@ -29,6 +29,6 @@
     "typescript": "^6.0.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   }
 }
