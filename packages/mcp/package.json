@@ -1,6 +1,6 @@
 {
   "name": "@superinstance/quilt-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,7 +15,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@superinstance/quilt-core": "^0.3.4",
+    "@superinstance/quilt-core": "^0.4.0",
     "@modelcontextprotocol/sdk": "^1.32.1"
   },
   "devDependencies": {

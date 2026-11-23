@@ -1,6 +1,6 @@
 {
   "name": "@superinstance/quilt-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -12,9 +12,9 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@superinstance/quilt-core": "^0.3.4",
-    "@superinstance/quilt-mcp": "^0.3.0",
-    "@superinstance/quilt-sdk": "^0.2.7",
+    "@superinstance/quilt-core": "^0.4.0",
+    "@superinstance/quilt-mcp": "^0.4.0",
+    "@superinstance/quilt-sdk": "^0.4.0",
     "yaml": "^2.9.1"
   },
   "devDependencies": {

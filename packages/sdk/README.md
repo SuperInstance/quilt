@@ -4,7 +4,7 @@
 
 [![tests](https://img.shields.io/badge/tests-79%2F79%20passing-brightgreen)](.)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](.)
-[![version](https://img.shields.io/badge/version-0.6.0-blue)](.)
+[![version](https://img.shields.io/badge/version-0.4.0-blue)](.)
 
 ```
 npm install @superinstance/quilt-sdk
