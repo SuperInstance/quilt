@@ -14,7 +14,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@superinstance/quilt-core": "^0.3.2",
+    "@superinstance/quilt-core": "^0.3.4",
     "@modelcontextprotocol/sdk": "^1.32.1"
   },
   "devDependencies": {
@@ -23,5 +23,6 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "license": "Apache-2.0"
 }

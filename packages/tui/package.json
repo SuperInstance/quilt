@@ -21,7 +21,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@superinstance/quilt-core": "^0.3.3"
+    "@superinstance/quilt-core": "^0.3.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

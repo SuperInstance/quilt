@@ -94,4 +94,5 @@ const unsub = subscribeCell('quilt://boat-1/sensors#heading', (v) => {
 - [Cell kinds](/guide/cell-kinds) — the 9 cell types in detail
 - [Federation](/guide/federation) — cross-tier cell resolution
 - [Deployment](/guide/deployment) — run Quilt anywhere
+- [Error contract](../error-contract.md) — how get/call return errors and set/push throw
 - [SDK reference](/sdk/) — full API documentation

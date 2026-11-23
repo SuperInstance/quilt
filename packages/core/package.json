@@ -22,7 +22,7 @@
     "test:watch": "vitest"
   },
   "description": "Quilt cell model: yaml+zod cell kinds, a typed engine, and the operations that make a cell a cell.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "quilt",
     "cell",

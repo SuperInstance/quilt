@@ -24,7 +24,7 @@
     "url": "https://github.com/SuperInstance/quilt/issues"
   },
   "dependencies": {
-    "@superinstance/quilt-core": "^0.3.3",
+    "@superinstance/quilt-core": "^0.3.4",
     "ajv": "^8.12.0",
     "ajv-formats": "^3.0.1"
   },

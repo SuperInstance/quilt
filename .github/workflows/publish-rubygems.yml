@@ -45,11 +45,14 @@ jobs:
           with tarfile.open(f'{gem_dir}/data.tar.gz', 'w:gz') as tar:
               tar.add(f'{gem_dir}/lib', arcname='lib')
           with open(f'{gem_dir}/specifications.gemspec', 'w') as f:
-              f.write('''--- !ruby/object:Gem::Specification
-name: quilt_cell
-version: !ruby/object:Gem::Version
-  version: ${{ inputs.version || github.ref_name }}
-''')
+              # NOTE: this string used to be a '''...''' literal whose
+              # content lines sat at column 0 — outside the YAML block
+              # scalar — which made the whole workflow file invalid and
+              # failed every push at startup with zero jobs.
+              f.write('--- !ruby/object:Gem::Specification\n'
+                      'name: quilt_cell\n'
+                      'version: !ruby/object:Gem::Version\n'
+                      '  version: ${{ inputs.version || github.ref_name }}\n')
           checksums = {}
           for root, dirs, files in os.walk(gem_dir):
               for file in files:

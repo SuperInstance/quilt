@@ -19,7 +19,7 @@
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![version](https://img.shields.io/badge/version-0.3.4-orange.svg)](./packages/core/package.json)
 [![node](https://img.shields.io/badge/node-%3E%3D22-green.svg)](./packages/core/package.json)
-[![tests](https://img.shields.io/badge/tests-160-brightgreen.svg)](#)
+[![tests](https://img.shields.io/badge/tests-165-brightgreen.svg)](#)
 [![repos](https://img.shields.io/badge/repos-37-blue.svg)](#)
 [![platform](https://img.shields.io/badge/platform-cloud%20%7C%20workstation%20%7C%20esp32-blue.svg)](#)
 [![discussions](https://img.shields.io/badge/discussions-welcome-brightgreen.svg)](https://github.com/SuperInstance/quilt/discussions)
