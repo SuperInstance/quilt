@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
@@ -24,5 +25,10 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }

@@ -11,7 +11,8 @@
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@superinstance/quilt-core": "^0.3.4",
@@ -24,5 +25,10 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
 }
