@@ -16,13 +16,13 @@ Quilt runs on every tier. Pick the one that matches your constraints.
 ## Browser
 
 ```bash
-npm install @quilt/core
+npm install @superinstance/quilt-core
 ```
 
 ```ts
-import { QuiltEngine } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 const engine = new QuiltEngine('app');
-engine.loadSheet(yaml);
+engine.loadSheet(parseSheet(yaml));
 ```
 
 Or use [Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.html) — 70KB HTML file, works offline, save as a cookie or downloadable file.
@@ -30,12 +30,12 @@ Or use [Quilt Live](https://superinstance.github.io/quilt/landing/quilt-live.htm
 ## Server (Node)
 
 ```bash
-npm install @quilt/core @quilt/sdk
+npm install @superinstance/quilt-core @superinstance/quilt-sdk
 ```
 
 ```ts
-import { QuiltEngine, parseSheet } from '@quilt/core';
-import { HttpCellTransport } from '@quilt/sdk';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
+import { HttpCellTransport } from '@superinstance/quilt-sdk';
 import express from 'express';
 
 const engine = new QuiltEngine('server');

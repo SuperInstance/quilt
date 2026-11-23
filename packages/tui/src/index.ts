@@ -75,6 +75,8 @@ export class QuiltTui {
     this.refreshCells();
   }
 
+  private resolveRun: (() => void) | null = null;
+
   /** Start the TUI. Returns when the user quits. */
   async run(): Promise<void> {
     this.running = true;
@@ -82,6 +84,12 @@ export class QuiltTui {
     this.reader.start();
     this.reader.on('key', (key: TuiKey) => this.handleKey(key));
     this.scheduleRedraw();
+    // Block until shutdown() — without this, run() returned immediately
+    // and startTui's finally-block shut the TUI down before its first
+    // frame could draw.
+    await new Promise<void>((resolve) => {
+      this.resolveRun = resolve;
+    });
   }
 
   /** Stop the TUI, restoring the terminal. */
@@ -93,6 +101,12 @@ export class QuiltTui {
     if (this.redrawTimer) {
       clearTimeout(this.redrawTimer);
       this.redrawTimer = null;
+    }
+    if (process.stdin.isTTY) process.stdin.pause();
+    if (this.resolveRun) {
+      const resolve = this.resolveRun;
+      this.resolveRun = null;
+      resolve();
     }
   }
 

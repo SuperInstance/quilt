@@ -11,13 +11,13 @@
 // take over the screen, and exits cleanly on q / Ctrl-C.
 
 import { readFileSync } from 'node:fs';
-import { parseSheet, QuiltEngine } from '@quilt/core';
-import { startTui } from '../src/index.js';
+import { parseSheet, QuiltEngine } from '@superinstance/quilt-core';
+import { startTui } from '../dist/index.js';
 
 async function main() {
   const sheetPath = process.argv[2];
 
-  const engine = new QuiltEngine({ id: 'tui-session' });
+  const engine = new QuiltEngine('tui-session');
   if (sheetPath) {
     const source = readFileSync(sheetPath, 'utf8');
     const sheet = parseSheet(source);

@@ -20,63 +20,64 @@ Cells wire together. Change one, every dependent rewires automatically.
 ## Installation
 
 ```bash
-npm install @quilt/core @quilt/sdk
+npm install @superinstance/quilt-core @superinstance/quilt-sdk
 ```
 
 ## Your first sheet
 
 ```ts
-import { QuiltEngine, parseSheet } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 
 const engine = new QuiltEngine('hello');
 
 // value cell
 engine.loadSheet(parseSheet(`
+id: hello
 cells:
-  greeting:
+  - id: greeting
     kind: value
     value: "Hello, "
-  name:
+  - id: name
     kind: value
     value: "world"
-  message:
+  - id: message
     kind: formula
-    formula: "greeting + name"
+    expr: "greeting + name"
 `));
 
-console.log(await engine.get('message')); // "Hello, world"
+// get() returns a CellValue — read .data for the payload
+console.log((await engine.get('message')).data); // "Hello, world"
 
 // Change a value cell — formula re-evaluates automatically
 await engine.set('name', 'Quilt');
-console.log(await engine.get('message')); // "Hello, Quilt"
+console.log((await engine.get('message')).data); // "Hello, Quilt"
 ```
 
 ## Your first AI cell
 
 ```ts
 engine.loadSheet(parseSheet(`
+id: ai-demo
 cells:
-  prompt:
-    kind: value
-    value: "Explain {{topic}} in one sentence"
-  topic:
+  - id: topic
     kind: value
     value: "quorum consensus"
-  answer:
+  - id: answer
     kind: ai
+    ai_kind: ai.llm
     provider: zai
     model: glm-4.5
-    template: "{{prompt}}"
+    prompt: "Explain {{topic}} in one sentence"
 `));
 
 const answer = await engine.get('answer');
-console.log(answer);
+console.log(answer.data);
 ```
 
 ## Your first federated cell
 
 ```ts
-import { HttpCellTransport, resolveCell, subscribeCell } from '@quilt/sdk';
+import { HttpCellTransport, resolveCell, subscribeCell } from '@superinstance/quilt-sdk';
 
 const transport = new HttpCellTransport('https://quilt.example.com', process.env.TOKEN);
 const handle = await resolveCell('quilt://boat-1/sensors#heading', transport);

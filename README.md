@@ -1,6 +1,6 @@
 # ⬢ Quilt
 
-> **The reactive, typed, cellular runtime.** A spreadsheet that thinks. A database that reacts. A control plane that's a single file. Twenty-five open-source repos. One ecosystem.
+> **The reactive, typed, cellular runtime.** A spreadsheet that thinks. A database that reacts. A control plane that's a single file. One ecosystem, 37 linked repos listed below.
 
 <p align="center">
   <img src="assets/hero.png" alt="Quilt: the reactive cellular runtime" width="900">
@@ -11,16 +11,16 @@
   <a href="#the-philosophy">Philosophy</a> •
   <a href="#the-architecture">Architecture</a> •
   <a href="#concrete-proof">Concrete proof</a> •
-  <a href="#the-25-repos">The 25 repos</a> •
+  <a href="#the-repos">The repos</a> •
   <a href="#getting-started">Get started</a> •
   <a href="#why-you-should-care">Why care</a>
 </p>
 
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![version](https://img.shields.io/badge/version-0.6.0-orange.svg)](./packages/core/package.json)
+[![version](https://img.shields.io/badge/version-0.3.4-orange.svg)](./packages/core/package.json)
 [![node](https://img.shields.io/badge/node-%3E%3D18-green.svg)](./packages/core/package.json)
-[![tests](https://img.shields.io/badge/tests-115-brightgreen.svg)](#)
-[![repos](https://img.shields.io/badge/repos-25-blue.svg)](#)
+[![tests](https://img.shields.io/badge/tests-160-brightgreen.svg)](#)
+[![repos](https://img.shields.io/badge/repos-37-blue.svg)](#)
 [![platform](https://img.shields.io/badge/platform-cloud%20%7C%20workstation%20%7C%20esp32-blue.svg)](#)
 [![discussions](https://img.shields.io/badge/discussions-welcome-brightgreen.svg)](https://github.com/SuperInstance/quilt/discussions)
 
@@ -75,11 +75,11 @@ The same sheet. The same engine. Different runtimes. That's the entire point.
 
 ## ✦ The architecture
 
-Quilt is a **25-repo ecosystem** organized in 6 layers:
+Quilt is an **ecosystem of linked repos** (37 listed below) organized in 6 layers:
 
 ```
                     ╔═══════════════════════════╗
-                    ║  L8  Ecosystem / community ║  25 repos, cross-refs
+                    ║  L8  Ecosystem / community ║  37 repos, cross-refs
                     ╠═══════════════════════════╣
                     ║  L7  Workflows / demos     ║  30+ work-doing pages
                     ╠═══════════════════════════╣
@@ -106,37 +106,47 @@ Every repo at every layer cross-references the others. Every repo has the same e
 **1. A Quilt sheet, top to bottom:**
 
 ```ts
-import { QuiltEngine } from '@superinstance/quilt-core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 
 const engine = new QuiltEngine('expense-tracker');
 
-engine.loadSheet({
-  name: 'expense-tracker',
-  cells: [
-    // Inputs (the knobs you turn)
-    { path: 'income',      kind: 'value', value: 5000 },
-    { path: 'food',        kind: 'value', value: 800  },
-    { path: 'rent',        kind: 'value', value: 1500 },
-    { path: 'transport',   kind: 'value', value: 200  },
+// A sheet is YAML: an `id`, and a `cells` array. Each cell has an `id`,
+// a `kind`, and the fields its kind needs — a formula's expression
+// lives in `expr`.
+engine.loadSheet(parseSheet(`
+id: expense-tracker
+cells:
+  # Inputs (the knobs you turn)
+  - id: income
+    kind: value
+    value: 5000
+  - id: food
+    kind: value
+    value: 800
+  - id: rent
+    kind: value
+    value: 1500
+  - id: transport
+    kind: value
+    value: 200
 
-    // Derived (recompute when inputs change)
-    { path: 'total_spent', kind: 'formula',
-      fn: (ctx) => ctx.food + ctx.rent + ctx.transport },
-    { path: 'savings',     kind: 'formula',
-      fn: (ctx) => ctx.income - ctx.total_spent },
-    { path: 'savings_rate', kind: 'formula',
-      fn: (ctx) => ctx.savings / ctx.income },
+  # Derived (recompute when inputs change)
+  - id: total_spent
+    kind: formula
+    expr: "food + rent + transport"
+  - id: savings
+    kind: formula
+    expr: "income - total_spent"
+  - id: savings_rate
+    kind: formula
+    expr: "savings / income"
+`));
 
-    // Reactive (fires when a value changes)
-    { path: 'on_spend_change', kind: 'listener', listens: 'total_spent',
-      fn: (ctx) => console.log('Total spent:', ctx.total_spent) },
-  ],
-});
+// get() is async and returns a CellValue — read .data for the payload
+console.log((await engine.get('savings_rate')).data);  // 0.5
 
-console.log(engine.get('savings_rate'));  // 0.5
-
-engine.set('food', 1000);  // changed a value
-console.log(engine.get('savings_rate'));  // 0.46 (auto-recomputed)
+await engine.set('food', 1000);  // changed a value
+console.log((await engine.get('savings_rate')).data);  // 0.46 (auto-recomputed)
 ```
 
 [Try it live →](https://superinstance.dev/playground.html)
@@ -171,7 +181,7 @@ Visualize any Quilt sheet as a dependency graph. Click any node to inspect.
 
 [Try Inspector →](https://superinstance.dev/inspector.html)
 
-## ✦ The 25 repos
+## ✦ The repos
 
 | # | Repo | What it does |
 |---|---|---|
@@ -219,37 +229,65 @@ The 12 polyformalism repos all express the same model in different language cons
 
 ## ✦ Getting started
 
-**In a browser (no install):**
-
-```html
-<script type="module">
-  import { QuiltEngine } from 'https://cdn.jsdelivr.net/npm/@superinstance/quilt-core@0.6.0/dist/index.js';
-  // ...
-</script>
-```
-
-[Or try the live playground →](https://superinstance.dev/playground.html)
-
 **In Node:**
 
 ```bash
 npm install @superinstance/quilt-core
 ```
 
+This installs the latest published release (**0.3.3**). The repository
+carries 0.3.4, which will be the next publish. Node >= 18.
+
 ```ts
-import { QuiltEngine } from '@superinstance/quilt-core';
-const engine = new QuiltEngine('my-app');
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
+
+const engine = new QuiltEngine('hello');
+engine.loadSheet(parseSheet(`
+id: hello
+cells:
+  - id: greeting
+    kind: value
+    value: "Hello, "
+  - id: name
+    kind: value
+    value: "world"
+  - id: message
+    kind: formula
+    expr: "greeting + name"
+`));
+
+const result = await engine.get('message');
+console.log(result.data);   // "Hello, world"
+console.log(result.status); // "ready"
+
+await engine.set('name', 'Quilt');
+console.log((await engine.get('message')).data); // "Hello, Quilt"
 ```
 
-**On a Cloudflare Worker:**
+`get()` is async and returns a **CellValue** — `{ data, status, … }` —
+never the raw value. The full walkthrough lives in the
+[quick start guide](./docs/guide/quick-start.md) — that is the one
+canonical on-ramp.
 
-```bash
-npm install @superinstance/quilt-cloudflare
+**In a browser (no install):**
+
+```html
+<script type="module">
+  import { QuiltEngine } from 'https://cdn.jsdelivr.net/npm/@superinstance/quilt-core@0.3.3/dist/index.js';
+  // ...
+</script>
 ```
 
-**On a Raspberry Pi / Jetson / ESP32:**
+(Pin the version that exists. There is no 0.6.0.)
 
-See [quilt-codespace](https://github.com/SuperInstance/quilt-codespace), [quilt-jetson](https://github.com/SuperInstance/quilt-jetson), [quilt-esp32](https://github.com/SuperInstance/quilt-esp32).
+[Or try the live playground →](https://superinstance.dev/playground.html)
+
+**On other tiers:** the Cloudflare runtime lives in
+[quilt-cloudflare](https://github.com/SuperInstance/quilt-cloudflare);
+see [quilt-codespace](https://github.com/SuperInstance/quilt-codespace),
+[quilt-jetson](https://github.com/SuperInstance/quilt-jetson), and
+[quilt-esp32](https://github.com/SuperInstance/quilt-esp32) for
+Codespaces, Jetson, and ESP32.
 
 ## ✦ Why you should care
 
@@ -316,4 +354,4 @@ The two projects share the same **conservation law**, the same **rooms**, the sa
 
 ---
 
-**The point is not the 25 repos. The point is the one model.**
+**The point is not the 37 repos. The point is the one model.**

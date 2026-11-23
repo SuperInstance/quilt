@@ -38,7 +38,7 @@ The SDK ships 3 transports:
 ### HttpCellTransport
 
 ```ts
-import { HttpCellTransport } from '@quilt/sdk';
+import { HttpCellTransport } from '@superinstance/quilt-sdk';
 const transport = new HttpCellTransport('https://quilt.example.com', token);
 ```
 
@@ -47,7 +47,7 @@ REST over HTTPS. Simple, cacheable, works through any proxy.
 ### MqttCellTransport (v0.6.0+)
 
 ```ts
-import { MqttCellTransport } from '@quilt/sdk';
+import { MqttCellTransport } from '@superinstance/quilt-sdk';
 import mqtt from 'mqtt';
 const client = mqtt.connect('mqtts://broker.local:8883');
 const transport = new MqttCellTransport(client, { url: 'mqtts://broker.local:8883' });
@@ -58,7 +58,7 @@ MQTT 5.0. Pub/sub with retained messages and last-will. Best for IoT fleets.
 ### LocalCellTransport
 
 ```ts
-import { LocalCellTransport } from '@quilt/sdk';
+import { LocalCellTransport } from '@superinstance/quilt-sdk';
 const transport = new LocalCellTransport(new Map([['local', engine]]));
 ```
 
@@ -69,7 +69,7 @@ In-process. For tests and same-process subscriptions.
 `resolveCell` returns a handle you can `.get()` or `.subscribe()`:
 
 ```ts
-import { resolveCell, subscribeCell } from '@quilt/sdk';
+import { resolveCell, subscribeCell } from '@superinstance/quilt-sdk';
 
 const handle = await resolveCell('quilt://boat-1/sensors#heading', transport);
 console.log(await handle.get()); // 45
@@ -84,7 +84,7 @@ const unsub = subscribeCell('quilt://boat-1/sensors#heading', (v) => {
 `CellRouter` lets you route calls across transports based on policies:
 
 ```ts
-import { CellRouter } from '@quilt/sdk';
+import { CellRouter } from '@superinstance/quilt-sdk';
 
 const router = new CellRouter({
   routes: {
@@ -103,7 +103,7 @@ const cell = await router.resolveCell('quilt://cloudflare-prod-1/main#count');
 For non-realtime data (models, run traces, manifests), use `FederatedArtifactStore`:
 
 ```ts
-import { FederatedArtifactStore, FileSystemCacheBackend } from '@quilt/sdk';
+import { FederatedArtifactStore, FileSystemCacheBackend } from '@superinstance/quilt-sdk';
 
 const store = new FederatedArtifactStore({
   r2: env.MY_BUCKET,  // optional

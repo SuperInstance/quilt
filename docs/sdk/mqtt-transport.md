@@ -23,7 +23,7 @@ Examples:
 ## Usage
 
 ```ts
-import { MqttCellTransport } from '@quilt/sdk';
+import { MqttCellTransport } from '@superinstance/quilt-sdk';
 import mqtt from 'mqtt';
 
 const client = mqtt.connect('mqtts://broker.local:8883', {
@@ -115,7 +115,7 @@ MQTT supports `+` (single level) and `#` (multi-level) wildcards in subscription
 `mqttTopicMatches(pattern, topic)` is exposed as a utility:
 
 ```ts
-import { mqttTopicMatches } from '@quilt/sdk';
+import { mqttTopicMatches } from '@superinstance/quilt-sdk';
 mqttTopicMatches('quilt/+/+/#', 'quilt/boat-1/sensors/heading'); // true
 ```
 
@@ -124,7 +124,7 @@ mqttTopicMatches('quilt/+/+/#', 'quilt/boat-1/sensors/heading'); // true
 `MqttCellTransport` implements `CellTransport` — use it with `resolveCell` and `subscribeCell` like any other transport:
 
 ```ts
-import { resolveCell, subscribeCell, CellRouter } from '@quilt/sdk';
+import { resolveCell, subscribeCell, CellRouter } from '@superinstance/quilt-sdk';
 
 // Mixed transport
 const router = new CellRouter({

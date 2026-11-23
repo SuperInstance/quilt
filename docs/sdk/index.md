@@ -1,4 +1,4 @@
-# @quilt/sdk
+# @superinstance/quilt-sdk
 
 Eight functions for treating Quilt as an agent substrate and federated runtime.
 

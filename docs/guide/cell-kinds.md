@@ -7,8 +7,9 @@ Every cell has a `kind`. The 9 cell kinds are the atoms of Quilt.
 A static value. Numbers, strings, booleans, objects, arrays — anything JSON-serializable.
 
 ```yaml
+id: example
 cells:
-  threshold:
+  - id: threshold
     kind: value
     value: 0.5
 ```
@@ -18,21 +19,22 @@ cells:
 A computed expression. Other cells become variables by name.
 
 ```yaml
+id: example
 cells:
-  discount:
+  - id: discount
     kind: value
     value: 0.1
-  price:
+  - id: price
     kind: value
     value: 100
-  final:
+  - id: final
     kind: formula
-    formula: "price * (1 - discount)"
+    expr: "price * (1 - discount)"
 ```
 
 Ternaries and function calls work:
 ```yaml
-formula: "count > 0 ? sum/count : 0"
+expr: "count > 0 ? sum/count : 0"
 ```
 
 ## 3. api
@@ -146,7 +148,7 @@ cells:
   # formula
   alert:
     kind: formula
-    formula: "reading > threshold"
+    expr: "reading > threshold"
 
   # listener
   notifier:

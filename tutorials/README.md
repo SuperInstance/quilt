@@ -81,6 +81,7 @@ This is the primitive that no other tool has.
 A cell can change its behavior based on *who called it* — the row, the column, the caller's identity, anything in the context.
 
 ```yaml
+id: routing
 cells:
   - id: fast
     kind: value
@@ -158,20 +159,28 @@ Quilt has a concept called the **classical ↔ jazz spectrum**.
 The same grid manages both. You can see exactly where the jazz is:
 
 ```yaml
+id: decomposition
 cells:
   - id: threshold
     kind: value
     value: 0.5
     description: "Above this, escalate"
 
+  - id: reading
+    kind: value
+    value: 0.7
+
   - id: classifier
-    kind: model
-    endpoint: "model:gpt-4o"  # jazz
+    kind: ai
+    ai_kind: ai.llm
+    provider: zai
+    model: glm-4.5
+    prompt: "Classify {{reading}}"  # jazz
     description: "LLM classifier (expensive)"
 
   - id: rule_based
     kind: formula
-    expr: "=sensor.value > threshold"  # classical
+    expr: "=reading > threshold"  # classical
     description: "Simple threshold check"
 ```
 

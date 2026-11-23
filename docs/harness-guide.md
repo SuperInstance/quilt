@@ -16,9 +16,9 @@ A harness is the application that:
 Examples of harnesses:
 
 - The `quilt` CLI (Rust) — terminal tool
-- The `@quilt/mcp` server (TypeScript) — exposes sheets as MCP tools
+- The `@superinstance/quilt-mcp` server (TypeScript) — exposes sheets as MCP tools
 - The `quilt-web` server (Rust) — HTTP + SSE
-- The `@quilt/tui` package (TypeScript) — terminal UI
+- The `@superinstance/quilt-tui` package (TypeScript) — terminal UI
 - Your own agent runtime, dashboard, IDE plugin, etc.
 
 The engine itself is just a library. The harness is everything
@@ -143,7 +143,7 @@ The TS engine is fully async. Use it from any async context.
 ### Minimal Node harness
 
 ```ts
-import { QuiltEngine, parseSheet, CallerContext } from '@quilt/core';
+import { QuiltEngine, parseSheet, CallerContext } from '@superinstance/quilt-core';
 import { readFile } from 'node:fs/promises';
 
 const yaml = await readFile('sheet.yaml', 'utf8');
@@ -166,7 +166,7 @@ engine.subscribe('some.cell', (value, prev) => {
 
 ```ts
 import express from 'express';
-import { QuiltEngine, parseSheet } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 
 const engine = new QuiltEngine('my-sheet');
 engine.loadSheet(parseSheet(yaml));
@@ -206,7 +206,7 @@ See `packages/mcp/`. The pattern:
 ### Wiring to a CLI (the `quilt` binary pattern)
 
 ```ts
-import { QuiltEngine, parseSheet } from '@quilt/core';
+import { QuiltEngine, parseSheet } from '@superinstance/quilt-core';
 
 async function load(path: string) {
   const yaml = await readFile(path, 'utf8');

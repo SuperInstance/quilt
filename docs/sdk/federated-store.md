@@ -22,7 +22,7 @@ Reads consult tiers in order; promote on hit. Writes go to all tiers; R2 is best
 ## Usage
 
 ```ts
-import { FederatedArtifactStore, FileSystemCacheBackend } from '@quilt/sdk';
+import { FederatedArtifactStore, FileSystemCacheBackend } from '@superinstance/quilt-sdk';
 
 const store = new FederatedArtifactStore({
   r2: env.MY_BUCKET,                                // optional
@@ -106,7 +106,7 @@ In-memory map. Fast, but not persistent.
 ### `FileSystemCacheBackend`
 
 ```ts
-import { FileSystemCacheBackend } from '@quilt/sdk';
+import { FileSystemCacheBackend } from '@superinstance/quilt-sdk';
 const store = new FederatedArtifactStore({
   local: new FileSystemCacheBackend('/var/cache/quilt'),
 });

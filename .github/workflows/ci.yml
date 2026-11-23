@@ -41,6 +41,21 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit -p . 2>/dev/null || echo "no tsc config found, skipping"
 
+  smoke:
+    name: tarball smoke test
+    runs-on: incredibuild-ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci || npm install
+      - name: Build
+        run: npm run build --if-present
+      - name: Pack core and run the README example against the tarball
+        run: node scripts/smoke-tarball.mjs
+
   lint:
     name: lint
     runs-on: incredibuild-ubuntu-latest
